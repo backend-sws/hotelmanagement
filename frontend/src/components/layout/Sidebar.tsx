@@ -12,17 +12,18 @@ import {
   Package,
   Wallet,
   FileStack,
-  Receipt
+  Receipt,
+  List
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/store/layoutStore";
 import { useAuthStore } from "@/store/authStore";
 import { useAppStore } from "@/store/appStore";
 import { useTenantStore } from "@/store/tenantStore";
-import { ShieldAlert, Settings, Database, Briefcase, Coins, UserCircle, LogOut, MessageSquare, Calendar, Calculator } from "lucide-react";
+import { ShieldAlert, Settings, Database, Briefcase, Coins, UserCircle, LogOut, MessageSquare, Calendar, Calculator, Tag } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useFeature } from "@/hooks/useFeature";
-import { FeatureLockModal } from "@/features/business/components/FeatureLockModal";
+import { FeatureLockModal } from "@/features/business/core/components/FeatureLockModal";
 import { Crown } from "lucide-react";
 
 export const businessMenuGroups = [
@@ -33,11 +34,14 @@ export const businessMenuGroups = [
     ]
   },
   {
-    title: "SALES & OPERATIONS",
+    title: "BILLING & SALES",
     items: [
-      { name: "NEW BILL (POS)", href: "/pos", icon: FileText },
-      { name: "ALL INVOICES", href: "/invoices", icon: ClipboardList },
-      { name: "FINANCE LEDGER", href: "/finance", icon: Wallet, feature: 'has_finance' },
+      { name: "NEW DOCUMENT", href: "/invoices/new", icon: FileText },
+      { name: "ALL DOCUMENTS", href: "/invoices", icon: ClipboardList },
+      { name: "CHALLANS", href: "/challans", icon: Package },
+      { name: "PROFORMA", href: "/proforma", icon: FileStack },
+      { name: "QUOTATIONS", href: "/quotations", icon: Receipt },
+      { name: "CREDIT NOTES", href: "/credit-notes", icon: Activity },
       { name: "EXPENSES", href: "/expenses", icon: Receipt },
     ]
   },
@@ -52,6 +56,7 @@ export const businessMenuGroups = [
     title: "INVENTORY",
     items: [
       { name: "ITEMS", href: "/items", icon: Package },
+      { name: "PRICE LISTS", href: "/price-lists", icon: List },
       { name: "CATEGORIES", href: "/categories", icon: Building2 },
       { name: "BRANDS", href: "/brands", icon: FileStack },
     ]
@@ -230,13 +235,14 @@ export function Sidebar({ className }: { className?: string }) {
   if (hasPermission('manage_sales') || hasPermission('manage_inventory') || hasPermission('manage_expenses')) {
     const operationsItems = [];
     if (hasPermission('manage_sales')) {
-      operationsItems.push({ name: "POS & BILLING", href: "/pos", icon: Calculator });
-      operationsItems.push({ name: "INVOICES", href: "/invoices", icon: FileText });
+      operationsItems.push({ name: "NEW DOCUMENT", href: "/invoices/new", icon: Calculator });
+      operationsItems.push({ name: "ALL DOCUMENTS", href: "/invoices", icon: FileText });
     }
     if (hasPermission('manage_inventory')) {
-      operationsItems.push({ name: "ITEMS", href: "/items", icon: Package });
       operationsItems.push({ name: "CATEGORIES", href: "/categories", icon: Building2 });
-      operationsItems.push({ name: "BRANDS", href: "/brands", icon: FileStack });
+      operationsItems.push({ name: "BRANDS", href: "/brands", icon: Tag });
+      operationsItems.push({ name: "ITEMS", href: "/items", icon: Package });
+      operationsItems.push({ name: "PRICE LISTS", href: "/price-lists", icon: List });
     }
     if (hasPermission('manage_expenses')) {
       if (hasFeature('has_finance')) {

@@ -43,7 +43,18 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('brands', \App\Http\Controllers\Api\Business\BrandController::class);
             
             Route::post('inventory/direct-inward', [\App\Http\Controllers\Api\Business\InventoryController::class, 'directInward']);
+            Route::get('inventory/low-stock', [\App\Http\Controllers\Api\Business\InventoryController::class, 'lowStockAlert']);
+            Route::get('inventory/generate-barcode', [\App\Http\Controllers\Api\Business\InventoryController::class, 'generateBarcode']);
             Route::apiResource('inventory', \App\Http\Controllers\Api\Business\InventoryController::class);
+            
+            // Price Lists Routes
+            Route::apiResource('price-lists', \App\Http\Controllers\Api\Business\PriceListController::class);
+            Route::post('price-lists/{priceList}/items', [\App\Http\Controllers\Api\Business\PriceListController::class, 'addItem']);
+            Route::delete('price-lists/{priceList}/items/{item}', [\App\Http\Controllers\Api\Business\PriceListController::class, 'removeItem']);
+            
+            // GST Settings
+            Route::get('settings/gst', [\App\Http\Controllers\Api\Business\GstSettingController::class, 'show']);
+            Route::post('settings/gst', [\App\Http\Controllers\Api\Business\GstSettingController::class, 'update']);
             
             // Supplier Routes
             Route::apiResource('suppliers', \App\Http\Controllers\Api\SupplierController::class);
@@ -55,6 +66,34 @@ Route::prefix('v1')->group(function () {
             
             // Sales Routes
             Route::get('sales/{sale}/invoice-pdf', [\App\Http\Controllers\Api\SaleController::class, 'generatePdf']);
+            // Invoices
+            Route::get('invoices/stats', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'stats']);
+            Route::post('invoices/{invoice}/convert', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'convert']);
+            Route::get('invoices/{invoice}/pdf', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'generatePdf']);
+            Route::get('invoices/{invoice}/whatsapp', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'sendWhatsapp']);
+            Route::apiResource('invoices', \App\Http\Controllers\Api\Business\InvoiceController::class);
+
+            // Phase 3 — Document Type Routes
+            // Delivery Challans
+            Route::get('challans/pending', [\App\Http\Controllers\Api\Business\ChallanController::class, 'pendingChallans']);
+            Route::get('challans/{id}/truck-slip', [\App\Http\Controllers\Api\Business\ChallanController::class, 'generateTruckSlip']);
+            Route::post('challans/convert', [\App\Http\Controllers\Api\Business\ChallanController::class, 'convert']);
+            Route::apiResource('challans', \App\Http\Controllers\Api\Business\ChallanController::class)->only(['index', 'show']);
+
+            // Proforma Invoices
+            Route::post('proforma/{id}/convert', [\App\Http\Controllers\Api\Business\ProformaController::class, 'convert']);
+            Route::apiResource('proforma', \App\Http\Controllers\Api\Business\ProformaController::class)->only(['index', 'show']);
+
+            // Quotations
+            Route::patch('quotations/{id}/status', [\App\Http\Controllers\Api\Business\QuotationController::class, 'updateStatus']);
+            Route::post('quotations/{id}/convert', [\App\Http\Controllers\Api\Business\QuotationController::class, 'convert']);
+            Route::apiResource('quotations', \App\Http\Controllers\Api\Business\QuotationController::class)->only(['index', 'show']);
+
+            // Credit Notes & Debit Notes
+            Route::apiResource('credit-notes', \App\Http\Controllers\Api\Business\CreditNoteController::class)->only(['index', 'store', 'show']);
+            Route::apiResource('debit-notes', \App\Http\Controllers\Api\Business\DebitNoteController::class)->only(['index', 'show']);
+
+            // Keep sales as legacy if needed by other components for now
             Route::apiResource('sales', \App\Http\Controllers\Api\SaleController::class);
             
             // Expense Routes
@@ -62,7 +101,8 @@ Route::prefix('v1')->group(function () {
             Route::get('expenses/categories', [\App\Http\Controllers\Api\Business\ExpenseController::class, 'categories']);
             Route::apiResource('expenses', \App\Http\Controllers\Api\Business\ExpenseController::class);
             
-            // EMI & Installments Routes
+            // EMI & Installments Routes (DEPRECATED: Replaced by Ledger System)
+            /* 
             Route::middleware(['feature:has_finance'])->group(function () {
                 Route::get('emis/customer/{customerId}', [\App\Http\Controllers\Api\Business\EmiController::class, 'getCustomerEmis']);
                 Route::post('emis/installments/{installmentId}/pay', [\App\Http\Controllers\Api\Business\EmiController::class, 'payInstallment']);
@@ -73,6 +113,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('finance/completed', [\App\Http\Controllers\Api\FinanceController::class, 'completed']);
                 Route::post('finance/{id}/mark-received', [\App\Http\Controllers\Api\FinanceController::class, 'markReceived']);
             });
+            */
 
             // Staff Management Routes
             Route::get('staff/performance', [\App\Http\Controllers\Api\Business\StaffPerformanceController::class, 'index']);

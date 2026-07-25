@@ -156,7 +156,7 @@ export function DynamicForm({ id, form, onSubmit, sections, className, children,
                 render={({ field: { value, onChange } }) => (
                   <CustomSelect
                     options={field.options?.map(opt => ({ value: String(opt.value), label: opt.label })) || []}
-                    value={value}
+                    value={value != null ? String(value) : undefined}
                     onChange={(val) => {
                       onChange(val);
                       form.trigger(field.name);

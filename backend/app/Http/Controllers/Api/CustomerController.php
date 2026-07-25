@@ -59,7 +59,7 @@ class CustomerController extends BaseController
     public function show(Customer $customer)
     {
         return $this->executeAction(function () use ($customer) {
-            $customer->load(['sales.items.product', 'sales.payments', 'sales.emiDetail']);
+            $customer->load(['sales.items.product', 'sales.payments', 'priceList']);
             return $customer;
         }, 'Customer retrieved successfully');
     }
@@ -91,6 +91,15 @@ class CustomerController extends BaseController
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
+            'gstin' => 'nullable|string|max:15',
+            'state_code' => 'nullable|string|max:2',
+            'state_name' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:100',
+            'credit_period' => 'nullable|string|max:20',
+            'credit_limit' => 'nullable|numeric|min:0',
+            'opening_balance' => 'nullable|numeric|min:0',
+            'balance_type' => 'nullable|string|in:debit,credit',
+            'price_list_id' => 'nullable|exists:price_lists,id'
         ]);
 
         return $this->executeAction(function () use ($validated) {
@@ -128,6 +137,15 @@ class CustomerController extends BaseController
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
+            'gstin' => 'nullable|string|max:15',
+            'state_code' => 'nullable|string|max:2',
+            'state_name' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:100',
+            'credit_period' => 'nullable|string|max:20',
+            'credit_limit' => 'nullable|numeric|min:0',
+            'opening_balance' => 'nullable|numeric|min:0',
+            'balance_type' => 'nullable|string|in:debit,credit',
+            'price_list_id' => 'nullable|exists:price_lists,id'
         ]);
 
         return $this->executeAction(function () use ($customer, $validated) {

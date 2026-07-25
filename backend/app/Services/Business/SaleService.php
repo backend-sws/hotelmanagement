@@ -365,10 +365,15 @@ class SaleService
             $discount = $data['discount'] ?? $sale->discount;
             $roundOff = $data['round_off'] ?? $sale->round_off;
             
-            if ($hasItems || isset($data['discount']) || isset($data['round_off'])) {
+            if ($hasItems) {
                 $finalAmount = $totalAmount - $discount + $roundOff;
+                if ($sale->total_tax_amount > 0) {
+                    $finalAmount += $sale->total_tax_amount;
+                    $totalAmount += $sale->total_tax_amount;
+                }
             } else {
                 $finalAmount = $sale->final_amount;
+                $totalAmount = $sale->total_amount;
             }
 
             $paidAmount = 0;
@@ -428,11 +433,11 @@ class SaleService
                         } else {
                             $product = \App\Models\Product::find($item['product_id']);
                             if ($product) {
-                                $product->decrement('quantity', $item->quantity);
+                                $product->decrement('quantity', $item['quantity']);
                                 InventoryMovement::create([
                                     'product_id' => $product->id,
                                     'type' => 'out',
-                                    'quantity' => $item->quantity,
+                                    'quantity' => $item['quantity'],
                                     'reference_type' => 'sale_edit',
                                     'reference_id' => $sale->id,
                                 ]);

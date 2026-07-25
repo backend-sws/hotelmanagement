@@ -10,8 +10,8 @@ import { ModeToggle } from "@/components/ui/mode-toggle";
 import { businessMenuGroups, superadminMenuGroups, isRouteActive } from "./Sidebar";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { useFeatureAccess } from "@/features/business/hooks/useFeatureAccess";
-import { FeatureLockModal } from "@/features/business/components/FeatureLockModal";
+import { useFeatureAccess } from "@/features/business/core/hooks/useFeatureAccess";
+import { FeatureLockModal } from "@/features/business/core/components/FeatureLockModal";
 // Theme dropdown component inside Header.tsx
 function ThemeCustomizer() {
   const [isOpen, setIsOpen] = useState(false);

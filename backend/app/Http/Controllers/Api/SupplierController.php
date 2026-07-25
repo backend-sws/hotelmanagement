@@ -90,6 +90,11 @@ class SupplierController extends BaseController
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'items_supplied' => 'nullable|string',
+            'gstin' => 'nullable|string|max:15',
+            'state_code' => 'nullable|string|max:2',
+            'state_name' => 'nullable|string|max:50',
+            'opening_balance' => 'nullable|numeric|min:0',
+            'balance_type' => 'nullable|string|in:debit,credit'
         ]);
 
         return $this->executeAction(function () use ($validated) {
@@ -129,6 +134,11 @@ class SupplierController extends BaseController
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'items_supplied' => 'nullable|string',
+            'gstin' => 'nullable|string|max:15',
+            'state_code' => 'nullable|string|max:2',
+            'state_name' => 'nullable|string|max:50',
+            'opening_balance' => 'nullable|numeric|min:0',
+            'balance_type' => 'nullable|string|in:debit,credit'
         ]);
 
         return $this->executeAction(function () use ($supplier, $validated) {
@@ -196,7 +206,7 @@ class SupplierController extends BaseController
             'invoice_file' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.quantity' => 'required|numeric|min:0.001',
             'items.*.purchase_price' => 'required|numeric|min:0',
             'items.*.mrp' => 'nullable|numeric|min:0',
             'items.*.batch_number' => 'nullable|string',

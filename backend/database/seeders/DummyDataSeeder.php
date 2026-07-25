@@ -219,26 +219,31 @@ class DummyDataSeeder extends Seeder
             // Phase 2: Seed Categories and Products for testing
             $cat1 = Category::create([
                 'business_id' => $business->id,
-                'name' => 'Smartphones'
+                'name' => 'Cement'
             ]);
             
             $cat2 = Category::create([
                 'business_id' => $business->id,
-                'name' => 'Accessories'
+                'name' => 'Steel'
             ]);
 
-            $brandSamsung = \App\Models\Brand::firstOrCreate(['business_id' => $business->id, 'name' => 'Samsung']);
-            $brandApple = \App\Models\Brand::firstOrCreate(['business_id' => $business->id, 'name' => 'Apple']);
+            $brandSamsung = \App\Models\Brand::firstOrCreate(['business_id' => $business->id, 'name' => 'Ultratech']);
+            $brandApple = \App\Models\Brand::firstOrCreate(['business_id' => $business->id, 'name' => 'Tata Tiscon']);
 
             Product::create([
                 'business_id' => $business->id,
                 'category_id' => $cat1->id,
                 'brand_id' => $brandSamsung->id,
-                'model_name' => 'Galaxy S23',
-                'imei' => '35' . rand(100000000, 999999999) . rand(1000, 9999),
-                'purchase_price' => 50000,
-                'mrp' => 70000,
-                'quantity' => 5,
+                'model_name' => 'PPC 50KG',
+                'item_code' => 'CEM-' . rand(100, 999),
+                'unit' => 'bag',
+                'hsn_code' => '2523',
+                'gst_rate' => 28,
+                'purchase_rate' => 320,
+                'sale_rate' => 380,
+                'purchase_price' => 320,
+                'mrp' => 380,
+                'quantity' => 100,
                 'status' => 'in_stock'
             ]);
 
@@ -246,11 +251,16 @@ class DummyDataSeeder extends Seeder
                 'business_id' => $business->id,
                 'category_id' => $cat2->id,
                 'brand_id' => $brandApple->id,
-                'model_name' => 'AirPods Pro',
-                'serial_no' => 'APP' . rand(10000, 99999),
-                'purchase_price' => 15000,
-                'mrp' => 24900,
-                'quantity' => 10,
+                'model_name' => 'TMT Bar 12mm',
+                'item_code' => 'TMT-' . rand(100, 999),
+                'unit' => 'kg',
+                'hsn_code' => '7214',
+                'gst_rate' => 18,
+                'purchase_rate' => 65,
+                'sale_rate' => 85,
+                'purchase_price' => 65,
+                'mrp' => 85,
+                'quantity' => 2000,
                 'status' => 'in_stock'
             ]);
         }

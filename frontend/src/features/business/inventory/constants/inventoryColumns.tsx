@@ -14,6 +14,16 @@ interface InventoryColumnsProps {
 
 export const getInventoryColumns = ({ onEdit, onDelete, onAddStock }: InventoryColumnsProps): ColumnDef<Product>[] => [
   {
+    accessorKey: 'item_code',
+    header: 'Item Code',
+    className: '!px-3 !py-1.5 text-xs',
+    cell: (item) => (
+      <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
+        {item.item_code || '-'}
+      </span>
+    ),
+  },
+  {
     accessorKey: 'model_name',
     header: 'Product',
     className: '!px-3 !py-1.5 text-xs',
@@ -28,12 +38,22 @@ export const getInventoryColumns = ({ onEdit, onDelete, onAddStock }: InventoryC
     ),
   },
   {
-    accessorKey: 'brand_id',
-    header: 'Brand',
+    accessorKey: 'unit',
+    header: 'Unit',
     className: '!px-3 !py-1.5 text-xs',
     cell: (item) => (
-      <span className="font-bold text-xs text-slate-700 dark:text-slate-300">
-        {item.brand?.name || '-'}
+      <span className="text-xs text-slate-700 dark:text-slate-300">
+        {item.unit || 'nos'}
+      </span>
+    ),
+  },
+  {
+    accessorKey: 'gst_rate',
+    header: 'GST',
+    className: '!px-3 !py-1.5 text-xs',
+    cell: (item) => (
+      <span className="text-xs text-slate-700 dark:text-slate-300">
+        {item.gst_rate}%
       </span>
     ),
   },
@@ -47,11 +67,11 @@ export const getInventoryColumns = ({ onEdit, onDelete, onAddStock }: InventoryC
       return (
         <div className="flex flex-col gap-1.5 items-start">
           <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-bold ${
-            totalStock <= 10 
+            totalStock <= (item.min_stock_alert || 0)
               ? 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20' 
               : 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
           }`}>
-            {totalStock} UNITS
+            {totalStock} {item.unit?.toUpperCase() || 'UNITS'}
           </Badge>
         </div>
       );
@@ -59,7 +79,7 @@ export const getInventoryColumns = ({ onEdit, onDelete, onAddStock }: InventoryC
   },
   {
     accessorKey: 'purchase_price',
-    header: 'Purchase Price',
+    header: 'Purchase Rate',
     className: '!px-3 !py-1.5 text-xs',
     cell: (item: any) => {
       return (
@@ -73,7 +93,7 @@ export const getInventoryColumns = ({ onEdit, onDelete, onAddStock }: InventoryC
   },
   {
     accessorKey: 'mrp',
-    header: 'MRP',
+    header: 'Sale Rate',
     className: '!px-3 !py-1.5 text-xs',
     cell: (item: any) => {
       return (

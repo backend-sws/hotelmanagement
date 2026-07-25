@@ -30,7 +30,7 @@ class InventoryController extends BaseController
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['search', 'category_id', 'brand_id', 'low_stock_days']);
+            $filters = $request->only(['search', 'category_id', 'brand_id', 'low_stock_days', 'price_list_id']);
             $perPage = $request->input('per_page', 10);
             $paginator = $this->inventoryService->getInventory($filters, $perPage);
             
@@ -80,9 +80,18 @@ class InventoryController extends BaseController
             'variant' => 'nullable|string|max:255',
             'purchase_price' => 'required|numeric|min:0',
             'mrp' => 'required|numeric|min:0',
-            'quantity' => 'required|integer|min:0',
+            'quantity' => 'required|numeric|min:0',
             'supplier_id' => 'nullable|integer',
-            'status' => 'nullable|string|in:in_stock,sold,damaged'
+            'status' => 'nullable|string|in:in_stock,sold,damaged',
+            'item_code' => 'nullable|string|max:50',
+            'unit' => 'nullable|string|max:30',
+            'hsn_code' => 'nullable|string|max:10',
+            'gst_rate' => 'nullable|numeric|min:0',
+            'sale_rate' => 'nullable|numeric|min:0',
+            'purchase_rate' => 'nullable|numeric|min:0',
+            'min_stock_alert' => 'nullable|numeric|min:0',
+            'barcode' => 'nullable|string|max:100',
+            'description' => 'nullable|string'
         ]);
 
         return $this->executeAction(function () use ($validated) {
@@ -146,8 +155,18 @@ class InventoryController extends BaseController
             'variant' => 'nullable|string|max:255',
             'purchase_price' => 'sometimes|numeric|min:0',
             'mrp' => 'sometimes|numeric|min:0',
+            'quantity' => 'sometimes|numeric|min:0',
             'supplier_id' => 'nullable|integer',
-            'status' => 'nullable|string|in:in_stock,sold,damaged'
+            'status' => 'nullable|string|in:in_stock,sold,damaged',
+            'item_code' => 'nullable|string|max:50',
+            'unit' => 'nullable|string|max:30',
+            'hsn_code' => 'nullable|string|max:10',
+            'gst_rate' => 'nullable|numeric|min:0',
+            'sale_rate' => 'nullable|numeric|min:0',
+            'purchase_rate' => 'nullable|numeric|min:0',
+            'min_stock_alert' => 'nullable|numeric|min:0',
+            'barcode' => 'nullable|string|max:100',
+            'description' => 'nullable|string'
         ]);
 
         return $this->executeAction(function () use ($inventory, $validated) {
@@ -201,7 +220,7 @@ class InventoryController extends BaseController
     {
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1',
+            'quantity' => 'required|numeric|min:0.001',
             'purchase_price' => 'nullable|numeric|min:0',
             'mrp' => 'nullable|numeric|min:0',
             'batch_number' => 'nullable|string|max:255',
@@ -210,5 +229,41 @@ class InventoryController extends BaseController
         return $this->executeAction(function () use ($validated) {
             return $this->inventoryService->directInward($validated);
         }, 'Stock added successfully');
+    }
+
+    /**
+     * Get products below their min_stock_alert threshold.
+     */
+    public function lowStockAlert(Request $request)
+    {
+        try {
+            $products = Product::where('quantity', '<=', \DB::raw('COALESCE(min_stock_alert, 0)'))
+                ->where('min_stock_alert', '>', 0)
+                ->with('category')
+                ->orderBy('quantity', 'asc')
+                ->get();
+
+            return $this->success($products, 'Low stock items retrieved');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Auto-generate a unique barcode for a product.
+     */
+    public function generateBarcode(Request $request)
+    {
+        try {
+            $businessId = app('current_business_id');
+            $prefix = str_pad($businessId, 3, '0', STR_PAD_LEFT);
+            $lastProduct = Product::orderBy('id', 'desc')->first();
+            $nextId = $lastProduct ? $lastProduct->id + 1 : 1;
+            $barcode = $prefix . str_pad($nextId, 9, '0', STR_PAD_LEFT);
+
+            return $this->success(['barcode' => $barcode], 'Barcode generated');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 500);
+        }
     }
 }

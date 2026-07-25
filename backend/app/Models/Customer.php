@@ -16,6 +16,15 @@ class Customer extends Model
         'name',
         'phone',
         'address',
+        'gstin',
+        'state_code',
+        'state_name',
+        'email',
+        'credit_period',
+        'credit_limit',
+        'opening_balance',
+        'balance_type',
+        'price_list_id',
     ];
 
     public function business()
@@ -26,5 +35,10 @@ class Customer extends Model
     public function sales()
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function priceList()
+    {
+        return $this->belongsTo(PriceList::class);
     }
 }

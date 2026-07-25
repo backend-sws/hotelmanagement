@@ -19,6 +19,15 @@ export interface Product {
   category_id: number;
   brand_id: number | null;
   model_name: string;
+  item_code: string | null;
+  unit: string;
+  hsn_code: string | null;
+  gst_rate: number;
+  sale_rate: number;
+  purchase_rate: number;
+  min_stock_alert: number;
+  barcode: string | null;
+  description: string | null;
   imei: string | null;
   serial_no: string | null;
   variant: string | null;
@@ -47,6 +56,15 @@ export const productSchema = z.object({
   category_id: z.coerce.number().min(1, 'Category is required'),
   brand_id: z.coerce.number().optional().or(z.literal('')),
   model_name: z.string().min(1, 'Model name is required'),
+  item_code: z.string().optional().or(z.literal('')),
+  unit: z.string().default('nos'),
+  hsn_code: z.string().optional().or(z.literal('')),
+  gst_rate: z.coerce.number().default(18),
+  sale_rate: z.coerce.number().min(0).default(0),
+  purchase_rate: z.coerce.number().min(0).default(0),
+  min_stock_alert: z.coerce.number().default(0),
+  barcode: z.string().optional().or(z.literal('')),
+  description: z.string().optional().or(z.literal('')),
   imei: z.string().optional().or(z.literal('')),
   serial_no: z.string().nullable().optional(),
   variant: z.string().nullable().optional(),

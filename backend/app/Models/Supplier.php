@@ -21,6 +21,11 @@ class Supplier extends Model
         'phone',
         'address',
         'items_supplied',
+        'gstin',
+        'state_code',
+        'state_name',
+        'opening_balance',
+        'balance_type',
     ];
 
     /**

@@ -14,12 +14,43 @@ class SaleItem extends Model
         'product_id',
         'product_batch_id',
         'quantity',
-        'unit_price',
-        'subtotal',
+        'hsn_code',
+        'unit',
+        'gst_rate',
+        'rate',
+        'taxable_amount',
+        'cgst_amount',
+        'sgst_amount',
+        'igst_amount',
+        'amount',
         'imei_1',
         'imei_2',
         'serial_no',
+        'unit_price',
+        'subtotal',
     ];
+
+    protected $appends = ['unit_price', 'subtotal'];
+
+    public function getUnitPriceAttribute()
+    {
+        return $this->rate ?? $this->attributes['rate'] ?? 0;
+    }
+
+    public function setUnitPriceAttribute($value)
+    {
+        $this->attributes['rate'] = $value;
+    }
+
+    public function getSubtotalAttribute()
+    {
+        return $this->amount ?? $this->attributes['amount'] ?? 0;
+    }
+
+    public function setSubtotalAttribute($value)
+    {
+        $this->attributes['amount'] = $value;
+    }
 
     public function sale()
     {

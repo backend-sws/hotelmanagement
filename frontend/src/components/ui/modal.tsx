@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { cn } from '@/lib/utils';
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+  overflowVisible?: boolean;
 }
 
 const maxWidthClasses = {
@@ -23,7 +25,7 @@ const maxWidthClasses = {
   '5xl': 'max-w-5xl',
 };
 
-export function Modal({ isOpen, onClose, title, description, children, footer, maxWidth = '2xl' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, description, children, footer, maxWidth = '2xl', overflowVisible = false }: ModalProps) {
   if (!isOpen) return null;
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -38,7 +40,11 @@ export function Modal({ isOpen, onClose, title, description, children, footer, m
       onClick={handleOverlayClick}
     >
       <div 
-        className={`relative bg-white dark:bg-[#09090b] w-full ${maxWidthClasses[maxWidth]} rounded-2xl shadow-2xl border border-slate-200/80 dark:border-white/10 max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200`}
+        className={cn(
+          "relative bg-white dark:bg-[#09090b] w-full rounded-2xl shadow-2xl border border-slate-200/80 dark:border-white/10 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200",
+          maxWidthClasses[maxWidth],
+          overflowVisible ? "overflow-visible" : "overflow-hidden"
+        )}
       >
         {/* Floating Close Button when no header */}
         {title === "" && (
@@ -73,13 +79,13 @@ export function Modal({ isOpen, onClose, title, description, children, footer, m
         )}
 
         {/* Body */}
-        <div className="p-4 overflow-y-auto min-h-0 custom-scrollbar">
+        <div className={cn("p-4 custom-scrollbar relative z-20", overflowVisible ? "overflow-visible" : "overflow-y-auto min-h-0")}>
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="px-4 py-3 border-t border-slate-200/80 dark:border-white/10 shrink-0 flex justify-end gap-3 bg-slate-50 dark:bg-white/[0.01]">
+          <div className="px-4 py-3 border-t border-slate-200/80 dark:border-white/10 shrink-0 flex justify-end gap-3 bg-slate-50 dark:bg-white/[0.01] relative z-10">
             {footer}
           </div>
         )}

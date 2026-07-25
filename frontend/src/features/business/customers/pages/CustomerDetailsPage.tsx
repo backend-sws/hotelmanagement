@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCustomer } from '../api/useCustomers';
-import { useCustomerEmis, usePayInstallment } from '../../finance/api/useEmi';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Phone, MapPin, Edit2, Users, IndianRupee, CheckCircle, Clock } from 'lucide-react';
+import { Phone, MapPin, Edit2, Users, IndianRupee, CheckCircle, Clock, Tag, Mail, ShieldCheck } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { EditCustomerModal } from '../components/EditCustomerModal';
 import { CollectPaymentModal } from '../components/CollectPaymentModal';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import { CardSkeleton, TableSkeleton } from '@/components/ui/skeleton-loaders';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 function CustomerDetailsSkeleton() {
   return (
@@ -46,12 +46,10 @@ export default function CustomerDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: customer, isLoading } = useCustomer(Number(id));
-  const { data: emis } = useCustomerEmis(Number(id));
-  const payInstallment = usePayInstallment();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCollectPaymentOpen, setIsCollectPaymentOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'sales' | 'emi'>('sales');
+  const [activeTab, setActiveTab] = useState<'sales' | 'ledger'>('sales');
 
   if (isLoading) return <CustomerDetailsSkeleton />;
   if (!customer) return <div className="p-8 text-center text-rose-500 min-h-screen bg-slate-50 dark:bg-[#09090b]">Customer not found</div>;
@@ -59,19 +57,6 @@ export default function CustomerDetailsPage() {
   const totalBilled = customer.sales?.reduce((sum: number, s: any) => sum + Number(s.final_amount), 0) || 0;
   const totalPaid = customer.sales?.reduce((sum: number, s: any) => sum + Number(s.paid_amount), 0) || 0;
   const outstanding = totalBilled - totalPaid;
-
-  const handlePayInstallment = async (installment: any) => {
-    if (!window.confirm(`Are you sure you want to mark Installment #${installment.installment_number} of ${formatCurrency(installment.amount)} as paid?`)) return;
-    try {
-      await payInstallment.mutateAsync({ 
-        installmentId: installment.id, 
-        data: { payment_mode: 'Cash', amount: installment.amount } 
-      });
-      toast.success('EMI installment paid successfully!');
-    } catch (e: any) {
-      toast.error(e.response?.data?.message || 'Failed to pay installment');
-    }
-  };
 
   const salesColumns: ColumnDef<any>[] = [
     {
@@ -207,16 +192,51 @@ export default function CustomerDetailsPage() {
                   <p className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">{customer.phone || 'N/A'}</p>
                 </div>
               </div>
+
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
+                <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center text-primary-500">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Email Address</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5 truncate max-w-[180px]">{customer.email || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">GSTIN / Tax ID</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5 font-mono">{customer.gstin || 'Unregistered (URD)'}</p>
+                </div>
+              </div>
               
               <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
                 <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center text-primary-500">
                   <MapPin className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Address</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">{customer.address || 'N/A'}</p>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Address & State</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">
+                    {customer.address || 'N/A'}
+                    {customer.state_name && ` (${customer.state_name} - ${customer.state_code})`}
+                  </p>
                 </div>
               </div>
+
+              {customer.price_list && (
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 sm:col-span-2">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500">
+                    <Tag className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Assigned Price List</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">{customer.price_list.name}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -257,7 +277,7 @@ export default function CustomerDetailsPage() {
           </div>
         </div>
 
-        {/* Sales History and EMI Schedule tabs */}
+        {/* Sales History and Ledger tabs */}
         <div className="bg-white dark:bg-[#09090b] border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm">
           <div className="flex border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
             <button 
@@ -273,15 +293,17 @@ export default function CustomerDetailsPage() {
               )}
             </button>
             <button 
-              className={`px-6 py-4 text-sm font-bold tracking-wide uppercase transition-colors flex items-center gap-2 relative ${activeTab === 'emi' ? 'text-primary-600' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-              onClick={() => setActiveTab('emi')}
+              onClick={() => setActiveTab('ledger')}
+              className={cn(
+                "px-4 py-3 text-sm font-semibold transition-all relative",
+                activeTab === 'ledger' 
+                  ? "text-primary-600 dark:text-primary-400" 
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              )}
             >
-              EMI Schedule
-              <span className={`px-2 py-0.5 text-[10px] font-black rounded-full ${activeTab === 'emi' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-400'}`}>
-                {Array.isArray(emis) ? emis.length : 0}
-              </span>
-              {activeTab === 'emi' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600 rounded-full" />
+              Ledger / Outstanding
+              {activeTab === 'ledger' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600 dark:bg-primary-400 rounded-t-full" />
               )}
             </button>
           </div>
@@ -294,54 +316,7 @@ export default function CustomerDetailsPage() {
               />
             ) : (
               <div className="p-6">
-                {!Array.isArray(emis) || emis.length === 0 ? (
-                  <p className="text-center text-slate-500 py-8">No EMI records found for this customer.</p>
-                ) : (
-                  <div className="space-y-6">
-                    {emis.map((emi: any) => (
-                      <div key={emi.id} className="border border-slate-200 dark:border-white/5 rounded-lg overflow-hidden">
-                        <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-white/5 flex justify-between items-center">
-                          <div>
-                            <h4 className="font-semibold text-slate-900 dark:text-white">Invoice: {emi.sale?.invoice_number}</h4>
-                            <p className="text-xs text-slate-500">Loan Amount: {formatCurrency(emi.loan_amount)} • Financier: {emi.financier_name}</p>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          {emi.installments?.length === 0 ? (
-                            <p className="text-sm text-slate-500 italic">No installments generated.</p>
-                          ) : (
-                            <div className="space-y-3">
-                              {emi.installments?.map((inst: any) => (
-                                <div key={inst.id} className="flex justify-between items-center p-3 border border-slate-100 dark:border-white/5 rounded bg-white dark:bg-black">
-                                  <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-primary-50 dark:bg-primary-900/20 text-primary-600 flex items-center justify-center font-bold">
-                                      #{inst.installment_number}
-                                    </div>
-                                    <div>
-                                      <p className="font-semibold">{formatCurrency(inst.amount)}</p>
-                                      <p className="text-xs text-slate-500">Due: {new Date(inst.due_date).toLocaleDateString()}</p>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    {(emi.is_payout_received || inst.status === 'paid') ? (
-                                      <span className="inline-flex items-center text-emerald-600 text-xs font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 rounded border border-emerald-100 dark:border-emerald-500/20">
-                                        <CheckCircle className="w-3.5 h-3.5 mr-1" /> Paid / Cleared
-                                      </span>
-                                    ) : (
-                                      <span className="inline-flex items-center text-amber-600 text-xs font-black uppercase tracking-wider bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded border border-amber-100 dark:border-amber-500/20">
-                                        <Clock className="w-3.5 h-3.5 mr-1" /> Pending
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <p className="text-center text-slate-500 py-8">Ledger details will appear here.</p>
               </div>
             )}
           </div>

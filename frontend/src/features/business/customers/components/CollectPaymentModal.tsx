@@ -105,9 +105,10 @@ export function CollectPaymentModal({ isOpen, onClose, customer }: CollectPaymen
       // 1. Prepare items
       const items = (selectedSale.items || []).map((item: any) => ({
         product_id: item.product_id,
-        product_batch_id: item.product_batch_id,
-        quantity: item.quantity,
-        unit_price: Number(item.unit_price),
+        product_batch_id: item.product_batch_id || null,
+        quantity: Number(item.quantity || 1),
+        unit_price: Number(item.unit_price ?? item.rate ?? 0),
+        rate: Number(item.rate ?? item.unit_price ?? 0),
       }));
 
       // 2. Prepare existing payments
@@ -132,12 +133,9 @@ export function CollectPaymentModal({ isOpen, onClose, customer }: CollectPaymen
         id: selectedSale.id,
         data: {
           customer_id: selectedSale.customer_id,
-          discount: Number(selectedSale.discount || 0),
-          round_off: Number(selectedSale.round_off || 0),
           payment_mode: selectedSale.payment_mode === 'EMI' ? 'EMI' : 'Split',
           date: selectedSale.date,
           notes: selectedSale.notes,
-          items,
           payments,
           emi_detail: selectedSale.emiDetail ? {
             financier_name: selectedSale.emiDetail.financier_name,

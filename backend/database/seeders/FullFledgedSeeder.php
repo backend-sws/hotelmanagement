@@ -46,9 +46,9 @@ class FullFledgedSeeder extends Seeder
 
         // ─── 2. Create 3 Businesses for this Owner ────────────────────────────────
         $businessesData = [
-            ['name' => 'Main City Mobiles', 'state' => 'Maharashtra', 'pincode' => '400001', 'address' => 'Andheri West'],
-            ['name' => 'Suburb Electronics', 'state' => 'Maharashtra', 'pincode' => '400050', 'address' => 'Bandra'],
-            ['name' => 'Downtown Gadgets', 'state' => 'Delhi', 'pincode' => '110001', 'address' => 'Connaught Place'],
+            ['name' => 'Main City Hardware & Pipes', 'state' => 'Maharashtra', 'pincode' => '400001', 'address' => 'Andheri West'],
+            ['name' => 'Suburb Electricals', 'state' => 'Maharashtra', 'pincode' => '400050', 'address' => 'Bandra'],
+            ['name' => 'Downtown Paints & Cement', 'state' => 'Delhi', 'pincode' => '110001', 'address' => 'Connaught Place'],
         ];
 
         foreach ($businessesData as $index => $bData) {
@@ -114,13 +114,13 @@ class FullFledgedSeeder extends Seeder
             }
 
             // ─── 4. Categories & Brands ─────────────────────────────────────────────
-            $catNames = ['Smartphones', 'Accessories', 'Tablets', 'Laptops'];
+            $catNames = ['Cement', 'Paints', 'Electricals', 'Plumbing', 'Steel & Iron'];
             $categories = [];
             foreach ($catNames as $name) {
                 $categories[] = Category::firstOrCreate(['name' => $name, 'business_id' => $business->id]);
             }
 
-            $brandNames = ['Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Sony'];
+            $brandNames = ['Ultratech', 'Asian Paints', 'Havells', 'Supreme', 'Tata Tiscon'];
             $brands = [];
             foreach ($brandNames as $name) {
                 $brands[] = Brand::firstOrCreate(['name' => $name, 'business_id' => $business->id]);
@@ -135,10 +135,16 @@ class FullFledgedSeeder extends Seeder
                 $mrp = $pp + rand(2000, 10000);
 
                 $product = Product::firstOrCreate(
-                    ['model_name' => $brand->name . ' Model X' . $p, 'business_id' => $business->id],
+                    ['model_name' => $brand->name . ' Product X' . $p, 'business_id' => $business->id],
                     [
                         'category_id' => $cat->id,
                         'brand_id' => $brand->id,
+                        'item_code' => 'ITM-' . $index . '-' . rand(100, 999),
+                        'unit' => 'nos',
+                        'hsn_code' => '1234',
+                        'gst_rate' => 18,
+                        'purchase_rate' => $pp,
+                        'sale_rate' => $mrp,
                         'purchase_price' => $pp,
                         'mrp' => $mrp,
                         'quantity' => 50,

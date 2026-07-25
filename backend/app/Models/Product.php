@@ -16,7 +16,9 @@ class Product extends Model
     protected $fillable = [
         'business_id', 'category_id', 'brand_id', 'model_name',
         'imei', 'serial_no', 'variant', 'purchase_price',
-        'mrp', 'quantity', 'supplier_id', 'status'
+        'mrp', 'quantity', 'supplier_id', 'status',
+        'item_code', 'unit', 'hsn_code', 'gst_rate', 'sale_rate',
+        'purchase_rate', 'min_stock_alert', 'barcode', 'description'
     ];
 
     protected $appends = ['inventory_value'];

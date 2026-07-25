@@ -14,33 +14,38 @@ import { useBrands, useCreateBrand } from '../api/useBrands';
 import { DynamicForm } from '@/components/ui/dynamic-form';
 import { getInventoryFormConfig } from '../constants/inventoryForm';
 import { useCategories, useCreateCategory } from '../api/useCategories';
+import { useGstSettings } from '../../settings/api/useGstSettings';
 
 interface InventoryFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   productToEdit?: Product | null;
+  onSuccess?: (product: any) => void;
 }
 
-export function InventoryFormModal({ isOpen, onClose, productToEdit }: InventoryFormModalProps) {
+export function InventoryFormModal({ isOpen, onClose, productToEdit, onSuccess }: InventoryFormModalProps) {
   const { data: categoriesData } = useCategories();
   const categories = categoriesData?.data || [];
   const { data: brandsData } = useBrands();
   const brands: Brand[] = brandsData || [];
   const createBrandMutation = useCreateBrand();
   const createCategoryMutation = useCreateCategory();
+  const { data: gstSettings } = useGstSettings();
 
-  const form = useForm({
+  const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      category_id: 0,
+      category_id: '' as any,
       brand_id: '',
       model_name: '',
-      imei: '',
-      serial_no: '',
-      variant: '',
+      item_code: '',
+      unit: 'nos',
+      hsn_code: '',
+      gst_rate: 18,
       purchase_price: '' as any,
       mrp: '' as any,
       quantity: '' as any,
+      min_stock_alert: 0,
       supplier_id: null,
       status: 'in_stock'
     }
@@ -57,42 +62,48 @@ export function InventoryFormModal({ isOpen, onClose, productToEdit }: Inventory
         category_id: productToEdit.category_id,
         brand_id: productToEdit.brand_id || '',
         model_name: productToEdit.model_name,
-        imei: productToEdit.imei || '',
-        serial_no: productToEdit.serial_no || '',
-        variant: productToEdit.variant || '',
+        item_code: productToEdit.item_code || '',
+        unit: productToEdit.unit || 'nos',
+        hsn_code: productToEdit.hsn_code || '',
+        gst_rate: productToEdit.gst_rate || 18,
         purchase_price: productToEdit.purchase_price,
         mrp: productToEdit.mrp,
         quantity: productToEdit.quantity,
-        supplier_id: productToEdit.supplier_id,
-        status: productToEdit.status,
+        min_stock_alert: productToEdit.min_stock_alert || 0,
+        supplier_id: productToEdit.supplier_id || null,
+        status: productToEdit.status || 'in_stock',
       });
     } else {
       reset({
-        category_id: 0,
+        category_id: '' as any,
         brand_id: '',
         model_name: '',
-        imei: '',
-        serial_no: '',
-        variant: '',
+        item_code: '',
+        unit: 'nos',
+        hsn_code: gstSettings?.data?.default_hsn || '',
+        gst_rate: gstSettings?.data?.default_gst_rate ? Number(gstSettings.data.default_gst_rate) : 18,
         purchase_price: '' as any,
         mrp: '' as any,
         quantity: '' as any,
+        min_stock_alert: 0,
         supplier_id: null,
         status: 'in_stock'
       });
     }
-  }, [productToEdit, reset, isOpen]);
+  }, [productToEdit, reset, isOpen, gstSettings]);
 
   if (!isOpen) return null;
 
   const onSubmit: SubmitHandler<ProductFormValues> = async (data) => {
     try {
       if (productToEdit) {
-        await updateMutation.mutateAsync({ id: productToEdit.id, data });
+        const updated = await updateMutation.mutateAsync({ id: productToEdit.id, data });
         toast.success('Product updated successfully');
+        if (onSuccess) onSuccess(updated);
       } else {
-        await createMutation.mutateAsync(data);
+        const created = await createMutation.mutateAsync(data);
         toast.success('Product created successfully');
+        if (onSuccess) onSuccess(created);
       }
       onClose();
     } catch (error: any) {

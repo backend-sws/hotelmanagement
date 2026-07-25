@@ -12,6 +12,7 @@ This project strictly follows a Domain-Driven Feature-Sliced architecture for th
    - `components/` (for UI components specific to this feature)
    - `pages/` (for main page views/screens)
    - `schemas/` (for Zod validation schemas and Typescript interfaces)
+   - `constants/` (for constants specific to this feature)
 
 ### ❌ WRONG Structure (Flattened):
 ```text

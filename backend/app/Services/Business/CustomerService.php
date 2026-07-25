@@ -8,7 +8,8 @@ class CustomerService
 {
     public function getCustomers($perPage = 15, $search = null, $hasUdhar = null)
     {
-        $query = Customer::withSum('sales', 'final_amount')
+        $query = Customer::with('priceList')
+            ->withSum('sales', 'final_amount')
             ->withSum('sales', 'paid_amount')
             ->orderBy('name');
 

@@ -32,7 +32,22 @@ class InventoryService
             $query->where('quantity', '<=', $qty);
         }
 
-        return $query->paginate($perPage);
+        $paginator = $query->paginate($perPage);
+
+        if (!empty($filters['price_list_id'])) {
+            $priceListId = $filters['price_list_id'];
+            $priceListItems = \App\Models\PriceListItem::where('price_list_id', $priceListId)
+                ->pluck('rate', 'product_id');
+
+            $paginator->getCollection()->transform(function ($product) use ($priceListItems) {
+                if (isset($priceListItems[$product->id])) {
+                    $product->price_list_rate = $priceListItems[$product->id];
+                }
+                return $product;
+            });
+        }
+
+        return $paginator;
     }
 
     public function createProduct(array $data)

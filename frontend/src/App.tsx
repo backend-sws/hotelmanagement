@@ -2,14 +2,14 @@ import { Suspense, lazy, useEffect } from 'react';
 import { useThemeStore } from './store/themeStore';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
-import { FeatureGuard } from './components/auth/FeatureGuard';
+import { FeatureGuard } from './features/auth/components/FeatureGuard';
 import { useTenantStore } from './store/tenantStore';
 import { Toaster } from 'sonner';
 import { PageLoadingSkeleton } from './components/ui/PageLoadingSkeleton';
 import { AppLayout } from './components/layout/AppLayout';
 import { usePublicSettings } from '@/features/superadmin/settings/api/useSettings';
 import { SettingsPage } from '@/features/superadmin/settings/pages/SettingsPage';
-import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { PermissionGuard } from '@/features/auth/components/PermissionGuard';
 import { useAppStore } from '@/store/appStore';
 
 const Login = lazy(() => import('@/features/auth/pages/LoginPage'));
@@ -19,6 +19,7 @@ const BusinessSettings = lazy(() => import('@/features/business/settings/pages/B
 const CategoriesPage = lazy(() => import('@/features/business/inventory/pages/CategoriesPage'));
 const BrandsPage = lazy(() => import('@/features/business/inventory/pages/BrandsPage'));
 const InventoryPage = lazy(() => import('@/features/business/inventory/pages/InventoryPage'));
+const PriceListsPage = lazy(() => import('@/features/business/inventory/pages/PriceListsPage'));
 const SuppliersPage = lazy(() => import('@/features/business/suppliers/pages/SuppliersPage'));
 const SupplierDetailsPage = lazy(() => import('@/features/business/suppliers/pages/SupplierDetailsPage'));
 const AddPurchasePage = lazy(() => import('@/features/business/suppliers/pages/AddPurchasePage'));
@@ -26,11 +27,18 @@ const AddPurchasePage = lazy(() => import('@/features/business/suppliers/pages/A
 const CustomersPage = lazy(() => import('@/features/business/customers/pages/CustomersPage'));
 const CustomerDetailsPage = lazy(() => import('@/features/business/customers/pages/CustomerDetailsPage'));
 
-const PosPage = lazy(() => import('@/features/business/pos/pages/PosPage'));
-const InvoicesPage = lazy(() => import('@/features/business/pos/pages/InvoicesPage'));
-const InvoiceDetailsPage = lazy(() => import('@/features/business/pos/pages/InvoiceDetailsPage'));
+const InvoiceNewPage = lazy(() => import('@/features/business/invoices/pages/NewInvoicePage'));
+const InvoiceListPage = lazy(() => import('@/features/business/invoices/pages/InvoicesListPage'));
+const InvoiceDetailPage = lazy(() => import('@/features/business/invoices/pages/InvoiceDetailPage'));
 const ExpensesPage = lazy(() => import('@/features/business/expenses/pages/ExpensesPage'));
 const FinanceLedgerPage = lazy(() => import('@/features/business/finance/pages/FinanceLedgerPage'));
+
+// Phase 3 — Document Types
+const ChallanListPage = lazy(() => import('@/features/business/challan/pages/ChallanListPage'));
+const ProformaListPage = lazy(() => import('@/features/business/invoices/pages/ProformaListPage'));
+const QuotationListPage = lazy(() => import('@/features/business/quotations/pages/QuotationListPage'));
+const CreditNoteListPage = lazy(() => import('@/features/business/invoices/pages/CreditNoteListPage'));
+const NewCreditNotePage = lazy(() => import('@/features/business/invoices/pages/NewCreditNotePage'));
 
 // Staff & HR
 const StaffPage = lazy(() => import('@/features/business/staff/pages/StaffPage'));
@@ -218,14 +226,25 @@ function App() {
             <Route path="/categories" element={<BusinessRoute><CategoriesPage /></BusinessRoute>} />
             <Route path="/brands" element={<BusinessRoute><BrandsPage /></BusinessRoute>} />
             <Route path="/items" element={<BusinessRoute><InventoryPage /></BusinessRoute>} />
+            <Route path="/price-lists" element={<BusinessRoute><PriceListsPage /></BusinessRoute>} />
             <Route path="/suppliers" element={<BusinessRoute><SuppliersPage /></BusinessRoute>} />
             <Route path="/suppliers/:id" element={<BusinessRoute><SupplierDetailsPage /></BusinessRoute>} />
             <Route path="/suppliers/:id/purchases/new" element={<BusinessRoute><AddPurchasePage /></BusinessRoute>} />
             <Route path="/customers" element={<BusinessRoute><CustomersPage /></BusinessRoute>} />
             <Route path="/customers/:id" element={<BusinessRoute><CustomerDetailsPage /></BusinessRoute>} />
-            <Route path="/pos" element={<BusinessRoute><PosPage /></BusinessRoute>} />
-            <Route path="/invoices" element={<BusinessRoute><InvoicesPage /></BusinessRoute>} />
-            <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailsPage /></BusinessRoute>} />
+            <Route path="/invoices/new" element={<BusinessRoute><InvoiceNewPage /></BusinessRoute>} />
+            <Route path="/invoices" element={<BusinessRoute><InvoiceListPage /></BusinessRoute>} />
+            <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailPage /></BusinessRoute>} />
+            <Route path="/business/sales/invoices" element={<Navigate to="/invoices" replace />} />
+            <Route path="/business/invoices" element={<Navigate to="/invoices" replace />} />
+            <Route path="/pos" element={<Navigate to="/invoices/new" replace />} />
+
+            {/* Phase 3 — Document Type Routes */}
+            <Route path="/challans" element={<BusinessRoute><ChallanListPage /></BusinessRoute>} />
+            <Route path="/proforma" element={<BusinessRoute><ProformaListPage /></BusinessRoute>} />
+            <Route path="/quotations" element={<BusinessRoute><QuotationListPage /></BusinessRoute>} />
+            <Route path="/credit-notes" element={<BusinessRoute><CreditNoteListPage /></BusinessRoute>} />
+            <Route path="/credit-notes/new" element={<BusinessRoute><NewCreditNotePage /></BusinessRoute>} />
             <Route path="/expenses" element={<BusinessRoute><ExpensesPage /></BusinessRoute>} />
             <Route path="/finance" element={<BusinessRoute><FinanceLedgerPage /></BusinessRoute>} />
             <Route path="/docs" element={<BusinessRoute><DocsPage /></BusinessRoute>} />
