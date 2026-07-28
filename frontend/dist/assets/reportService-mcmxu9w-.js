@@ -1,1 +1,0 @@
-import{r as e}from"./authStore-BWdxuuva.js";var t={getProfitLoss:async t=>(await e.get(`/business/reports/profit-loss`,{params:t})).data,getBalanceSheet:async t=>(await e.get(`/business/reports/balance-sheet`,{params:t})).data,getSalesAnalysis:async t=>(await e.get(`/business/reports/sales-analysis`,{params:t})).data};export{t};

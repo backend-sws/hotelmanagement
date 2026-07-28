@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173', 'http://127.0.0.1:5173', env('FRONTEND_URL', 'https://crm.zytrixontech.com')],
+    'allowed_origins' => ['http://localhost:5173', 'http://127.0.0.1:5173', 'https://billkaro.ojasvidya.com', env('FRONTEND_URL', 'https://billkaro.ojasvidya.com')],
 
     'allowed_origins_patterns' => [],
 
