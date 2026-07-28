@@ -71,6 +71,13 @@ const LeaveRequestsPage = lazy(() => import('@/features/business/hr/pages/LeaveR
 const SalaryAdvancesPage = lazy(() => import('@/features/business/hr/pages/SalaryAdvancesPage'));
 const AuditLogsPage = lazy(() => import('@/features/business/reports/pages/AuditLogsPage'));
 const StaffPerformancePage = lazy(() => import('@/features/business/reports/pages/StaffPerformancePage'));
+
+// Phase 8 — GST Reports & Core Financial Accounting Suite
+const GstReportsPage = lazy(() => import('@/features/business/gst-reports/pages/GstReportsPage'));
+const ProfitLossPage = lazy(() => import('@/features/business/reports/pages/ProfitLossPage'));
+const BalanceSheetPage = lazy(() => import('@/features/business/reports/pages/BalanceSheetPage'));
+const SalesReportPage = lazy(() => import('@/features/business/reports/pages/SalesReportPage'));
+
 const DocsPage = lazy(() => import('@/features/docs/pages/DocsPage'));
 const ProjectsListPage = lazy(() => import('@/features/business/projects/pages/ProjectsListPage'));
 const NewProjectPage = lazy(() => import('@/features/business/projects/pages/NewProjectPage'));
@@ -325,6 +332,16 @@ function App() {
 
             <Route path="/reports/audit-logs" element={<BusinessRoute><AuditLogsPage /></BusinessRoute>} />
             <Route path="/reports/staff-performance" element={<BusinessRoute><StaffPerformancePage /></BusinessRoute>} />
+
+            {/* Phase 8 — GST Reports & Core Financial Accounting Suite */}
+            <Route path="/business/reports/gst" element={<BusinessRoute><GstReportsPage /></BusinessRoute>} />
+            <Route path="/business/reports/profit-loss" element={<BusinessRoute><ProfitLossPage /></BusinessRoute>} />
+            <Route path="/business/reports/balance-sheet" element={<BusinessRoute><BalanceSheetPage /></BusinessRoute>} />
+            <Route path="/business/reports/sales" element={<BusinessRoute><SalesReportPage /></BusinessRoute>} />
+            <Route path="/reports/gst" element={<Navigate to="/business/reports/gst" replace />} />
+            <Route path="/reports/profit-loss" element={<Navigate to="/business/reports/profit-loss" replace />} />
+            <Route path="/reports/balance-sheet" element={<Navigate to="/business/reports/balance-sheet" replace />} />
+            <Route path="/reports/sales" element={<Navigate to="/business/reports/sales" replace />} />
 
             {/* Superadmin Routes */}
             <Route path="/superadmin/dashboard" element={<SuperadminRoute><PermissionGuard permission="view_dashboard"><SuperadminDashboard /></PermissionGuard></SuperadminRoute>} />

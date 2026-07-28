@@ -15,7 +15,7 @@ class LedgerService
      */
     public function createEntry(array $data): LedgerEntry
     {
-        $businessId = $data['business_id'] ?? app()->get('current_business_id') ?? auth()->user()?->business_id ?? null;
+        $businessId = $data['business_id'] ?? (app()->bound('current_business_id') ? app('current_business_id') : null) ?? auth()->user()?->business_id ?? null;
         $partyType = $data['party_type'];
         $partyId = $data['party_id'];
 
@@ -110,7 +110,7 @@ class LedgerService
      */
     public function getBalance(string $partyType, int $partyId, ?int $businessId = null): float
     {
-        $businessId = $businessId ?? app()->get('current_business_id') ?? auth()->user()?->business_id;
+        $businessId = $businessId ?? (app()->bound('current_business_id') ? app('current_business_id') : null) ?? auth()->user()?->business_id;
 
         $lastEntry = LedgerEntry::where('business_id', $businessId)
             ->where('party_type', $partyType)
@@ -145,7 +145,7 @@ class LedgerService
      */
     public function getStatement(string $partyType, int $partyId, ?string $from = null, ?string $to = null, ?int $businessId = null): array
     {
-        $businessId = $businessId ?? app()->get('current_business_id') ?? auth()->user()?->business_id;
+        $businessId = $businessId ?? (app()->bound('current_business_id') ? app('current_business_id') : null) ?? auth()->user()?->business_id;
 
         // Ensure opening balance is initialized if no entries yet
         $existingCount = LedgerEntry::where('business_id', $businessId)

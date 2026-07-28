@@ -201,13 +201,7 @@ export default function StockTransferPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-zinc-900 text-xs font-medium">
                 {isLoading ? (
-                  <tr>
-                    <td colSpan={8} className="p-0">
-                      <div className="p-4">
-                        <TableSkeleton cols={8} rows={6} />
-                      </div>
-                    </td>
-                  </tr>
+                  <TableSkeleton cols={8} rows={6} />
                 ) : transfers.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-16 px-6 text-center">

@@ -202,7 +202,7 @@ class StockService
      */
     public function getSummary(?int $businessId = null, ?int $locationId = null): Collection
     {
-        $businessId = $businessId ?? app('current_business_id') ?? auth()->user()?->business_id;
+        $businessId = $businessId ?? (app()->bound('current_business_id') ? app('current_business_id') : null) ?? auth()->user()?->business_id;
         $query = Product::where('business_id', $businessId)
             ->whereNull('deleted_at')
             ->with(['category', 'brand']);
@@ -254,7 +254,7 @@ class StockService
      */
     public function getLowStockItems(?int $businessId = null): Collection
     {
-        $businessId = $businessId ?? app('current_business_id') ?? auth()->user()?->business_id;
+        $businessId = $businessId ?? (app()->bound('current_business_id') ? app('current_business_id') : null) ?? auth()->user()?->business_id;
         return Product::where('business_id', $businessId)
             ->whereNull('deleted_at')
             ->whereNotNull('min_stock_alert')

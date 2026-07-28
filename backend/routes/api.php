@@ -160,6 +160,16 @@ Route::prefix('v1')->group(function () {
             Route::get('labour/project/{projectId}', [\App\Http\Controllers\Api\Business\LabourPaymentController::class, 'projectLabour']);
             Route::post('labour/payment', [\App\Http\Controllers\Api\Business\LabourPaymentController::class, 'recordPayment']);
 
+            // Phase 8 — GST Reports & Core Financial Accounting Suite
+            Route::prefix('reports')->group(function () {
+                Route::get('gst/gstr1', [\App\Http\Controllers\Api\Business\GstReportController::class, 'gstr1']);
+                Route::get('gst/gstr3b', [\App\Http\Controllers\Api\Business\GstReportController::class, 'gstr3b']);
+                Route::get('gst/hsn', [\App\Http\Controllers\Api\Business\GstReportController::class, 'hsnSummary']);
+                Route::get('profit-loss', [\App\Http\Controllers\Api\Business\ProfitLossController::class, 'index']);
+                Route::get('balance-sheet', [\App\Http\Controllers\Api\Business\BalanceSheetController::class, 'index']);
+                Route::get('sales-analysis', [\App\Http\Controllers\Api\Business\SalesReportController::class, 'index']);
+            });
+
             // Keep sales as legacy if needed by other components for now
             Route::apiResource('sales', \App\Http\Controllers\Api\SaleController::class);
             

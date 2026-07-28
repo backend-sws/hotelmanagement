@@ -108,6 +108,15 @@ export const businessMenuGroups = [
     ]
   },
   {
+    title: "GST & FINANCIAL REPORTS",
+    items: [
+      { name: "GST RETURNS (GSTR-1, 3B, HSN)", href: "/business/reports/gst", icon: FileText },
+      { name: "PROFIT & LOSS STATEMENT", href: "/business/reports/profit-loss", icon: Calculator },
+      { name: "BALANCE SHEET", href: "/business/reports/balance-sheet", icon: BookOpen },
+      { name: "SALES ANALYSIS REPORT", href: "/business/reports/sales", icon: BarChart3 },
+    ]
+  },
+  {
     title: "REPORTS & AUDIT",
     items: [
       { name: "STAFF PERFORMANCE", href: "/reports/staff-performance", icon: Activity },
