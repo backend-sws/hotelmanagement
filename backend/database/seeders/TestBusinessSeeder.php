@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\Business;
+use App\Models\BusinessLocation;
 use App\Models\Plan;
 use App\Models\Category;
 use App\Models\Brand;
@@ -19,46 +20,57 @@ use App\Models\SalePayment;
 use App\Models\Supplier;
 use App\Models\Expense;
 use App\Models\InventoryMovement;
+use App\Models\Attendance;
+use App\Models\BankAccount;
+use App\Models\CashBankEntry;
+use App\Models\ChequeRegister;
+use App\Models\LedgerEntry;
+use App\Models\Project;
+use App\Models\MaterialConsumption;
+use App\Models\MaterialConsumptionItem;
+use App\Models\SalaryAdvance;
 
 class TestBusinessSeeder extends Seeder
 {
     public function run(): void
     {
-        // ─── 1. Create Test User ────────────────────────────────────────
+        $this->command->info('🌱 Starting full BillKaro Enterprise ERP Master Seeder for test@demo.com...');
+
+        // ─── 1. Create Master Test Admin User ───────────────────────────
         $user = User::where('email', 'test@demo.com')->first();
-        if ($user) {
-            $this->command->info('Test user already exists. Skipping...');
-            return;
+        if (!$user) {
+            $user = User::create([
+                'name' => 'BillKaro Managing Director',
+                'email' => 'test@demo.com',
+                'phone' => '9898980001',
+                'password' => Hash::make('password123'),
+            ]);
         }
 
-        $user = User::create([
-            'name' => 'Demo Shop Owner',
-            'email' => 'test@demo.com',
-            'phone' => '9999900000',
-            'password' => Hash::make('password123'),
-        ]);
-
-        // ─── 2. Create Business ─────────────────────────────────────────
+        // ─── 2. Create Enterprise Business Profile ──────────────────────
         $plan = Plan::where('name', 'Enterprise Plan')->first();
-        $business = Business::create([
-            'name' => 'Demo Traders (Hardware & Electricals)',
-            'email' => 'test@demo.com',
-            'phone' => '9999900000',
-            'gst_number' => '27AABCD1234E1ZP',
-            'address' => 'Shop No. 5, Main Market, Near Bus Stand',
-            'owner_id' => $user->id,
-            'status' => 'active',
-            'plan_id' => $plan ? $plan->id : null,
-            'plan_expires_at' => now()->addYear(),
-            'state' => 'Bihar',
-            'pincode' => '845401',
-            'description' => 'Demo hardware and electricals shop for testing billing features',
-        ]);
+        $business = Business::firstOrCreate(
+            ['email' => 'contact@billkaro.in'],
+            [
+                'name' => 'BillKaro Enterprises ERP (HQ)',
+                'email' => 'contact@billkaro.in',
+                'phone' => '9898980001',
+                'gst_number' => '27AAACB1234F1Z9',
+                'address' => 'Corporate Tower, Unit 402, BKC Hub',
+                'owner_id' => $user->id,
+                'status' => 'active',
+                'plan_id' => $plan ? $plan->id : null,
+                'plan_expires_at' => now()->addYear(),
+                'state' => 'Maharashtra',
+                'pincode' => '400051',
+                'description' => 'Comprehensive enterprise construction, hardware & billing operation',
+            ]
+        );
 
-        // Attach user to business
-        $user->businesses()->attach($business->id);
+        if (!$user->businesses->contains($business->id)) {
+            $user->businesses()->attach($business->id);
+        }
 
-        // Assign Business Admin role
         setPermissionsTeamId($business->id);
         $businessAdminRole = \Spatie\Permission\Models\Role::firstOrCreate([
             'name' => 'Business Admin',
@@ -73,252 +85,436 @@ class TestBusinessSeeder extends Seeder
             'manage_business_settings',
         ];
         $businessAdminRole->syncPermissions($businessPermissions);
-        
         $user->assignRole($businessAdminRole);
 
-        // ─── 3. Seed Categories ─────────────────────────────────────────
+        // ─── 3. Add Staff Employees & Attendance ────────────────────────
+        $staffRole = \Spatie\Permission\Models\Role::firstOrCreate([
+            'name' => 'Staff',
+            'business_id' => $business->id,
+            'guard_name' => 'web'
+        ]);
+
+        $staffMembers = [
+            ['name' => 'Rahul Sharma (Site Supervisor)', 'email' => 'rahul@billkaro.in', 'phone' => '9800000101', 'salary' => 35000],
+            ['name' => 'Amit Kumar (Accounts & Billing)', 'email' => 'amit@billkaro.in', 'phone' => '9800000102', 'salary' => 28000],
+        ];
+
+        foreach ($staffMembers as $idx => $sm) {
+            $staffUser = User::firstOrCreate(
+                ['email' => $sm['email']],
+                [
+                    'name' => $sm['name'],
+                    'phone' => $sm['phone'],
+                    'password' => Hash::make('password123'),
+                ]
+            );
+
+            if (!$staffUser->businesses->contains($business->id)) {
+                $staffUser->businesses()->attach($business->id);
+            }
+            $staffUser->assignRole($staffRole);
+
+            // Attendance Check-in for today
+            Attendance::firstOrCreate(
+                ['user_id' => $staffUser->id, 'date' => now()->toDateString()],
+                [
+                    'business_id' => $business->id,
+                    'status' => 'present',
+                    'check_in_time' => '09:15:00',
+                    'check_out_time' => null,
+                ]
+            );
+
+            // Seed salary advance
+            if ($idx === 0) {
+                SalaryAdvance::firstOrCreate(
+                    ['user_id' => $staffUser->id, 'amount' => 5000],
+                    [
+                        'business_id' => $business->id,
+                        'given_date' => now()->toDateString(),
+                        'notes' => 'Emergency family requirement',
+                        'status' => 'approved',
+                    ]
+                );
+            }
+        }
+
+        // ─── 4. Godowns / Business Locations ────────────────────────────
+        $mainWarehouse = BusinessLocation::firstOrCreate(
+            ['name' => 'Main Yard & Storehouse (Mumbai HQ)', 'business_id' => $business->id],
+            ['address' => 'Industrial Area, Phase II, Mumbai, Maharashtra', 'is_default' => true, 'latitude' => 19.0760, 'longitude' => 72.8777, 'radius_meters' => 500]
+        );
+        $siteWarehouse = BusinessLocation::firstOrCreate(
+            ['name' => 'Site-A Construction Store (Thane)', 'business_id' => $business->id],
+            ['address' => 'Project Site Camp, West Thane, Maharashtra', 'is_default' => false, 'latitude' => 19.1972, 'longitude' => 72.9772, 'radius_meters' => 800]
+        );
+
+        // ─── 5. Categories & Brands ─────────────────────────────────────
+        $catNames = ['Cement & Concrete', 'Structural Steel', 'Luxury Paints', 'Electrical Fittings', 'Plumbing & Valves', 'Industrial Hardware'];
         $categories = [];
-        $catNames = ['Cement', 'Steel & Iron', 'Paints', 'Electricals', 'Plumbing', 'Tiles'];
         foreach ($catNames as $name) {
-            $categories[$name] = Category::create([
-                'business_id' => $business->id,
-                'name' => $name,
-            ]);
+            $categories[$name] = Category::firstOrCreate(['business_id' => $business->id, 'name' => $name]);
         }
 
-        // ─── 4. Seed Brands ────────────────────────────────────────────
+        $brandNames = ['UltraTech', 'Tata Tiscon', 'Asian Paints', 'Havells', 'Anchor Roma', 'Supreme Pipes', 'Jindal Panther'];
         $brands = [];
-        $brandNames = ['Ultratech', 'Ambuja', 'Tata Tiscon', 'Jindal Panther', 'Asian Paints', 'Berger', 'Havells', 'Anchor', 'Supreme', 'Ashirvad'];
         foreach ($brandNames as $name) {
-            $brands[$name] = Brand::create([
-                'business_id' => $business->id,
-                'name' => $name,
-            ]);
+            $brands[$name] = Brand::firstOrCreate(['business_id' => $business->id, 'name' => $name]);
         }
 
-        // ─── 5. Seed Products with Batches ──────────────────────────────
-        $products = [
-            ['cat' => 'Cement', 'brand' => 'Ultratech', 'model' => 'PPC 50KG', 'unit' => 'bag', 'hsn' => '2523', 'gst' => 28, 'pp' => 320, 'mrp' => 380, 'qty' => 500],
-            ['cat' => 'Cement', 'brand' => 'Ambuja', 'model' => 'PPC 50KG', 'unit' => 'bag', 'hsn' => '2523', 'gst' => 28, 'pp' => 310, 'mrp' => 370, 'qty' => 300],
-            ['cat' => 'Steel & Iron', 'brand' => 'Tata Tiscon', 'model' => 'TMT Bar 12mm', 'unit' => 'kg', 'hsn' => '7214', 'gst' => 18, 'pp' => 65, 'mrp' => 85, 'qty' => 2000],
-            ['cat' => 'Steel & Iron', 'brand' => 'Jindal Panther', 'model' => 'TMT Bar 10mm', 'unit' => 'kg', 'hsn' => '7214', 'gst' => 18, 'pp' => 64, 'mrp' => 84, 'qty' => 1500],
-            ['cat' => 'Paints', 'brand' => 'Asian Paints', 'model' => 'Royale Luxury Emulsion 20L', 'unit' => 'ltr', 'hsn' => '3209', 'gst' => 18, 'pp' => 5500, 'mrp' => 6800, 'qty' => 50],
-            ['cat' => 'Paints', 'brand' => 'Berger', 'model' => 'Silk Glamor 20L', 'unit' => 'ltr', 'hsn' => '3209', 'gst' => 18, 'pp' => 5200, 'mrp' => 6500, 'qty' => 40],
-            ['cat' => 'Electricals', 'brand' => 'Havells', 'model' => 'Wire 1.5 sq mm (90m)', 'unit' => 'coil', 'hsn' => '8544', 'gst' => 18, 'pp' => 850, 'mrp' => 1100, 'qty' => 100],
-            ['cat' => 'Electricals', 'brand' => 'Anchor', 'model' => 'Roma Switch 6A', 'unit' => 'nos', 'hsn' => '8536', 'gst' => 18, 'pp' => 25, 'mrp' => 45, 'qty' => 1000],
-            ['cat' => 'Plumbing', 'brand' => 'Supreme', 'model' => 'PVC Pipe 1 inch x 20ft', 'unit' => 'nos', 'hsn' => '3917', 'gst' => 18, 'pp' => 350, 'mrp' => 500, 'qty' => 200],
-            ['cat' => 'Plumbing', 'brand' => 'Ashirvad', 'model' => 'CPVC Pipe 1/2 inch', 'unit' => 'nos', 'hsn' => '3917', 'gst' => 18, 'pp' => 120, 'mrp' => 180, 'qty' => 300],
+        // ─── 6. Products, Batches & Low Stock Alert Items ───────────────
+        $productsData = [
+            // Standard Stock
+            ['cat' => 'Cement & Concrete', 'brand' => 'UltraTech', 'model' => 'Super PPC Portland 50KG', 'unit' => 'bag', 'hsn' => '2523', 'gst' => 28, 'pp' => 340, 'mrp' => 410, 'qty' => 450, 'reorder' => 50],
+            ['cat' => 'Structural Steel', 'brand' => 'Tata Tiscon', 'model' => '500D TMT Rebar 12mm', 'unit' => 'kg', 'hsn' => '7214', 'gst' => 18, 'pp' => 68, 'mrp' => 88, 'qty' => 3500, 'reorder' => 500],
+            ['cat' => 'Luxury Paints', 'brand' => 'Asian Paints', 'model' => 'Royale Glitz Emulsion 20L', 'unit' => 'ltr', 'hsn' => '3209', 'gst' => 18, 'pp' => 6200, 'mrp' => 7600, 'qty' => 45, 'reorder' => 10],
+            ['cat' => 'Electrical Fittings', 'brand' => 'Havells', 'model' => 'FR Shield Wire 2.5 sqmm (90m)', 'unit' => 'coil', 'hsn' => '8544', 'gst' => 18, 'pp' => 1250, 'mrp' => 1650, 'qty' => 80, 'reorder' => 20],
+            ['cat' => 'Plumbing & Valves', 'brand' => 'Supreme Pipes', 'model' => 'UPVC Heavy Drainage Pipe 4 inch', 'unit' => 'nos', 'hsn' => '3917', 'gst' => 18, 'pp' => 650, 'mrp' => 950, 'qty' => 150, 'reorder' => 30],
+            
+            // Critical Low Stock Items (To power Executive Dashboard Alert Widget!)
+            ['cat' => 'Industrial Hardware', 'brand' => 'Jindal Panther', 'model' => 'Titanium Coated Masonry Drill Bit 10mm', 'unit' => 'nos', 'hsn' => '8207', 'gst' => 18, 'pp' => 320, 'mrp' => 480, 'qty' => 4, 'reorder' => 25],
+            ['cat' => 'Industrial Hardware', 'brand' => 'Anchor Roma', 'model' => 'Heavy Duty Industrial Circuit Breaker 63A', 'unit' => 'nos', 'hsn' => '8536', 'gst' => 18, 'pp' => 1100, 'mrp' => 1550, 'qty' => 2, 'reorder' => 15],
         ];
 
         $createdProducts = [];
-        $counter = 1;
-        foreach ($products as $p) {
-            $product = Product::create([
-                'business_id' => $business->id,
-                'category_id' => $categories[$p['cat']]->id,
-                'brand_id' => $brands[$p['brand']]->id,
-                'model_name' => $p['model'],
-                'item_code' => 'ITM-00' . $counter++,
-                'unit' => $p['unit'],
-                'hsn_code' => $p['hsn'],
-                'gst_rate' => $p['gst'],
-                'purchase_rate' => $p['pp'],
-                'sale_rate' => $p['mrp'],
-                'purchase_price' => $p['pp'], // Legacy fallback
-                'mrp' => $p['mrp'], // Legacy fallback
-                'quantity' => $p['qty'],
-                'status' => 'in_stock',
-            ]);
+        $pCount = 101;
+        foreach ($productsData as $p) {
+            $product = Product::firstOrCreate(
+                ['business_id' => $business->id, 'model_name' => $p['model']],
+                [
+                    'category_id' => $categories[$p['cat']]->id,
+                    'brand_id' => $brands[$p['brand']]->id,
+                    'item_code' => 'BLK-' . $pCount++,
+                    'unit' => $p['unit'],
+                    'hsn_code' => $p['hsn'],
+                    'gst_rate' => $p['gst'],
+                    'purchase_rate' => $p['pp'],
+                    'sale_rate' => $p['mrp'],
+                    'purchase_price' => $p['pp'],
+                    'mrp' => $p['mrp'],
+                    'quantity' => $p['qty'],
+                    'min_stock_alert' => $p['reorder'],
+                    'status' => 'in_stock',
+                ]
+            );
 
-            // Create a batch for each product
-            ProductBatch::create([
-                'product_id' => $product->id,
-                'batch_number' => 'BATCH-' . strtoupper(Str::random(6)),
-                'purchase_price' => $p['pp'],
-                'mrp' => $p['mrp'],
-                'original_quantity' => $p['qty'],
-                'remaining_quantity' => $p['qty'],
-            ]);
+            ProductBatch::firstOrCreate(
+                ['product_id' => $product->id],
+                [
+                    'batch_number' => 'BATCH-BLK-' . strtoupper(Str::random(5)),
+                    'purchase_price' => $p['pp'],
+                    'mrp' => $p['mrp'],
+                    'original_quantity' => $p['qty'],
+                    'remaining_quantity' => $p['qty'],
+                ]
+            );
 
             $createdProducts[] = $product;
         }
 
-        // ─── 6. Seed Customers ──────────────────────────────────────────
-        $customerData = [
-            ['name' => 'Rahul Builders', 'phone' => '9876543210', 'address' => 'Patna, Bihar', 'gstin' => '10AABCR1234F1Z1', 'balance_type' => 'debit', 'balance' => 50000],
-            ['name' => 'Priya Constructions', 'phone' => '9876543211', 'address' => 'Muzaffarpur, Bihar', 'gstin' => '10AABCP1234F1Z1', 'balance_type' => 'debit', 'balance' => 15000],
-            ['name' => 'Amit Sharma (Contractor)', 'phone' => '9876543212', 'address' => 'Gaya, Bihar', 'gstin' => null, 'balance_type' => 'debit', 'balance' => 0],
-            ['name' => 'Sneha Interiors', 'phone' => '9876543213', 'address' => 'Bhagalpur, Bihar', 'gstin' => '10AABCS1234F1Z1', 'balance_type' => 'debit', 'balance' => 20000],
+        // ─── 7. Customers & Suppliers (Khata Ledger Dues) ───────────────
+        $customersData = [
+            ['name' => 'DLF Commercial Infrastructures Ltd', 'phone' => '9876500001', 'address' => 'Lower Parel, Mumbai', 'gstin' => '27AAACD5678P1Z5', 'due' => 165000],
+            ['name' => 'L&T Express Realty Projects', 'phone' => '9876500002', 'address' => 'Powai, Mumbai', 'gstin' => '27AAACL8899Q2Z1', 'due' => 85000],
+            ['name' => 'Rajesh Shrivastava (Independent Villa)', 'phone' => '9876500003', 'address' => 'Juhu Scheme, West Mumbai', 'gstin' => null, 'due' => 24000],
         ];
 
-        $customers = [];
-        foreach ($customerData as $c) {
-            $customers[] = Customer::create([
-                'business_id' => $business->id,
-                'name' => $c['name'],
-                'phone' => $c['phone'],
-                'address' => $c['address'],
-                'gstin' => $c['gstin'],
-                'opening_balance' => $c['balance'],
-                'balance_type' => $c['balance_type'],
-            ]);
+        $createdCustomers = [];
+        foreach ($customersData as $c) {
+            $cust = Customer::firstOrCreate(
+                ['business_id' => $business->id, 'name' => $c['name']],
+                [
+                    'phone' => $c['phone'],
+                    'address' => $c['address'],
+                    'gstin' => $c['gstin'],
+                    'opening_balance' => $c['due'],
+                    'balance_type' => 'debit',
+                ]
+            );
+            $createdCustomers[] = $cust;
+
+            // Seed Khata Receivable Ledger Entry
+            LedgerEntry::firstOrCreate(
+                ['business_id' => $business->id, 'party_type' => 'customer', 'party_id' => $cust->id, 'narration' => 'Opening Khata Receivable Balance'],
+                [
+                    'entry_type' => 'opening_balance',
+                    'date' => now()->subDays(5)->toDateString(),
+                    'debit' => $c['due'],
+                    'credit' => 0,
+                    'balance' => $c['due'],
+                ]
+            );
         }
 
-        // ─── 7. Seed Suppliers ──────────────────────────────────────────
-        $supplierData = [
-            ['name' => 'Ultratech Cement Depot', 'phone' => '9800000001', 'email' => 'ultratech@supplier.com', 'address' => 'Patna Wholesale', 'gst' => '10AABCJ1234E1ZP'],
-            ['name' => 'Tata Steel Distributor', 'phone' => '9800000002', 'email' => 'tata@supplier.com', 'address' => 'Delhi NCR', 'gst' => '07AABCK5678F2ZQ'],
-            ['name' => 'Havells Wholesaler', 'phone' => '9800000003', 'email' => 'havells@supplier.com', 'address' => 'Lucknow', 'gst' => '09AABCS9012G3ZR'],
+        $suppliersData = [
+            ['name' => 'UltraTech Cement Maharashtra Depot', 'phone' => '9900011111', 'gst' => '27AAACU1122M1ZM', 'payable' => 110000],
+            ['name' => 'Tata Tiscon Mumbai Wholesale Yard', 'phone' => '9900022222', 'gst' => '27AAACT3344N2ZN', 'payable' => 45000],
         ];
 
-        foreach ($supplierData as $s) {
-            Supplier::create([
-                'business_id' => $business->id,
-                'name' => $s['name'],
-                'phone' => $s['phone'],
-                'address' => $s['address'],
-                'gstin' => $s['gst'],
-            ]);
+        foreach ($suppliersData as $s) {
+            $supp = Supplier::firstOrCreate(
+                ['business_id' => $business->id, 'name' => $s['name']],
+                ['phone' => $s['phone'], 'address' => 'Navi Mumbai Hub', 'gstin' => $s['gst']]
+            );
+
+            // Seed Khata Payable Ledger Entry
+            LedgerEntry::firstOrCreate(
+                ['business_id' => $business->id, 'party_type' => 'supplier', 'party_id' => $supp->id, 'narration' => 'Supplier Credit Invoice Due'],
+                [
+                    'entry_type' => 'purchase_bill',
+                    'date' => now()->subDays(7)->toDateString(),
+                    'debit' => 0,
+                    'credit' => $s['payable'],
+                    'balance' => -$s['payable'],
+                ]
+            );
         }
 
-        // ─── 8. Seed Sales (Sample Invoices) ────────────────────────────
-        $salesData = [
-            // Sale 1: Cash sale
+        // ─── 8. Cash & Bank Accounts (Liquid Reserves & Cheques) ────────
+        $hdfc = BankAccount::firstOrCreate(
+            ['business_id' => $business->id, 'account_number' => '50200088991100'],
             [
-                'customer_idx' => 0,
-                'items' => [
-                    ['product_idx' => 0, 'qty' => 50], // Ultratech Cement
-                    ['product_idx' => 2, 'qty' => 200], // Tata Tiscon
-                ],
+                'account_name' => 'BillKaro ERP Current A/c',
+                'ifsc_code' => 'HDFC0000241',
+                'bank_name' => 'HDFC Bank Ltd',
+                'branch' => 'BKC Mumbai Corporate',
+                'opening_balance' => 450000,
+                'current_balance' => 450000,
+                'is_default' => true,
+            ]
+        );
+
+        $icici = BankAccount::firstOrCreate(
+            ['business_id' => $business->id, 'account_number' => '001105009922'],
+            [
+                'account_name' => 'BillKaro Settlement A/c',
+                'ifsc_code' => 'ICIC0000011',
+                'bank_name' => 'ICICI Bank',
+                'branch' => 'Bandra East',
+                'opening_balance' => 180000,
+                'current_balance' => 180000,
+                'is_default' => false,
+            ]
+        );
+
+        // Cash drawer deposit
+        CashBankEntry::firstOrCreate(
+            ['business_id' => $business->id, 'account_type' => 'cash', 'reference_no' => 'CASH-DEP-01'],
+            [
+                'entry_type' => 'cash_receipt',
+                'account_name' => 'Main Cash Drawer',
+                'amount' => 95000,
                 'payment_mode' => 'Cash',
-                'discount' => 500,
-                'days_ago' => 5,
-            ],
-            // Sale 2: Split payment
+                'narration' => 'Daily counter counter collections & liquid float',
+                'date' => now()->toDateString(),
+                'entered_by' => $user->id,
+            ]
+        );
+
+        // Pending bank cheques for widget
+        ChequeRegister::firstOrCreate(
+            ['business_id' => $business->id, 'cheque_number' => '889912'],
             [
-                'customer_idx' => 1,
-                'items' => [
-                    ['product_idx' => 4, 'qty' => 5], // Asian Paints
-                ],
-                'payment_mode' => 'Split',
-                'discount' => 1000,
-                'days_ago' => 3,
-                'split' => ['Cash' => 15000, 'UPI' => 18000],
-            ],
-            // Sale 3: Cash sale
+                'bank_account_id' => $hdfc->id,
+                'bank_name' => 'ICICI Bank',
+                'branch' => 'Lower Parel',
+                'cheque_date' => now()->addDays(2)->toDateString(),
+                'amount' => 125000,
+                'type' => 'received',
+                'party_type' => 'customer',
+                'party_id' => $createdCustomers[0]->id,
+                'in_favour_of' => 'BillKaro Enterprises ERP (HQ)',
+                'status' => 'pending',
+                'notes' => 'Advance milestone payment for mall construction',
+            ]
+        );
+
+        ChequeRegister::firstOrCreate(
+            ['business_id' => $business->id, 'cheque_number' => '542109'],
             [
-                'customer_idx' => 2,
-                'items' => [
-                    ['product_idx' => 6, 'qty' => 10], // Havells Wire
-                    ['product_idx' => 7, 'qty' => 50], // Anchor Switch
-                ],
-                'payment_mode' => 'Cash',
-                'discount' => 0,
-                'days_ago' => 2,
-            ],
+                'bank_account_id' => $icici->id,
+                'bank_name' => 'State Bank of India',
+                'branch' => 'Andheri West',
+                'cheque_date' => now()->addDays(4)->toDateString(),
+                'amount' => 60000,
+                'type' => 'issued',
+                'party_type' => 'supplier',
+                'party_id' => 1,
+                'in_favour_of' => 'UltraTech Cement Maharashtra Depot',
+                'status' => 'pending',
+                'notes' => 'Settlement against invoice delivery',
+            ]
+        );
+
+        // ─── 9. Active Contracting Projects & Consumption ───────────────
+        $project1 = Project::firstOrCreate(
+            ['business_id' => $business->id, 'project_code' => 'PRJ-MALL-26'],
+            [
+                'name' => 'High-Rise Mall Complex Structural Phase',
+                'client_name' => 'DLF Commercial Infrastructures Ltd',
+                'client_phone' => '9876500001',
+                'site_address' => 'Plot 14, Commercial Zone, Lower Parel',
+                'city' => 'Mumbai',
+                'start_date' => now()->subDays(20)->toDateString(),
+                'end_date' => now()->addDays(60)->toDateString(),
+                'contract_value' => 2500000,
+                'status' => 'active',
+                'description' => 'Complete structure & piping contracting works',
+                'location_id' => $siteWarehouse->id,
+                'created_by' => $user->id,
+            ]
+        );
+
+        $project2 = Project::firstOrCreate(
+            ['business_id' => $business->id, 'project_code' => 'PRJ-VILLA-04'],
+            [
+                'name' => 'Luxury Villa Interior & Wiring Suite',
+                'client_name' => 'Rajesh Shrivastava',
+                'client_phone' => '9876500003',
+                'site_address' => 'Villa 104, Juhu Scheme',
+                'city' => 'Mumbai',
+                'start_date' => now()->subDays(10)->toDateString(),
+                'end_date' => now()->addDays(25)->toDateString(),
+                'contract_value' => 750000,
+                'status' => 'active',
+                'description' => 'Electrical automation and premium paint finishes',
+                'location_id' => $mainWarehouse->id,
+                'created_by' => $user->id,
+            ]
+        );
+
+        // Record material consumption on project 1
+        $consumption = MaterialConsumption::firstOrCreate(
+            ['business_id' => $business->id, 'project_id' => $project1->id, 'consumption_number' => 'CON-MALL-001'],
+            [
+                'date' => now()->subDays(3)->toDateString(),
+                'notes' => 'Site structural foundation and pillar pour consumption',
+                'entered_by' => $user->id,
+            ]
+        );
+
+        MaterialConsumptionItem::firstOrCreate(
+            ['consumption_id' => $consumption->id, 'product_id' => $createdProducts[0]->id],
+            [
+                'quantity' => 120,
+                'unit' => 'bag',
+                'rate' => 340,
+                'amount' => 40800,
+                'notes' => 'Poured in Sector 4 pillars',
+            ]
+        );
+
+        MaterialConsumptionItem::firstOrCreate(
+            ['consumption_id' => $consumption->id, 'product_id' => $createdProducts[1]->id],
+            [
+                'quantity' => 800,
+                'unit' => 'kg',
+                'rate' => 68,
+                'amount' => 54400,
+                'notes' => 'Reinforced structural grid',
+            ]
+        );
+
+        // ─── 10. Chronological 14-Day Sales & Expense Trend Chart Data ──
+        $salesTrend = [
+            ['days' => 13, 'amt' => 45000, 'cust' => 0, 'mode' => 'Bank Transfer', 'type' => 'sales_invoice'],
+            ['days' => 12, 'amt' => 82000, 'cust' => 1, 'mode' => 'Cheque', 'type' => 'sales_invoice'],
+            ['days' => 11, 'amt' => 38000, 'cust' => 2, 'mode' => 'UPI', 'type' => 'sales_invoice'],
+            ['days' => 10, 'amt' => 115000, 'cust' => 0, 'mode' => 'Bank Transfer', 'type' => 'sales_invoice'],
+            ['days' => 9,  'amt' => 64000, 'cust' => 1, 'mode' => 'Cash', 'type' => 'sales_invoice'],
+            ['days' => 8,  'amt' => 92000, 'cust' => 0, 'mode' => 'Bank Transfer', 'type' => 'sales_invoice'],
+            ['days' => 7,  'amt' => 128000, 'cust' => 1, 'mode' => 'Cheque', 'type' => 'sales_invoice'],
+            ['days' => 6,  'amt' => 55000, 'cust' => 2, 'mode' => 'UPI', 'type' => 'sales_invoice'],
+            ['days' => 5,  'amt' => 142000, 'cust' => 0, 'mode' => 'Bank Transfer', 'type' => 'sales_invoice'],
+            ['days' => 4,  'amt' => 76000, 'cust' => 1, 'mode' => 'Cash', 'type' => 'sales_invoice'],
+            ['days' => 3,  'amt' => 180000, 'cust' => 0, 'mode' => 'Bank Transfer', 'type' => 'sales_invoice'],
+            ['days' => 2,  'amt' => 88000, 'cust' => 2, 'mode' => 'UPI', 'type' => 'sales_invoice'],
+            ['days' => 1,  'amt' => 155000, 'cust' => 1, 'mode' => 'Bank Transfer', 'type' => 'sales_invoice'],
+            ['days' => 0,  'amt' => 95000, 'cust' => 0, 'mode' => 'Cash', 'type' => 'sales_invoice'],
+            
+            // Quotations, Proforma, and Challan
+            ['days' => 2, 'amt' => 450000, 'cust' => 0, 'mode' => 'Pending', 'type' => 'quotation'],
+            ['days' => 1, 'amt' => 220000, 'cust' => 1, 'mode' => 'Pending', 'type' => 'proforma'],
+            ['days' => 0, 'amt' => 15000,  'cust' => 2, 'mode' => 'Pending', 'type' => 'delivery_challan'],
         ];
 
-        foreach ($salesData as $saleData) {
-            $totalAmount = 0;
-            $itemsPayload = [];
+        $invCounter = 1001;
+        foreach ($salesTrend as $st) {
+            $prefix = match($st['type']) {
+                'quotation' => 'EST-BLK-',
+                'proforma' => 'PRO-BLK-',
+                'delivery_challan' => 'CHL-BLK-',
+                default => 'INV-BLK-',
+            };
 
-            foreach ($saleData['items'] as $itemData) {
-                $product = $createdProducts[$itemData['product_idx']];
-                $batch = $product->batches()->first();
-                $subtotal = $product->sale_rate * $itemData['qty'];
-                $totalAmount += $subtotal;
+            $sale = Sale::firstOrCreate(
+                ['business_id' => $business->id, 'invoice_number' => $prefix . $invCounter++],
+                [
+                    'customer_id' => $createdCustomers[$st['cust']]->id,
+                    'user_id' => $user->id,
+                    'invoice_type' => $st['type'],
+                    'total_amount' => $st['amt'],
+                    'discount' => 0,
+                    'round_off' => 0,
+                    'final_amount' => $st['amt'],
+                    'paid_amount' => $st['type'] === 'sales_invoice' ? $st['amt'] : 0,
+                    'payment_mode' => $st['mode'],
+                    'date' => now()->subDays($st['days'])->toDateString(),
+                    'status' => $st['type'] === 'sales_invoice' ? 'completed' : 'pending',
+                ]
+            );
 
-                $itemsPayload[] = [
-                    'product' => $product,
-                    'batch' => $batch,
-                    'qty' => $itemData['qty'],
-                    'price' => $product->sale_rate,
-                    'subtotal' => $subtotal,
-                ];
-            }
+            // Add sample items
+            $prod = $createdProducts[($st['days'] % 5)];
+            $qty = max(1, round($st['amt'] / $prod->sale_rate));
+            
+            SaleItem::firstOrCreate(
+                ['sale_id' => $sale->id, 'product_id' => $prod->id],
+                [
+                    'product_batch_id' => $prod->batches()->first()?->id,
+                    'quantity' => $qty,
+                    'unit_price' => $prod->sale_rate,
+                    'subtotal' => $st['amt'],
+                ]
+            );
 
-            $discount = $saleData['discount'];
-            $finalAmount = $totalAmount - $discount;
+            if ($st['type'] === 'sales_invoice') {
+                SalePayment::firstOrCreate(
+                    ['sale_id' => $sale->id],
+                    ['payment_mode' => $st['mode'], 'amount' => $st['amt']]
+                );
 
-            $sale = Sale::create([
-                'business_id' => $business->id,
-                'customer_id' => $saleData['customer_idx'] !== null ? $customers[$saleData['customer_idx']]->id : null,
-                'user_id' => $user->id,
-                'invoice_number' => 'INV-DEMO-' . strtoupper(Str::random(6)),
-                'total_amount' => $totalAmount,
-                'discount' => $discount,
-                'round_off' => 0,
-                'final_amount' => $finalAmount,
-                'paid_amount' => $finalAmount,
-                'payment_mode' => $saleData['payment_mode'],
-                'date' => now()->subDays($saleData['days_ago'])->toDateString(),
-                'status' => 'completed',
-            ]);
-
-            // Create sale items & deduct stock
-            foreach ($itemsPayload as $ip) {
-                SaleItem::create([
-                    'sale_id' => $sale->id,
-                    'product_id' => $ip['product']->id,
-                    'product_batch_id' => $ip['batch'] ? $ip['batch']->id : null,
-                    'quantity' => $ip['qty'],
-                    'unit_price' => $ip['price'],
-                    'subtotal' => $ip['subtotal'],
-                ]);
-
-                // Deduct stock
-                $ip['product']->decrement('quantity', $ip['qty']);
-                if ($ip['batch']) {
-                    $ip['batch']->decrement('remaining_quantity', $ip['qty']);
-                }
-
-                InventoryMovement::create([
-                    'product_id' => $ip['product']->id,
-                    'type' => 'out',
-                    'quantity' => $ip['qty'],
-                    'reference_type' => 'sale',
-                    'reference_id' => $sale->id,
-                ]);
-            }
-
-            // Create payments
-            if (!empty($saleData['split'])) {
-                foreach ($saleData['split'] as $mode => $amount) {
-                    SalePayment::create([
-                        'sale_id' => $sale->id,
-                        'payment_mode' => $mode,
-                        'amount' => $amount,
-                    ]);
-                }
-            } else {
-                SalePayment::create([
-                    'sale_id' => $sale->id,
-                    'payment_mode' => $saleData['payment_mode'],
-                    'amount' => $finalAmount,
-                ]);
+                InventoryMovement::firstOrCreate(
+                    ['reference_type' => 'sale', 'reference_id' => $sale->id],
+                    ['product_id' => $prod->id, 'type' => 'out', 'quantity' => $qty]
+                );
             }
         }
 
-        // ─── 9. Seed Expenses ───────────────────────────────────────────
-        $expenseData = [
-            ['category' => 'Rent', 'amount' => 15000, 'desc' => 'Monthly shop rent - July 2026', 'days_ago' => 10],
-            ['category' => 'Electricity', 'amount' => 3500, 'desc' => 'Electricity bill - June 2026', 'days_ago' => 8],
-            ['category' => 'Staff Salary', 'amount' => 12000, 'desc' => 'Helper boy salary', 'days_ago' => 5],
-            ['category' => 'Transport', 'amount' => 2000, 'desc' => 'Stock pickup from Patna', 'days_ago' => 3],
+        // ─── 11. Operational Expenses (To match Revenue Chart) ──────────
+        $expensesData = [
+            ['category' => 'Site Heavy Machinery & JCB Rent', 'amount' => 45000, 'days' => 12],
+            ['category' => 'Site Worker Wages & Labour Payouts', 'amount' => 32000, 'days' => 9],
+            ['category' => 'Logistics & Truck Freight Cargo', 'amount' => 18500, 'days' => 7],
+            ['category' => 'HQ Electricity & Commercial Utility', 'amount' => 14200, 'days' => 5],
+            ['category' => 'Office Refreshments & Site Travel', 'amount' => 8500,  'days' => 2],
+            ['category' => 'Diesel & Generator Fuel Replacements', 'amount' => 22000, 'days' => 0],
         ];
 
-        foreach ($expenseData as $e) {
-            Expense::create([
-                'business_id' => $business->id,
-                'category' => $e['category'],
-                'amount' => $e['amount'],
-                'description' => $e['desc'],
-                'expense_date' => now()->subDays($e['days_ago'])->toDateString(),
-                'added_by' => $user->id,
-            ]);
+        foreach ($expensesData as $e) {
+            Expense::firstOrCreate(
+                ['business_id' => $business->id, 'description' => $e['category'], 'amount' => $e['amount']],
+                [
+                    'category' => explode(' ', $e['category'])[0],
+                    'expense_date' => now()->subDays($e['days'])->toDateString(),
+                    'added_by' => $user->id,
+                ]
+            );
         }
 
-        $this->command->info('✅ Test business (Billing context) seeded successfully!');
-        $this->command->info('   Login: test@demo.com / password123');
+        $this->command->info('✅ BillKaro Enterprise ERP Master Seeder completed successfully!');
+        $this->command->info('👉 Primary Admin ID: test@demo.com');
+        $this->command->info('👉 Password:         password123');
+        $this->command->info('   (Includes 14-Day Analytics, Active Site Projects, Low Stock Alerts, Khata Dues & Complete Financial Suite)');
     }
 }

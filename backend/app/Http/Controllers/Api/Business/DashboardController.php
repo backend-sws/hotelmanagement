@@ -208,7 +208,7 @@ class DashboardController extends Controller
 
         // 13. Active Running Projects
         $activeProjects = Project::where('business_id', $businessId)
-            ->where('status', 'in_progress')
+            ->whereIn('status', ['active', 'in_progress', 'running'])
             ->limit(5)
             ->get()
             ->map(function ($project) {
