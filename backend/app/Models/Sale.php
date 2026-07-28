@@ -51,8 +51,19 @@ class Sale extends Model
     ];
 
     protected $casts = [
-        'date' => 'date',
-        'draft_data' => 'array',
+        'date'             => 'date',
+        'due_date'         => 'date',
+        'draft_data'       => 'array',
+        'total_amount'     => 'float',
+        'taxable_amount'   => 'float',
+        'total_tax_amount' => 'float',
+        'cgst_amount'      => 'float',
+        'sgst_amount'      => 'float',
+        'igst_amount'      => 'float',
+        'discount'         => 'float',
+        'round_off'        => 'float',
+        'final_amount'     => 'float',
+        'paid_amount'      => 'float',
     ];
 
     protected $appends = ['public_url'];

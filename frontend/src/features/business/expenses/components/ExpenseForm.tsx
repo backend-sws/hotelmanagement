@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { useExpenseCategories } from '../api/useExpenses';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
+import { useQuery } from '@tanstack/react-query';
+import { projectService } from '../../projects/api/projectService';
 
 interface ExpenseFormProps {
   initialData?: Expense;
@@ -25,14 +27,19 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
   onCancel
 }) => {
   const { data: categories = [] } = useExpenseCategories();
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects', 'active'],
+    queryFn: () => projectService.getProjects({ status: 'active' }),
+  });
   
   const { register, handleSubmit, formState: { errors }, reset, setValue, control } = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
-      category: '',
+      category: new URLSearchParams(window.location.search).get('category') || '',
       amount: 0,
       expense_date: new Date().toISOString().split('T')[0],
       description: '',
+      project_id: new URLSearchParams(window.location.search).get('project_id') ? Number(new URLSearchParams(window.location.search).get('project_id')) : undefined,
     }
   });
 
@@ -43,6 +50,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         amount: initialData.amount as number,
         expense_date: initialData.expense_date,
         description: initialData.description || '',
+        project_id: initialData.project_id || undefined,
       });
     }
   }, [initialData, reset]);
@@ -53,6 +61,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
     formData.append('amount', String(data.amount));
     formData.append('expense_date', data.expense_date);
     if (data.description) formData.append('description', data.description);
+    if (data.project_id) formData.append('project_id', String(data.project_id));
     
     // Check if receipt file was selected
     const receiptInput = document.getElementById('receipt') as HTMLInputElement;
@@ -106,6 +115,31 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
               creatable={true}
               error={errors.category?.message}
             />
+          )}
+        />
+      </div>
+
+      <div>
+        <div className="flex items-center gap-1 mb-2">
+          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Link to Construction Site / Project (Optional)</label>
+          <InfoTooltip text="Link this expense or labour wage to an active project or site." />
+        </div>
+        <Controller
+          name="project_id"
+          control={control}
+          render={({ field }) => (
+            <select
+              value={field.value || ''}
+              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+              className="w-full px-3.5 py-2.5 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-200"
+            >
+              <option value="">-- General Office / No Specific Project --</option>
+              {projects.map((p: any) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.project_code || 'PROJ'})
+                </option>
+              ))}
+            </select>
           )}
         />
       </div>

@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { invoiceService } from '../api/invoiceService';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText, ArrowRightLeft, Eye, Download, MessageSquare, Pencil, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Plus, FileText, ArrowRightLeft, Eye, Download, MessageSquare, Pencil, ChevronLeft, ChevronRight, FileSpreadsheet, HelpCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { FilterContainer, FilterSearch, FilterSelect, FilterReset } from '@/components/ui/filter-controls';
@@ -16,6 +17,7 @@ export default function ProformaListPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('all');
   const [search, setSearch] = useState('');
+  const [showGuide, setShowGuide] = useState(false);
   const debouncedSearch = useDebounce(search, 400);
 
   const { data, isLoading, refetch } = useQuery({
@@ -122,39 +124,109 @@ export default function ProformaListPage() {
       </div>
 
       <div className="relative w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-4 pb-14 space-y-6 z-10">
-        {/* Premium Control Panel (KPI Cards) */}
-        <div className="bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-[2rem] p-5 shadow-2xl shadow-slate-200/30 dark:shadow-black/50">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-              <div className="transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Total Proforma Value"
-                  value={formatCurrency(totalAmount)}
-                  icon={<FileText className="w-5 h-5 text-white" />}
-                  glowColor="primary"
-                  subtitle="Estimated billing value on page"
-                />
+        {/* Premium Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm relative z-20">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-purple-600 text-white shadow-lg shadow-purple-500/30 flex items-center justify-center">
+                <FileText className="w-6 h-6 animate-pulse-slow" />
               </div>
-              <div className="transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Converted to Invoice"
-                  value={`${convertedCount} Documents`}
-                  icon={<ArrowRightLeft className="w-5 h-5 text-white" />}
-                  glowColor="emerald"
-                  subtitle="Successfully closed deals"
-                />
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                  Proforma Invoices <span className="text-purple-600 dark:text-purple-400 text-base font-bold px-2 py-0.5 rounded-md bg-purple-500/10">Kachha Bill & Advance Offer</span>
+                </h1>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  Issue preliminary invoices for advance payments, order commitments & goods valuation without generating an immediate GST liability.
+                </p>
               </div>
             </div>
-            
-            <div className="flex-shrink-0 flex items-center justify-end px-2 sm:px-4">
-              <button 
-                onClick={() => navigate('/invoices/new?type=proforma')}
-                className="group relative flex items-center justify-center gap-2 px-6 h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-lg hover:shadow-purple-500/25 active:scale-95 transition-all duration-200"
-              >
-                <Plus className="w-5 h-5 transition-transform group-hover:rotate-90 duration-300" />
-                <span className="font-bold text-sm tracking-wide">New Proforma</span>
-              </button>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-3 self-start sm:self-center">
+            <Button 
+              onClick={() => navigate('/invoices/new?type=proforma')}
+              className="rounded-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md shadow-purple-500/20 px-4 h-10 text-xs"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              New Proforma
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowGuide(!showGuide)}
+              className="rounded-xl font-bold bg-white/80 dark:bg-slate-900/80 hover:bg-slate-50 border-purple-200 dark:border-purple-900/30 text-purple-600 dark:text-purple-400 shadow-sm h-10 px-3 text-xs"
+            >
+              <HelpCircle className="w-4 h-4 mr-1.5" /> 
+              {showGuide ? 'Hide Guide' : 'What is a Proforma?'}
+              {showGuide ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Educational Guide Card */}
+        {showGuide && (
+          <Card className="p-6 rounded-2xl bg-gradient-to-br from-purple-50 via-slate-50 to-indigo-50 dark:from-purple-950/40 dark:via-slate-900 dark:to-indigo-950/20 border-2 border-purple-200 dark:border-purple-800/40 shadow-xl transition-all animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                <Sparkles className="w-5 h-5 fill-purple-500 text-purple-600 animate-spin-slow" />
+                <h3 className="text-base font-black uppercase tracking-wide">Business Guide: Why & How to Use Proforma Invoices</h3>
+              </div>
+              
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                A <strong>Proforma Invoice (Preliminary / Kachha Bill)</strong> is an estimated billing document sent to a buyer prior to shipment or delivery. It outlines exact item costs and banking details so the buyer can arrange advance payments or purchase approvals without creating an immediate tax obligation for your business!
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+                    <span>💰</span> 1. Advance Payment & Booking
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Issue proformas for corporate purchase orders, tender approvals, or 50% advance deposits before manufacturing or dispatching expensive stock.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                    <span>🛡️</span> 2. Zero Accounting Liability
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Unlike Tax Invoices, a Proforma does not trigger GST tax liabilities or alter inventory quantities until it is converted into a final bill.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                    <span>📦</span> 3. Seamless Final Conversion
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Once payment is received or goods are ready for delivery, convert the Proforma into a complete GST Tax Invoice instantly to deduct stock and finalize ledger entries.
+                  </p>
+                </div>
+              </div>
             </div>
+          </Card>
+        )}
+
+        {/* KPI Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="sm:col-span-1 lg:col-span-2">
+            <CustomKpiCard
+              title="Total Proforma Value"
+              value={formatCurrency(totalAmount)}
+              icon={<FileText className="w-5 h-5 text-white" />}
+              glowColor="primary"
+              subtitle="Estimated billing value on page"
+            />
+          </div>
+          <div className="sm:col-span-1 lg:col-span-2">
+            <CustomKpiCard
+              title="Converted to Invoice"
+              value={`${convertedCount} Documents`}
+              icon={<ArrowRightLeft className="w-5 h-5 text-white" />}
+              glowColor="emerald"
+              subtitle="Successfully closed deals"
+            />
           </div>
         </div>
 

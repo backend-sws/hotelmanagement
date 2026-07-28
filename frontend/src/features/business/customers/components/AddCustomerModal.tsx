@@ -20,7 +20,7 @@ interface AddCustomerModalProps {
 
 export function AddCustomerModal({ isOpen, onClose, onSuccess }: AddCustomerModalProps) {
   const { register, handleSubmit, reset, control, setValue, watch, formState: { errors, isSubmitting } } = useForm<CustomerFormValues>({
-    resolver: zodResolver(customerSchema),
+    resolver: zodResolver(customerSchema) as any,
     defaultValues: {
       name: '',
       phone: '',

@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { usePayrolls, useConfirmPayroll, useMarkPayrollPaid } from '../api/usePayroll';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { IndianRupee, FileText, CheckCircle, Clock, Download, Plus, Search, HelpCircle, ShieldAlert, BadgeDollarSign, AlertCircle } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { IndianRupee, FileText, CheckCircle, Clock, Download, Plus, Search, HelpCircle, ShieldAlert, BadgeDollarSign, AlertCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +28,7 @@ export default function PayrollPage() {
   const [selectedStaff, setSelectedStaff] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   const { data: staffList } = useStaff();
 
@@ -84,15 +86,83 @@ export default function PayrollPage() {
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-[#09090b]">
-      <PageHeader 
-        icon={IndianRupee}
-        title={isManager ? "Payroll Processing" : "My Salary Slips"} 
-        subtitle={isManager ? "Manage employee salaries, commissions, and deductions" : "View your monthly salary slips and earnings"}
-      />
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-4 pb-8 space-y-6">
+        {/* Premium Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm relative z-20">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center">
+                <IndianRupee className="w-6 h-6 animate-pulse-slow" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                  {isManager ? "Payroll & Salaries" : "My Salary Slips"} <span className="text-emerald-600 dark:text-emerald-400 text-base font-bold px-2 py-0.5 rounded-md bg-emerald-500/10">Staff Wages & Payslips</span>
+                </h1>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  {isManager ? "Calculate monthly wages, track employee earnings & deductions, and disburse official salary slips." : "View your monthly salary slips, bonuses, deductions, and payment historical records."}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 self-start sm:self-center">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowGuide(!showGuide)}
+              className="rounded-xl font-bold bg-white/80 dark:bg-slate-900/80 hover:bg-slate-50 border-emerald-200 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400 shadow-sm"
+            >
+              <HelpCircle className="w-4 h-4 mr-1.5" /> 
+              {showGuide ? 'Hide Guide' : 'What is Payroll Processing?'}
+              {showGuide ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+            </Button>
+          </div>
+        </div>
 
-      <div className="w-full max-w-[1600px] px-4 pt-0 pb-4 space-y-4">
-        
+        {/* Educational Guide Card */}
+        {showGuide && (
+          <Card className="p-6 rounded-2xl bg-gradient-to-br from-emerald-50 via-slate-50 to-teal-50 dark:from-emerald-950/40 dark:via-slate-900 dark:to-teal-950/20 border-2 border-emerald-200 dark:border-emerald-800/40 shadow-xl transition-all animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                <Sparkles className="w-5 h-5 fill-emerald-500 text-emerald-600 animate-spin-slow" />
+                <h3 className="text-base font-black uppercase tracking-wide">Business Guide: Transparent Payroll Processing & Wage Accounting</h3>
+              </div>
+              
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                Automating your monthly <strong>Payroll & Salary Disbursal</strong> eliminates wage computation errors, ensures structured record-keeping, and fosters strong team morale through verifiable digital payslips!
+              </p>
 
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                    <span>💰</span> 1. Automated Wage Computation
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Instantly calculates payable salaries based on designated base wages, performance incentives, overtime earnings, and applicable deduction logs.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-teal-600 dark:text-teal-400 uppercase tracking-wider">
+                    <span>📑</span> 2. Digital Salary Slips
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Generate formatted, official payslips that employees can easily access or download for their personal records, banking, and tax documentation needs.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                    <span>⚖️</span> 3. Advance & Loan Reconciliation
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Effortlessly adjust short-term staff salary advances or loan installment repayments during monthly pay cycle closings with full audit transparency.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
         
         {/* Analytics Section (Full Width Grid) */}
         {isManager && (

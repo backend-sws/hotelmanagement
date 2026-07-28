@@ -90,49 +90,47 @@ export default function FinanceLedgerPage() {
       <div className="relative w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-2 pb-6 space-y-6 z-20">
         
         {/* KPI Analytics Cards */}
-        <div className="bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-[2rem] p-4 shadow-2xl shadow-slate-200/30 dark:shadow-black/50">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div 
-              className={`flex-1 transition-all hover:-translate-y-1 duration-300 cursor-pointer ${activeTab === 'pending' ? 'ring-2 ring-primary-500 rounded-2xl' : 'opacity-80 hover:opacity-100'}`}
-              onClick={() => { setActiveTab('pending'); setPage(1); }}
-            >
-              <CustomKpiCard
-                title="Pending Payouts"
-                value={pendingResponse?.meta?.total || 0}
-                icon={<Clock />}
-                glowColor="primary"
-                subtitle="Awaiting financier clearance"
-              />
-            </div>
-            <div 
-              className={`flex-1 transition-all hover:-translate-y-1 duration-300 cursor-pointer ${activeTab === 'pending' ? 'ring-2 ring-primary-500 rounded-2xl' : 'opacity-80 hover:opacity-100'}`}
-              onClick={() => { setActiveTab('pending'); setPage(1); }}
-            >
-              <CustomKpiCard
-                title="Expected Payout (This Page)"
-                value={formatCurrency(
-                  (pendingResponse?.data || []).reduce(
-                    (sum: number, emi: any) => sum + (Number(emi.loan_amount || 0) - Number(emi.processing_fee || 0)),
-                    0
-                  )
-                )}
-                icon={<Wallet />}
-                glowColor="primary"
-                subtitle="Clearance value pending"
-              />
-            </div>
-            <div 
-              className={`flex-1 transition-all hover:-translate-y-1 duration-300 cursor-pointer ${activeTab === 'completed' ? 'ring-2 ring-primary-500 rounded-2xl' : 'opacity-80 hover:opacity-100'}`}
-              onClick={() => { setActiveTab('completed'); setPage(1); }}
-            >
-              <CustomKpiCard
-                title="Completed Payouts"
-                value={completedResponse?.meta?.total || 0}
-                icon={<CheckCircle2 />}
-                glowColor="primary"
-                subtitle="Cleared financier funds"
-              />
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div 
+            className={`transition-all hover:-translate-y-1 duration-300 cursor-pointer ${activeTab === 'pending' ? 'ring-2 ring-primary-500 rounded-2xl' : 'opacity-80 hover:opacity-100'}`}
+            onClick={() => { setActiveTab('pending'); setPage(1); }}
+          >
+            <CustomKpiCard
+              title="Pending Payouts"
+              value={pendingResponse?.meta?.total || 0}
+              icon={<Clock className="w-5 h-5 text-white" />}
+              glowColor="primary"
+              subtitle="Awaiting financier clearance"
+            />
+          </div>
+          <div 
+            className={`transition-all hover:-translate-y-1 duration-300 cursor-pointer ${activeTab === 'pending' ? 'ring-2 ring-primary-500 rounded-2xl' : 'opacity-80 hover:opacity-100'}`}
+            onClick={() => { setActiveTab('pending'); setPage(1); }}
+          >
+            <CustomKpiCard
+              title="Expected Payout (This Page)"
+              value={formatCurrency(
+                (pendingResponse?.data || []).reduce(
+                  (sum: number, emi: any) => sum + (Number(emi.loan_amount || 0) - Number(emi.processing_fee || 0)),
+                  0
+                )
+              )}
+              icon={<Wallet className="w-5 h-5 text-white" />}
+              glowColor="primary"
+              subtitle="Clearance value pending"
+            />
+          </div>
+          <div 
+            className={`transition-all hover:-translate-y-1 duration-300 cursor-pointer ${activeTab === 'completed' ? 'ring-2 ring-primary-500 rounded-2xl' : 'opacity-80 hover:opacity-100'}`}
+            onClick={() => { setActiveTab('completed'); setPage(1); }}
+          >
+            <CustomKpiCard
+              title="Completed Payouts"
+              value={completedResponse?.meta?.total || 0}
+              icon={<CheckCircle2 className="w-5 h-5 text-white" />}
+              glowColor="emerald"
+              subtitle="Cleared financier funds"
+            />
           </div>
         </div>
 

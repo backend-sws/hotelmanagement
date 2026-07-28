@@ -168,54 +168,46 @@ export default function PriceListsPage() {
 
       <div className="relative w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-2 pb-6 space-y-6 z-20">
         
-        {/* Custom Header matching the aesthetic */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-[2rem] p-4 shadow-sm relative z-30">
+        {/* Header matching the aesthetic */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm relative z-30">
           <div className="flex items-center gap-4">
-             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white shadow-lg shadow-primary-500/30">
-               <List className="w-6 h-6" />
-             </div>
-             <div>
-               <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300">Price Lists</h1>
-               <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Manage and organize your pricing structures</p>
-             </div>
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white shadow-lg shadow-primary-500/30">
+              <List className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300">Price Lists</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Manage and organize your pricing structures</p>
+            </div>
           </div>
-          <Button className="bg-primary-600 hover:bg-primary-700 text-white shadow-lg shadow-primary-500/20 rounded-xl" onClick={() => { setPriceListToEdit(null); setIsModalOpen(true); }}>
+          <Button className="bg-primary-600 hover:bg-primary-700 text-white shadow-lg shadow-primary-500/20 rounded-xl font-bold h-10 px-4 text-xs" onClick={() => { setPriceListToEdit(null); setIsModalOpen(true); }}>
             <Plus className="w-4 h-4 mr-2" />
             Create Price List
           </Button>
         </div>
         
         {/* KPI Analytics Cards */}
-        <div className="bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-[2rem] p-4 shadow-2xl shadow-slate-200/30 dark:shadow-black/50">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 transition-all hover:-translate-y-1 duration-300">
-              <CustomKpiCard
-                title="Total Price Lists"
-                value={stats.total}
-                icon={<List />}
-                glowColor="primary"
-                subtitle="All pricing structures"
-              />
-            </div>
-            <div className="flex-1 transition-all hover:-translate-y-1 duration-300">
-              <CustomKpiCard
-                title="Active Lists"
-                value={stats.active}
-                icon={<Activity />}
-                glowColor="emerald"
-                subtitle="Currently in use"
-              />
-            </div>
-            <div className="flex-1 transition-all hover:-translate-y-1 duration-300">
-              <CustomKpiCard
-                title="Default List"
-                value={stats.defaultName}
-                icon={<Tag />}
-                glowColor="amber"
-                subtitle="Base pricing applied"
-              />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CustomKpiCard
+            title="Total Price Lists"
+            value={stats.total}
+            icon={<List className="w-5 h-5 text-white" />}
+            glowColor="primary"
+            subtitle="All pricing structures"
+          />
+          <CustomKpiCard
+            title="Active Lists"
+            value={stats.active}
+            icon={<Activity className="w-5 h-5 text-white" />}
+            glowColor="emerald"
+            subtitle="Currently in use"
+          />
+          <CustomKpiCard
+            title="Default List"
+            value={stats.defaultName}
+            icon={<Tag className="w-5 h-5 text-white" />}
+            glowColor="amber"
+            subtitle="Base pricing applied"
+          />
         </div>
 
         {/* Search & Filter Bar */}

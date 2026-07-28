@@ -13,14 +13,17 @@ import {
   Wallet,
   FileStack,
   Receipt,
-  List
+  List,
+  BarChart3,
+  ArrowLeftRight,
+  Warehouse
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/store/layoutStore";
 import { useAuthStore } from "@/store/authStore";
 import { useAppStore } from "@/store/appStore";
 import { useTenantStore } from "@/store/tenantStore";
-import { ShieldAlert, Settings, Database, Briefcase, Coins, UserCircle, LogOut, MessageSquare, Calendar, Calculator, Tag } from "lucide-react";
+import { ShieldAlert, Settings, Database, Briefcase, Coins, UserCircle, LogOut, MessageSquare, Calendar, Calculator, Tag, ShoppingBag, BookOpen, Clock, PieChart, HardHat } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useFeature } from "@/hooks/useFeature";
 import { FeatureLockModal } from "@/features/business/core/components/FeatureLockModal";
@@ -46,6 +49,23 @@ export const businessMenuGroups = [
     ]
   },
   {
+    title: "PURCHASE & KHATA",
+    items: [
+      { name: "PURCHASE BILLS", href: "/business/purchases", icon: ShoppingBag },
+      { name: "CUSTOMER KHATA", href: "/business/ledger/customers", icon: BookOpen },
+      { name: "SUPPLIER KHATA", href: "/business/ledger/suppliers", icon: BookOpen },
+      { name: "OUTSTANDING AGING", href: "/business/outstanding", icon: Clock },
+    ]
+  },
+  {
+    title: "CASH, BANK & CHEQUES",
+    items: [
+      { name: "CASH & BANK BOOK", href: "/business/cash-bank", icon: Wallet },
+      { name: "ROZKA DAY BOOK", href: "/business/daybook", icon: ClipboardList },
+      { name: "CHEQUE REGISTER", href: "/business/cheques", icon: Receipt },
+    ]
+  },
+  {
     title: "RELATIONSHIPS",
     items: [
       { name: "CUSTOMERS", href: "/customers", icon: Users },
@@ -59,6 +79,22 @@ export const businessMenuGroups = [
       { name: "PRICE LISTS", href: "/price-lists", icon: List },
       { name: "CATEGORIES", href: "/categories", icon: Building2 },
       { name: "BRANDS", href: "/brands", icon: FileStack },
+    ]
+  },
+  {
+    title: "STOCK & GODOWNS",
+    items: [
+      { name: "STOCK SUMMARY", href: "/stock/summary", icon: BarChart3 },
+      { name: "STOCK TRANSFERS", href: "/stock/transfer", icon: ArrowLeftRight },
+      { name: "GODOWNS", href: "/stock/godowns", icon: Warehouse },
+    ]
+  },
+  {
+    title: "PROJECTS & BOQ",
+    items: [
+      { name: "PROJECTS & SITES", href: "/business/projects", icon: Building2 },
+      { name: "BOQ & ESTIMATES", href: "/boq", icon: PieChart },
+      { name: "LABOUR & WAGES", href: "/business/labour/summary", icon: HardHat },
     ]
   },
   {
@@ -269,6 +305,31 @@ export function Sidebar({ className }: { className?: string }) {
     filteredStaffGroups.push({
       title: "RELATIONSHIPS",
       items: relationshipItems
+    });
+
+    const khataItems = [];
+    if (hasPermission('manage_suppliers')) {
+      khataItems.push({ name: "PURCHASE BILLS", href: "/business/purchases", icon: ShoppingBag });
+      khataItems.push({ name: "SUPPLIER KHATA", href: "/business/ledger/suppliers", icon: BookOpen });
+    }
+    if (hasPermission('manage_customers')) {
+      khataItems.push({ name: "CUSTOMER KHATA", href: "/business/ledger/customers", icon: BookOpen });
+    }
+    khataItems.push({ name: "OUTSTANDING AGING", href: "/business/outstanding", icon: Clock });
+    if (khataItems.length > 0) {
+      filteredStaffGroups.push({
+        title: "PURCHASE & KHATA",
+        items: khataItems
+      });
+    }
+
+    filteredStaffGroups.push({
+      title: "CASH, BANK & CHEQUES",
+      items: [
+        { name: "CASH & BANK BOOK", href: "/business/cash-bank", icon: Wallet },
+        { name: "ROZKA DAY BOOK", href: "/business/daybook", icon: ClipboardList },
+        { name: "CHEQUE REGISTER", href: "/business/cheques", icon: Receipt },
+      ]
     });
   }
 

@@ -21,7 +21,7 @@ interface EditCustomerModalProps {
 
 export function EditCustomerModal({ isOpen, onClose, customer }: EditCustomerModalProps) {
   const { register, handleSubmit, control, setValue, formState: { errors, isSubmitting } } = useForm<CustomerFormValues>({
-    resolver: zodResolver(customerSchema),
+    resolver: zodResolver(customerSchema) as any,
     values: (customer && isOpen) ? {
       name: customer.name || '',
       phone: customer.phone || '',

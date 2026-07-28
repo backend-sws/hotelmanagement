@@ -5,6 +5,7 @@ export const expenseSchema = z.object({
   amount: z.number({ message: 'Amount must be a positive number' }).min(0, 'Amount must be a positive number'),
   expense_date: z.string().min(1, 'Date is required'),
   description: z.string().optional(),
+  project_id: z.number().optional(),
   receipt: z.any().optional(), // Handled specially for file uploads
 });
 
@@ -16,6 +17,7 @@ export interface Expense {
   category: string;
   amount: string | number;
   description: string | null;
+  project_id?: number;
   receipt_path: string | null;
   added_by: number;
   added_by_name?: string;

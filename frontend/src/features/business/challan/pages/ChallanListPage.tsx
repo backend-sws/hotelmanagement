@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { challanService } from '../api/challanService';
 import { invoiceService } from '@/features/business/invoices/api/invoiceService';
 import { Button } from '@/components/ui/button';
-import { Plus, Truck, ArrowRightLeft, Eye, Printer, Download, MessageSquare, Pencil, ChevronLeft, ChevronRight, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Plus, Truck, ArrowRightLeft, Eye, Printer, Download, MessageSquare, Pencil, ChevronLeft, ChevronRight, FileSpreadsheet, CheckCircle2, HelpCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { FilterContainer, FilterSearch, FilterSelect, FilterReset } from '@/components/ui/filter-controls';
@@ -17,6 +18,7 @@ export default function ChallanListPage() {
   const [status, setStatus] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [showGuide, setShowGuide] = useState(false);
   const debouncedSearch = useDebounce(search, 400);
 
   const { data, isLoading, refetch } = useQuery({
@@ -156,48 +158,118 @@ export default function ChallanListPage() {
       </div>
 
       <div className="relative w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-4 pb-14 space-y-6 z-10">
-        {/* Premium Control Panel (KPI Cards) */}
-        <div className="bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-[2rem] p-5 shadow-2xl shadow-slate-200/30 dark:shadow-black/50">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-              <div className="transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Pending Delivery Challans"
-                  value={`${pendingCount} Active`}
-                  icon={<Truck className="w-5 h-5 text-white" />}
-                  glowColor="primary"
-                  subtitle="In-transit or unconverted slips"
-                />
+        {/* Premium Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm relative z-20">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-amber-500 text-white shadow-lg shadow-amber-500/30 flex items-center justify-center">
+                <Truck className="w-6 h-6 animate-pulse-slow" />
               </div>
-              <div className="transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Delivered / Converted"
-                  value={`${deliveredCount} Completed`}
-                  icon={<CheckCircle2 className="w-5 h-5 text-white" />}
-                  glowColor="emerald"
-                  subtitle="Successfully billed or delivered"
-                />
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                  Delivery Challans & Dispatch <span className="text-amber-600 dark:text-amber-400 text-base font-bold px-2 py-0.5 rounded-md bg-amber-500/10">Maal Bhejne ki Parchi</span>
+                </h1>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  Legally transport goods for job work, approval, or consignment without raising an immediate tax invoice or billing impact.
+                </p>
               </div>
             </div>
-            
-            <div className="flex-shrink-0 flex items-center justify-end gap-3 px-2 sm:px-4">
-              {selectedIds.length > 0 && (
-                <button 
-                  onClick={handleConvert}
-                  className="group relative flex items-center justify-center gap-2 px-6 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg hover:shadow-blue-500/25 active:scale-95 transition-all duration-200"
-                >
-                  <ArrowRightLeft className="w-5 h-5" />
-                  <span className="font-bold text-sm tracking-wide">Convert {selectedIds.length} to Invoice</span>
-                </button>
-              )}
-              <button 
-                onClick={() => navigate('/invoices/new?type=delivery_challan')}
-                className="group relative flex items-center justify-center gap-2 px-6 h-12 bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-lg hover:shadow-amber-500/25 active:scale-95 transition-all duration-200"
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-3 self-start sm:self-center">
+            {selectedIds.length > 0 && (
+              <Button 
+                onClick={handleConvert}
+                className="rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 px-4 h-10 text-xs"
               >
-                <Plus className="w-5 h-5 transition-transform group-hover:rotate-90 duration-300" />
-                <span className="font-bold text-sm tracking-wide">New Challan</span>
-              </button>
+                <ArrowRightLeft className="w-4 h-4 mr-1.5" />
+                Convert {selectedIds.length} to Invoice
+              </Button>
+            )}
+            <Button 
+              onClick={() => navigate('/invoices/new?type=delivery_challan')}
+              className="rounded-xl font-bold bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-md shadow-amber-500/20 px-4 h-10 text-xs"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              New Challan
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowGuide(!showGuide)}
+              className="rounded-xl font-bold bg-white/80 dark:bg-slate-900/80 hover:bg-slate-50 border-amber-200 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 shadow-sm h-10 px-3 text-xs"
+            >
+              <HelpCircle className="w-4 h-4 mr-1.5" /> 
+              {showGuide ? 'Hide Guide' : 'What is a Challan?'}
+              {showGuide ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Educational Guide Card */}
+        {showGuide && (
+          <Card className="p-6 rounded-2xl bg-gradient-to-br from-amber-50 via-slate-50 to-orange-50 dark:from-amber-950/40 dark:via-slate-900 dark:to-orange-950/20 border-2 border-amber-200 dark:border-amber-800/40 shadow-xl transition-all animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                <Sparkles className="w-5 h-5 fill-amber-500 text-amber-600 animate-spin-slow" />
+                <h3 className="text-base font-black uppercase tracking-wide">Business Guide: Why & How to Use Delivery Challans</h3>
+              </div>
+              
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                A <strong>Delivery Challan (Dispatch Slip / Maal Bhejne ki Parchi)</strong> is a formal document created during the transportation of goods from one place to another without raising a sale invoice at that instant. Under GST rules, a Delivery Challan is legally required when goods leave your godown or shop before actual billing!
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                    <span>🚚</span> 1. Lawful Goods Transit (E-Way Bill)
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Mandatory under GST laws for transporting goods for Job Work (Karigar / Processing), supply on approval, or movement between branches without immediate taxation.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-orange-600 dark:text-orange-400 uppercase tracking-wider">
+                    <span>✍️</span> 2. Proof of Delivery & Acknowledgment
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Acts as an official receiving receipt. When the delivery driver drops off items, the buyer signs the challan as indisputable physical proof of receiving intact goods.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                    <span>📑</span> 3. Bulk Conversion to Invoice
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Send items in daily or weekly deliveries using challans, and later select multiple completed challans to merge and convert them into a single consolidated Tax Invoice!
+                  </p>
+                </div>
+              </div>
             </div>
+          </Card>
+        )}
+
+        {/* KPI Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="sm:col-span-1 lg:col-span-2">
+            <CustomKpiCard
+              title="Pending Delivery Challans"
+              value={`${pendingCount} Active`}
+              icon={<Truck className="w-5 h-5 text-white" />}
+              glowColor="primary"
+              subtitle="In-transit or unconverted slips"
+            />
+          </div>
+          <div className="sm:col-span-1 lg:col-span-2">
+            <CustomKpiCard
+              title="Delivered / Converted"
+              value={`${deliveredCount} Completed`}
+              icon={<CheckCircle2 className="w-5 h-5 text-white" />}
+              glowColor="emerald"
+              subtitle="Successfully billed or delivered"
+            />
           </div>
         </div>
 

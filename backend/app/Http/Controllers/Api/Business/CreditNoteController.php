@@ -126,6 +126,22 @@ class CreditNoteController extends Controller
                 }
             }
 
+            // Integrate with LedgerService to credit the customer account
+            if ($cn->customer_id) {
+                app(\App\Services\LedgerService::class)->createEntry([
+                    'business_id' => $businessId,
+                    'party_type' => 'customer',
+                    'party_id' => $cn->customer_id,
+                    'entry_type' => 'credit_note',
+                    'reference_type' => 'credit_note',
+                    'reference_id' => $cn->id,
+                    'date' => $cn->date ?? now()->toDateString(),
+                    'debit' => 0,
+                    'credit' => $roundedTotal,
+                    'narration' => "Credit Note #{$cn->invoice_number} issued against invoice #{$originalInvoice->invoice_number}",
+                ]);
+            }
+
             return $cn->load(['items.product', 'customer']);
         });
 

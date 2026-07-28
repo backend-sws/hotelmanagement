@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { invoiceService } from '../api/invoiceService';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText, CheckCircle2, AlertCircle, Eye, Download, MessageSquare, ChevronLeft, ChevronRight, FileSpreadsheet, Pencil } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Plus, FileText, CheckCircle2, AlertCircle, Eye, Download, MessageSquare, ChevronLeft, ChevronRight, FileSpreadsheet, Pencil, HelpCircle, Sparkles, ChevronDown, ChevronUp, Receipt } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
@@ -18,6 +19,7 @@ export default function InvoicesListPage() {
   const [type, setType] = useState('all');
   const [status, setStatus] = useState('all');
   const [search, setSearch] = useState('');
+  const [showGuide, setShowGuide] = useState(false);
   const debouncedSearch = useDebounce(search, 400);
 
   const { data: stats } = useQuery({
@@ -146,49 +148,113 @@ export default function InvoicesListPage() {
       </div>
 
       <div className="relative w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-4 pb-14 space-y-6 z-10">
-        {/* Premium Control Panel (KPI Cards) */}
-        <div className="bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-[2rem] p-5 shadow-2xl shadow-slate-200/30 dark:shadow-black/50">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
-              <div className="transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Total Invoiced (GST)"
-                  value={formatCurrency(stats?.total_invoiced || 0)}
-                  icon={<FileText className="w-5 h-5 text-white" />}
-                  glowColor="primary"
-                  subtitle="Total sales & proforma billed"
-                />
+        {/* Premium Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm relative z-20">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-primary-600 text-white shadow-lg shadow-primary-500/30 flex items-center justify-center">
+                <Receipt className="w-6 h-6 animate-pulse-slow" />
               </div>
-              <div className="transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Total Collected"
-                  value={formatCurrency(stats?.total_collected || 0)}
-                  icon={<CheckCircle2 className="w-5 h-5 text-white" />}
-                  glowColor="emerald"
-                  subtitle="Actual cash/online received"
-                />
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                  Invoices & GST Billing <span className="text-primary-600 dark:text-primary-400 text-base font-bold px-2 py-0.5 rounded-md bg-primary-500/10">Pucca Tax Bill</span>
+                </h1>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  Generate legally valid GST & Non-GST sales invoices, track pending payments & maintain transparent accounting logs.
+                </p>
               </div>
-              <div className="transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Outstanding Balance"
-                  value={formatCurrency(stats?.total_outstanding || 0)}
-                  icon={<AlertCircle className="w-5 h-5 text-white" />}
-                  glowColor="rose"
-                  subtitle="Pending customer receivables"
-                />
-              </div>
-            </div>
-            
-            <div className="flex-shrink-0 flex items-center justify-end px-2 sm:px-4">
-              <button 
-                onClick={() => navigate('/invoices/new')}
-                className="group relative flex items-center justify-center gap-2 px-6 h-12 bg-primary-600 hover:bg-primary-700 text-white rounded-xl shadow-lg hover:shadow-primary-500/25 active:scale-95 transition-all duration-200"
-              >
-                <Plus className="w-5 h-5 transition-transform group-hover:rotate-90 duration-300" />
-                <span className="font-bold text-sm tracking-wide">New Document</span>
-              </button>
             </div>
           </div>
+          
+          <div className="flex flex-wrap items-center gap-3 self-start sm:self-center">
+            <Button 
+              onClick={() => navigate('/invoices/new')}
+              className="rounded-xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white shadow-md shadow-primary-500/20 px-4 h-10 text-xs"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              New Document
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowGuide(!showGuide)}
+              className="rounded-xl font-bold bg-white/80 dark:bg-slate-900/80 hover:bg-slate-50 border-primary-200 dark:border-primary-900/30 text-primary-600 dark:text-primary-400 shadow-sm h-10 px-3 text-xs"
+            >
+              <HelpCircle className="w-4 h-4 mr-1.5" /> 
+              {showGuide ? 'Hide Guide' : 'What is an Invoice?'}
+              {showGuide ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Educational Guide Card */}
+        {showGuide && (
+          <Card className="p-6 rounded-2xl bg-gradient-to-br from-primary-50 via-slate-50 to-emerald-50 dark:from-primary-950/40 dark:via-slate-900 dark:to-emerald-950/20 border-2 border-primary-200 dark:border-primary-800/40 shadow-xl transition-all animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-primary-700 dark:text-primary-300">
+                <Sparkles className="w-5 h-5 fill-primary-500 text-primary-600 animate-spin-slow" />
+                <h3 className="text-base font-black uppercase tracking-wide">Business Guide: Why & How to Manage Invoices</h3>
+              </div>
+              
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                A <strong>Tax Invoice (Pucca Bill)</strong> is the core financial document issued by a seller to a buyer when goods or services are sold. It details items, quantities, agreed prices, discounts, and tax (GST/IGST) breakdown. It is mandatory for legal trade and tax compliance!
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-primary-600 dark:text-primary-400 uppercase tracking-wider">
+                    <span>📑</span> 1. Legal Evidence & Compliance
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Serves as indisputable legal proof of ownership transfer and price agreement between buyer and seller under commercial law.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                    <span>🛡️</span> 2. Input Tax Credit (ITC) Claim
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Mandatory for business buyers with GSTIN to claim Input Tax Credit on purchases, directly saving them 5% to 28% in cash taxes!
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                    <span>📊</span> 3. Automated Ledger & Accounting
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Automatically updates customer ledgers, tracks pending balances, computes inventory reduction, and builds GSTR reports!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* KPI Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <CustomKpiCard
+            title="Total Invoiced (GST)"
+            value={formatCurrency(stats?.total_invoiced || 0)}
+            icon={<FileText className="w-5 h-5 text-white" />}
+            glowColor="primary"
+            subtitle="Total sales & proforma billed"
+          />
+          <CustomKpiCard
+            title="Total Collected"
+            value={formatCurrency(stats?.total_collected || 0)}
+            icon={<CheckCircle2 className="w-5 h-5 text-white" />}
+            glowColor="emerald"
+            subtitle="Actual cash/online received"
+          />
+          <CustomKpiCard
+            title="Outstanding Balance"
+            value={formatCurrency(stats?.total_outstanding || 0)}
+            icon={<AlertCircle className="w-5 h-5 text-white" />}
+            glowColor="rose"
+            subtitle="Pending customer receivables"
+          />
         </div>
 
         {/* Filter Controls */}

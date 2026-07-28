@@ -31,24 +31,34 @@ class InvoiceNumberService
             
             $prefix = $settings[$prefixKey] ?? ($defaultPrefixes[$type] ?? 'DOC-');
             
-            // Get the last invoice number of this type for the business using lockForUpdate
-            $lastInvoice = Sale::where('business_id', $businessId)
-                ->where('invoice_type', $type)
-                ->where('invoice_number', 'LIKE', $prefix . '%')
-                ->orderBy('id', 'desc')
-                ->lockForUpdate()
-                ->first();
+            // Get the last number of this type for the business using lockForUpdate
+            if ($type === 'purchase_bill') {
+                $lastDoc = \App\Models\SupplierPurchase::where('business_id', $businessId)
+                    ->where('purchase_number', 'LIKE', $prefix . '%')
+                    ->orderBy('id', 'desc')
+                    ->lockForUpdate()
+                    ->first();
+                $lastNumberValue = $lastDoc ? $lastDoc->purchase_number : null;
+            } else {
+                $lastDoc = Sale::where('business_id', $businessId)
+                    ->where('invoice_type', $type)
+                    ->where('invoice_number', 'LIKE', $prefix . '%')
+                    ->orderBy('id', 'desc')
+                    ->lockForUpdate()
+                    ->first();
+                $lastNumberValue = $lastDoc ? $lastDoc->invoice_number : null;
+            }
 
             $nextNumber = 1;
             
-            if ($lastInvoice) {
+            if ($lastNumberValue) {
                 // Extract number from the end of the string
-                $lastNumberString = str_replace($prefix, '', $lastInvoice->invoice_number);
+                $lastNumberString = str_replace($prefix, '', $lastNumberValue);
                 if (is_numeric($lastNumberString)) {
                     $nextNumber = intval($lastNumberString) + 1;
                 } else {
-                    // Try to parse if there's a suffix, though we assume basic zero-padding
-                    preg_match('/\d+$/', $lastInvoice->invoice_number, $matches);
+                    // Try to parse if there's a suffix
+                    preg_match('/\d+$/', $lastNumberValue, $matches);
                     if (!empty($matches)) {
                         $nextNumber = intval($matches[0]) + 1;
                     }

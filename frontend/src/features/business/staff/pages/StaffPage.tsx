@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useStaff, useUpdateStaff } from '../api/useStaff';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Users, Plus, TrendingUp, IndianRupee, Search, X, ShieldAlert, Download } from 'lucide-react';
+import { Users, Plus, TrendingUp, IndianRupee, Search, X, ShieldAlert, Download, HelpCircle, Sparkles, ChevronDown, ChevronUp, UserCheck } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
@@ -23,6 +24,7 @@ export default function StaffPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   // Filter states
   const [search, setSearch] = useState('');
@@ -97,6 +99,82 @@ export default function StaffPage() {
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-[#09090b]">
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-4 pb-8 space-y-4">
+        {/* Premium Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm relative z-20">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-500/30 flex items-center justify-center">
+                <UserCheck className="w-6 h-6 animate-pulse-slow" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                  Staff & Workforce <span className="text-sky-600 dark:text-sky-400 text-base font-bold px-2 py-0.5 rounded-md bg-sky-500/10">Employees & Permissions</span>
+                </h1>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  Manage your team, assign customized role permissions, monitor active statuses, and organize monthly payroll profiles.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 self-start sm:self-center">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowGuide(!showGuide)}
+              className="rounded-xl font-bold bg-white/80 dark:bg-slate-900/80 hover:bg-slate-50 border-sky-200 dark:border-sky-900/30 text-sky-600 dark:text-sky-400 shadow-sm"
+            >
+              <HelpCircle className="w-4 h-4 mr-1.5" /> 
+              {showGuide ? 'Hide Guide' : 'What is Staff Management?'}
+              {showGuide ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Educational Guide Card */}
+        {showGuide && (
+          <Card className="p-6 rounded-2xl bg-gradient-to-br from-sky-50 via-slate-50 to-blue-50 dark:from-sky-950/40 dark:via-slate-900 dark:to-blue-950/20 border-2 border-sky-200 dark:border-sky-800/40 shadow-xl transition-all animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sky-700 dark:text-sky-300">
+                <Sparkles className="w-5 h-5 fill-sky-500 text-sky-600 animate-spin-slow" />
+                <h3 className="text-base font-black uppercase tracking-wide">Business Guide: Workforce Setup & Access Permission Control</h3>
+              </div>
+              
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                As your business employs sales executives, cashiers, accountants, and field staff, organizing robust <strong>Staff Profiles & Role Permissions</strong> enables seamless team collaboration while keeping proprietary enterprise logs completely secure!
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-sky-600 dark:text-sky-400 uppercase tracking-wider">
+                    <span>🔐</span> 1. Role-Based Access Control
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Precisely customize what each staff member can view or modify. Restrict invoice deletions, hide sensitive executive reports, or limit access to billing modules.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                    <span>🗃️</span> 2. Integrated Payroll Baseline
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    An employee&apos;s designated monthly salary and role profile provide the core baseline data required for automated monthly salary and commission calculations.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                    <span>📋</span> 3. Instant Status Revocation
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Instantly toggle an ex-employee&apos;s account status to inactive to terminate system login privileges without losing historical sales or customer activity logs.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Compact Top Control Panel */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

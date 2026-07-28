@@ -24,11 +24,17 @@ class GstCalculationService
         $taxableAmount = $rate * $qty;
         $totalTax = $taxableAmount * ($gstRate / 100);
 
+        // FIX BUG-08: Let SGST absorb the rounding difference so CGST+SGST always equals totalTax exactly.
+        // e.g. totalTax=1.01 → cgst=0.51, sgst=1.01-0.51=0.50 → sum=1.01 ✓ (old: 0.51+0.51=1.02 ✗)
+        $cgst = $taxType === 'gst' ? round($totalTax / 2, 2) : 0;
+        $sgst = $taxType === 'gst' ? round($totalTax - $cgst, 2) : 0;
+        $igst = $taxType === 'igst' ? round($totalTax, 2) : 0;
+
         return [
             'taxable_amount' => round($taxableAmount, 2),
-            'cgst_amount'    => $taxType === 'gst' ? round($totalTax / 2, 2) : 0,
-            'sgst_amount'    => $taxType === 'gst' ? round($totalTax / 2, 2) : 0,
-            'igst_amount'    => $taxType === 'igst' ? round($totalTax, 2) : 0,
+            'cgst_amount'    => $cgst,
+            'sgst_amount'    => $sgst,
+            'igst_amount'    => $igst,
             'total_tax'      => round($totalTax, 2),
             'total_amount'   => round($taxableAmount + $totalTax, 2),
         ];

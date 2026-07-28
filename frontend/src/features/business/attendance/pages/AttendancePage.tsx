@@ -185,216 +185,172 @@ export default function AttendancePage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#09090b]">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#09090b] text-slate-900 dark:text-slate-200">
       <PageHeader 
         icon={Calendar}
         title="Attendance Tracking" 
-        subtitle="Manage daily attendance and time tracking"
+        subtitle="Manage employee daily check-ins, remote geofence verifications, and time tracking logs."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {isManager && (
+              <>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-xs font-bold px-3 h-10"
+                >
+                  <Download className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
+                  Export
+                </Button>
+
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsImportOpen(true)}
+                  className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-xs font-bold px-3 h-10"
+                >
+                  <Upload className="w-3.5 h-3.5 mr-1.5 text-indigo-500" />
+                  Import
+                </Button>
+              </>
+            )}
+
+            {isManager && (
+              <>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsDayStatusOpen(true)}
+                  className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-xs font-bold px-3 h-10"
+                >
+                  <Calendar className="w-3.5 h-3.5 mr-1.5 text-emerald-500" />
+                  Set Day Status
+                </Button>
+
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsMarkOpen(true)}
+                  className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-xs font-bold px-3 h-10"
+                >
+                  <UserCheck className="w-3.5 h-3.5 mr-1.5 text-purple-500" />
+                  Mark Manual
+                </Button>
+              </>
+            )}
+
+            <Button 
+              size="sm"
+              onClick={() => setIsCheckInOpen(true)}
+              className="bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md shadow-primary-500/20 px-4 h-10"
+            >
+              <Clock className="w-4 h-4 mr-1.5" />
+              {isCheckedOut ? 'Done for Today' : isCheckedIn ? 'Self Check Out' : 'Self Check In'}
+            </Button>
+          </div>
+        }
       />
 
-      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-2 pb-8 space-y-4">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-0 pb-8 space-y-6">
         
-        {/* KPI Cards (Theme Based) */}
-        <div className="flex gap-3 overflow-x-auto w-full pb-2 hide-scrollbar">
-          {/* Card 1 - Present Days */}
-          <div className="relative overflow-hidden flex items-center gap-3.5 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl px-6 py-3.5 min-w-[220px] shadow-lg shadow-primary-500/20 shrink-0 flex-1">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/20 rounded-full -mr-6 -mt-6 mix-blend-overlay" />
-            <div className="absolute bottom-0 right-10 w-10 h-10 bg-black/10 rounded-full -mb-3 mix-blend-overlay" />
-            
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white relative z-10 border border-white/20 shrink-0">
-              <UserCheck className="w-5 h-5" />
-            </div>
-            <div className="relative z-10">
-              <p className="text-[11px] font-bold text-primary-100 uppercase tracking-widest drop-shadow-sm">Present Days</p>
-              <p className="text-base font-black text-white leading-tight drop-shadow-sm">{stats.presentCount}</p>
-            </div>
-          </div>
-
-          {/* Card 2 - Pending Approval */}
-          <div className="relative overflow-hidden flex items-center gap-3.5 bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl px-6 py-3.5 min-w-[220px] shadow-lg shadow-primary-600/20 shrink-0 flex-1">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-white/10 rotate-45 mix-blend-overlay" />
-            <div className="absolute -bottom-5 -left-5 w-16 h-16 bg-white/20 rounded-full mix-blend-overlay" />
-
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white relative z-10 border border-white/20 shrink-0">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div className="relative z-10">
-              <p className="text-[11px] font-bold text-primary-100 uppercase tracking-widest drop-shadow-sm">Pending Approval</p>
-              <p className="text-base font-black text-white leading-tight drop-shadow-sm">{stats.pendingCount}</p>
-            </div>
-          </div>
-
-          {/* Card 3 - Outside Geofence */}
-          <div className="relative overflow-hidden flex items-center gap-3.5 bg-gradient-to-br from-primary-400 to-primary-500 rounded-2xl px-6 py-3.5 min-w-[220px] shadow-lg shadow-primary-400/20 shrink-0 flex-1">
-            <div className="absolute top-0 right-0 w-0 h-0 border-l-[80px] border-l-transparent border-t-[80px] border-white/20 mix-blend-overlay" />
-            <div className="absolute bottom-0 right-1/4 w-12 h-12 bg-black/10 rounded-full -mb-5 mix-blend-overlay" />
-
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white relative z-10 border border-white/20 shrink-0">
-              <ShieldAlert className="w-5 h-5" />
-            </div>
-            <div className="relative z-10">
-              <p className="text-[11px] font-bold text-primary-100 uppercase tracking-widest drop-shadow-sm">Outside Geofence</p>
-              <p className="text-base font-black text-white leading-tight drop-shadow-sm">{stats.geofenceOutCount}</p>
-            </div>
-          </div>
-
-          {/* Card 4 - Absent/Leave */}
-          <div className="relative overflow-hidden flex items-center gap-3.5 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl px-6 py-3.5 min-w-[220px] shadow-lg shadow-primary-500/20 shrink-0 flex-1">
-            <div className="absolute -top-6 -right-6 w-24 h-24 border-4 border-white/10 rounded-full mix-blend-overlay" />
-            <div className="absolute -bottom-4 -left-4 w-16 h-16 border-4 border-white/10 rounded-full mix-blend-overlay" />
-
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white relative z-10 border border-white/20 shrink-0">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div className="relative z-10">
-              <p className="text-[11px] font-bold text-primary-100 uppercase tracking-widest drop-shadow-sm">Absent/Leave</p>
-              <p className="text-base font-black text-white leading-tight drop-shadow-sm">{stats.absentLeaveCount}</p>
-            </div>
-          </div>
+        {/* KPI Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CustomKpiCard
+            title="Present Days"
+            value={stats.presentCount}
+            icon={<UserCheck className="w-5 h-5 text-white" />}
+            glowColor="emerald"
+            subtitle="Active present records"
+          />
+          <CustomKpiCard
+            title="Pending Approval"
+            value={stats.pendingCount}
+            icon={<Clock className="w-5 h-5 text-white" />}
+            glowColor="amber"
+            subtitle="Awaiting manager verification"
+          />
+          <CustomKpiCard
+            title="Outside Geofence"
+            value={stats.geofenceOutCount}
+            icon={<ShieldAlert className="w-5 h-5 text-white" />}
+            glowColor="rose"
+            subtitle="Flagged remote check-ins"
+          />
+          <CustomKpiCard
+            title="Absent / Leave"
+            value={stats.absentLeaveCount}
+            icon={<Calendar className="w-5 h-5 text-white" />}
+            glowColor="indigo"
+            subtitle="Time-off & missed days"
+          />
         </div>
 
-        {/* Action Controls & Filters Bar */}
-        <div className="w-full bg-white dark:bg-[#111118] border border-slate-200/80 dark:border-white/10 rounded-2xl p-4 shadow-sm flex flex-col gap-4">
-          
-          {/* Row 1: Filters */}
-          <div className="flex flex-wrap items-end gap-4 w-full">
-            {/* Staff Selector */}
-            {isManager && (
-              <div className="w-full sm:w-60 shrink-0">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5">
-                  Staff Member
-                </label>
-                <FilterSelect
-                  value={selectedStaff}
-                  onChange={setSelectedStaff}
-                  placeholder="All Staff"
-                  searchable={true}
-                  options={staffList?.map((s: any) => ({ value: s.id.toString(), label: s.name })) || []}
-                  wrapperClassName="w-full"
-                />
-              </div>
-            )}
-            
-            {/* View-specific date filter inputs */}
-            {viewMode === 'list' ? (
-              <div className="flex flex-wrap gap-4 items-end flex-grow">
-                <div className="w-full sm:w-48 shrink-0">
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5">
-                    From Date
-                  </label>
-                  <DatePicker 
-                    value={dateRange.from} 
-                    onChange={(val) => setDateRange(prev => ({ ...prev, from: val }))}
-                    className="w-full"
-                  />
-                </div>
-                <div className="w-full sm:w-48 shrink-0">
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5">
-                    To Date
-                  </label>
-                  <DatePicker 
-                    value={dateRange.to} 
-                    onChange={(val) => setDateRange(prev => ({ ...prev, to: val }))}
-                    className="w-full"
-                    align="right"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="w-full sm:w-56 shrink-0">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5">
-                  Month
-                </label>
-                <MonthPicker 
-                  value={selectedMonth} 
-                  onChange={setSelectedMonth}
+        {/* Unified Filter Controls */}
+        <FilterContainer>
+          {isManager && (
+            <div className="w-56 shrink-0">
+              <FilterSelect
+                value={selectedStaff}
+                onChange={setSelectedStaff}
+                placeholder="All Staff Members"
+                searchable={true}
+                options={staffList?.map((s: any) => ({ value: s.id.toString(), label: s.name })) || []}
+                wrapperClassName="w-full"
+              />
+            </div>
+          )}
+
+          {viewMode === 'list' ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="w-44 shrink-0">
+                <DatePicker 
+                  value={dateRange.from} 
+                  onChange={(val) => setDateRange(prev => ({ ...prev, from: val }))}
                   className="w-full"
                 />
               </div>
-            )}
-          </div>
-          
-          {/* Divider */}
-          <div className="w-full h-px bg-slate-100 dark:bg-white/5" />
-
-          {/* Row 2: Actions & Toggles */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
-            {/* Actions on Left */}
-            <div className="flex flex-wrap items-center gap-2">
-              {isManager && (
-                <>
-                  <button 
-                    onClick={handleExport}
-                    className="inline-flex items-center gap-2 h-10 px-4 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-[#111115] hover:bg-slate-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 duration-200 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5 text-primary-500" />
-                    <span>Export</span>
-                  </button>
-
-                  <button 
-                    onClick={() => setIsImportOpen(true)}
-                    className="inline-flex items-center gap-2 h-10 px-4 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-[#111115] hover:bg-slate-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 duration-200 cursor-pointer"
-                  >
-                    <Upload className="w-3.5 h-3.5 text-primary-500" />
-                    <span>Import</span>
-                  </button>
-                </>
-              )}
-
-              {isManager && (
-                <>
-                  <button 
-                    onClick={() => setIsDayStatusOpen(true)}
-                    className="inline-flex items-center gap-2 h-10 px-4 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-[#111115] hover:bg-slate-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 duration-200 cursor-pointer"
-                  >
-                    <Calendar className="w-3.5 h-3.5 text-primary-500" />
-                    <span>Set Day Status</span>
-                  </button>
-
-                  <button 
-                    onClick={() => setIsMarkOpen(true)}
-                    className="inline-flex items-center gap-2 h-10 px-4 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-[#111115] hover:bg-slate-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 duration-200 cursor-pointer"
-                  >
-                    <UserCheck className="w-3.5 h-3.5 text-primary-500" />
-                    <span>Mark Manual</span>
-                  </button>
-                </>
-              )}
-
-              <button 
-                onClick={() => setIsCheckInOpen(true)}
-                className="group relative flex items-center gap-2 h-10 px-5 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary-500/20 hover:shadow-primary-500/35 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 overflow-hidden cursor-pointer"
-              >
-                <Clock className="w-3.5 h-3.5 text-white" />
-                <span>{isCheckedOut ? 'Done for Today' : isCheckedIn ? 'Self Check Out' : 'Self Check In'}</span>
-              </button>
-
-              {/* Reset Button */}
-              {(selectedStaff !== '' || selectedMonth !== format(new Date(), 'yyyy-MM') || dateRange.from !== format(startOfMonth(new Date()), 'yyyy-MM-dd')) && (
-                <FilterReset
-                  onClick={handleClearFilters}
-                  className="ml-0 h-10 rounded-xl shadow-sm border border-slate-200 dark:border-zinc-800"
+              <span className="text-slate-400 font-bold text-xs">to</span>
+              <div className="w-44 shrink-0">
+                <DatePicker 
+                  value={dateRange.to} 
+                  onChange={(val) => setDateRange(prev => ({ ...prev, to: val }))}
+                  className="w-full"
+                  align="right"
                 />
-              )}
+              </div>
             </div>
+          ) : (
+            <div className="w-48 shrink-0">
+              <MonthPicker 
+                value={selectedMonth} 
+                onChange={setSelectedMonth}
+                className="w-full"
+              />
+            </div>
+          )}
 
-            {/* Grid / List Toggler tabs on Right */}
-            <div className="flex gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl shrink-0 self-end sm:self-auto ml-auto sm:ml-0">
-              <button 
-                onClick={() => setViewMode('grid')}
-                className={`h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-200 cursor-pointer ${viewMode === 'grid' ? 'bg-white dark:bg-[#111118] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-300'}`}
-              >
-                Grid
-              </button>
-              <button 
-                onClick={() => setViewMode('list')}
-                className={`h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-200 cursor-pointer ${viewMode === 'list' ? 'bg-white dark:bg-[#111118] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-300'}`}
-              >
-                List
-              </button>
-            </div>
+          {(selectedStaff !== '' || selectedMonth !== format(new Date(), 'yyyy-MM') || dateRange.from !== format(startOfMonth(new Date()), 'yyyy-MM-dd')) && (
+            <FilterReset onClick={handleClearFilters} />
+          )}
+
+          <div className="ml-auto flex gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl shrink-0">
+            <button 
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`h-8 px-4 text-xs font-bold rounded-lg transition-all duration-200 cursor-pointer ${viewMode === 'grid' ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-300'}`}
+            >
+              Grid View
+            </button>
+            <button 
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`h-8 px-4 text-xs font-bold rounded-lg transition-all duration-200 cursor-pointer ${viewMode === 'list' ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-300'}`}
+            >
+              List View
+            </button>
           </div>
-        </div>
+        </FilterContainer>
 
         {/* Content View */}
         {viewMode === 'list' ? (

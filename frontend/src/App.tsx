@@ -40,6 +40,26 @@ const QuotationListPage = lazy(() => import('@/features/business/quotations/page
 const CreditNoteListPage = lazy(() => import('@/features/business/invoices/pages/CreditNoteListPage'));
 const NewCreditNotePage = lazy(() => import('@/features/business/invoices/pages/NewCreditNotePage'));
 
+// Phase 4 — Purchase, Ledger & Outstanding
+const PurchaseListPage = lazy(() => import('@/features/business/purchase/pages/PurchaseListPage'));
+const NewPurchasePage = lazy(() => import('@/features/business/purchase/pages/NewPurchasePage'));
+const PurchaseDetailPage = lazy(() => import('@/features/business/purchase/pages/PurchaseDetailPage'));
+const CustomerLedgerPage = lazy(() => import('@/features/business/ledger/pages/CustomerLedgerPage'));
+const SupplierLedgerPage = lazy(() => import('@/features/business/ledger/pages/SupplierLedgerPage'));
+const OutstandingPage = lazy(() => import('@/features/business/outstanding/pages/OutstandingPage'));
+
+// Phase 5 — Cash/Bank Book, Day Book & Cheques
+const CashBookPage = lazy(() => import('@/features/business/cashbook/pages/CashBookPage'));
+const DayBookPage = lazy(() => import('@/features/business/cashbook/pages/DayBookPage'));
+const ChequeRegisterPage = lazy(() => import('@/features/business/cheques/pages/ChequeRegisterPage'));
+
+// Phase 6 — Stock & Inventory
+const StockSummaryPage = lazy(() => import('@/features/business/stock/pages/StockSummaryPage'));
+const StockMovementsPage = lazy(() => import('@/features/business/stock/pages/StockMovementsPage'));
+const StockTransferPage = lazy(() => import('@/features/business/stock/pages/StockTransferPage'));
+const NewStockTransferPage = lazy(() => import('@/features/business/stock/pages/NewStockTransferPage'));
+const GodownsPage = lazy(() => import('@/features/business/stock/pages/GodownsPage'));
+
 // Staff & HR
 const StaffPage = lazy(() => import('@/features/business/staff/pages/StaffPage'));
 const StaffDetailsPage = lazy(() => import('@/features/business/staff/pages/StaffDetailsPage'));
@@ -52,6 +72,13 @@ const SalaryAdvancesPage = lazy(() => import('@/features/business/hr/pages/Salar
 const AuditLogsPage = lazy(() => import('@/features/business/reports/pages/AuditLogsPage'));
 const StaffPerformancePage = lazy(() => import('@/features/business/reports/pages/StaffPerformancePage'));
 const DocsPage = lazy(() => import('@/features/docs/pages/DocsPage'));
+const ProjectsListPage = lazy(() => import('@/features/business/projects/pages/ProjectsListPage'));
+const NewProjectPage = lazy(() => import('@/features/business/projects/pages/NewProjectPage'));
+const ProjectDetailPage = lazy(() => import('@/features/business/projects/pages/ProjectDetailPage'));
+const NewConsumptionPage = lazy(() => import('@/features/business/projects/pages/NewConsumptionPage'));
+const BoqListPage = lazy(() => import('@/features/business/projects/pages/BoqListPage'));
+const NewBoqPage = lazy(() => import('@/features/business/projects/pages/NewBoqPage'));
+const LabourSummaryPage = lazy(() => import('@/features/business/projects/pages/LabourSummaryPage'));
 
 const SuperadminDashboard = lazy(() => import('@/features/superadmin/dashboard/pages/SuperadminDashboardPage'));
 const TenantsPage = lazy(() => import('@/features/superadmin/tenants/pages/TenantsPage'));
@@ -246,8 +273,45 @@ function App() {
             <Route path="/credit-notes" element={<BusinessRoute><CreditNoteListPage /></BusinessRoute>} />
             <Route path="/credit-notes/new" element={<BusinessRoute><NewCreditNotePage /></BusinessRoute>} />
             <Route path="/expenses" element={<BusinessRoute><ExpensesPage /></BusinessRoute>} />
-            <Route path="/finance" element={<BusinessRoute><FinanceLedgerPage /></BusinessRoute>} />
+            <Route path="/expenses/new" element={<BusinessRoute><ExpensesPage /></BusinessRoute>} />
+            <Route path="/finance" element={<Navigate to="/business/outstanding" replace />} />
             <Route path="/docs" element={<BusinessRoute><DocsPage /></BusinessRoute>} />
+
+            {/* Phase 4 — Purchase, Ledger & Outstanding Routes */}
+            <Route path="/business/purchases" element={<BusinessRoute><PurchaseListPage /></BusinessRoute>} />
+            <Route path="/business/purchases/new" element={<BusinessRoute><NewPurchasePage /></BusinessRoute>} />
+            <Route path="/business/purchases/:id" element={<BusinessRoute><PurchaseDetailPage /></BusinessRoute>} />
+            <Route path="/business/ledger/customers" element={<BusinessRoute><CustomerLedgerPage /></BusinessRoute>} />
+            <Route path="/business/ledger/suppliers" element={<BusinessRoute><SupplierLedgerPage /></BusinessRoute>} />
+            <Route path="/business/outstanding" element={<BusinessRoute><OutstandingPage /></BusinessRoute>} />
+            <Route path="/purchases" element={<Navigate to="/business/purchases" replace />} />
+
+            {/* Phase 5 — Cash/Bank & Cheques Routes */}
+            <Route path="/business/cash-bank" element={<BusinessRoute><CashBookPage /></BusinessRoute>} />
+            <Route path="/business/daybook" element={<BusinessRoute><DayBookPage /></BusinessRoute>} />
+            <Route path="/business/cheques" element={<BusinessRoute><ChequeRegisterPage /></BusinessRoute>} />
+            <Route path="/cashbook" element={<Navigate to="/business/cash-bank" replace />} />
+            <Route path="/daybook" element={<Navigate to="/business/daybook" replace />} />
+            <Route path="/cheques" element={<Navigate to="/business/cheques" replace />} />
+
+            {/* Phase 6 — Stock & Inventory Routes */}
+            <Route path="/stock/summary" element={<BusinessRoute><StockSummaryPage /></BusinessRoute>} />
+            <Route path="/stock/movements/:productId" element={<BusinessRoute><StockMovementsPage /></BusinessRoute>} />
+            <Route path="/stock/transfer" element={<BusinessRoute><StockTransferPage /></BusinessRoute>} />
+            <Route path="/stock/transfer/new" element={<BusinessRoute><NewStockTransferPage /></BusinessRoute>} />
+            <Route path="/stock/godowns" element={<BusinessRoute><GodownsPage /></BusinessRoute>} />
+
+            {/* Phase 7 — Projects & Material Consumption Routes */}
+            <Route path="/business/projects" element={<BusinessRoute><ProjectsListPage /></BusinessRoute>} />
+            <Route path="/business/projects/new" element={<BusinessRoute><NewProjectPage /></BusinessRoute>} />
+            <Route path="/business/projects/:id" element={<BusinessRoute><ProjectDetailPage /></BusinessRoute>} />
+            <Route path="/projects/:id/consumptions/new" element={<BusinessRoute><NewConsumptionPage /></BusinessRoute>} />
+            <Route path="/projects" element={<Navigate to="/business/projects" replace />} />
+            <Route path="/projects/new" element={<Navigate to="/business/projects/new" replace />} />
+            <Route path="/projects/:id" element={<Navigate to="/business/projects/:id" replace />} />
+            <Route path="/boq" element={<BusinessRoute><BoqListPage /></BusinessRoute>} />
+            <Route path="/boq/new" element={<BusinessRoute><NewBoqPage /></BusinessRoute>} />
+            <Route path="/business/labour/summary" element={<BusinessRoute><LabourSummaryPage /></BusinessRoute>} />
 
             {/* Staff & HR Routes */}
             <Route path="/staff" element={<BusinessRoute><StaffPage /></BusinessRoute>} />

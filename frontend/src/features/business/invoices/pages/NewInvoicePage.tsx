@@ -14,9 +14,11 @@ import { ItemSearchInput } from '../components/ItemSearchInput';
 import { InvoiceItemsTable } from '../components/InvoiceItemsTable';
 import { InvoiceSummaryPanel } from '../components/InvoiceSummaryPanel';
 import { PaymentSection } from '../components/PaymentSection';
-import { Save, Printer, Send, FileText, Calendar, Users, Package, FileSpreadsheet, Sparkles, MapPin } from 'lucide-react';
+import { Save, Printer, Send, FileText, Calendar, Users, Package, FileSpreadsheet, Sparkles, MapPin, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { GST_STATES } from '@/features/business/customers/constants/gstStates';
+import { useQuery } from '@tanstack/react-query';
+import { projectService } from '../../projects/api/projectService';
 
 export default function NewInvoicePage() {
   const navigate = useNavigate();
@@ -27,6 +29,11 @@ export default function NewInvoicePage() {
     grandTotal, roundOff, calculatedCharges
   } = useGstCalculation(store.items, store.placeOfSupply, store.discount, store.isTaxInclusive, store.taxMode, store.additionalCharges);
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects', 'active'],
+    queryFn: () => projectService.getProjects({ status: 'active' }),
+  });
+
   const editId = searchParams.get('edit') || searchParams.get('id');
 
   useEffect(() => {
@@ -34,6 +41,7 @@ export default function NewInvoicePage() {
       invoiceService.get(Number(editId)).then((data: any) => {
         if (data) {
           if (data.customer) store.setCustomer(data.customer);
+          if (data.project_id) store.setProjectId(data.project_id);
           if (data.invoice_type) store.setInvoiceType(data.invoice_type);
           if (data.date) store.setDate(data.date.split('T')[0]);
           if (data.due_date) store.setDueDate(data.due_date.split('T')[0]);
@@ -41,6 +49,9 @@ export default function NewInvoicePage() {
           store.setDiscount(Number(data.discount || 0));
           store.setPaidAmount(Number(data.paid_amount || 0));
           if (data.payment_mode) store.setPaymentMode(data.payment_mode);
+          if (data.payments && Array.isArray(data.payments) && data.payments.length > 0) {
+            store.setSplitPayments(data.payments.map((p: any) => ({ mode: p.payment_mode || 'Cash', amount: Number(p.amount || 0) })));
+          }
           if (data.notes) store.setNotes(data.notes);
           if (data.terms_conditions) store.setTermsConditions(data.terms_conditions);
           if (data.items && Array.isArray(data.items)) {
@@ -67,6 +78,10 @@ export default function NewInvoicePage() {
       if (typeParam && ['sales_invoice', 'proforma', 'delivery_challan', 'quotation'].includes(typeParam)) {
         store.setInvoiceType(typeParam);
       }
+      const projParam = searchParams.get('project_id');
+      if (projParam) {
+        store.setProjectId(Number(projParam));
+      }
     }
     return () => store.reset(); // Cleanup on unmount
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -81,6 +96,7 @@ export default function NewInvoicePage() {
     try {
       const payload = {
         customer_id: store.customer?.id || null,
+        project_id: store.projectId || undefined,
         invoice_type: store.invoiceType as any,
         date: store.date,
         due_date: store.dueDate || undefined,
@@ -88,6 +104,9 @@ export default function NewInvoicePage() {
         discount: store.discount,
         paid_amount: store.paidAmount,
         payment_mode: store.paymentMode,
+        payments: store.paymentMode === 'Split'
+          ? store.splitPayments.filter(p => Number(p.amount) > 0).map(p => ({ payment_mode: p.mode, amount: Number(p.amount) }))
+          : (store.paidAmount > 0 ? [{ payment_mode: store.paymentMode, amount: Number(store.paidAmount) }] : []),
         notes: store.notes,
         terms_conditions: store.termsConditions,
         items: calculatedItems.map(i => ({
@@ -206,6 +225,24 @@ export default function NewInvoicePage() {
                 <option value="gst">🇮🇳 Regular GST Mode (CGST / SGST / IGST)</option>
                 <option value="custom_vat">🌍 Custom Tax / VAT Mode (Single Tax %)</option>
                 <option value="exempt">🚫 Tax Exempt Mode (No Tax - 0%)</option>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5 pt-1">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                <Building2 className="w-3.5 h-3.5 text-blue-500" /> Link to Site / Project (Optional)
+              </Label>
+              <Select
+                value={store.projectId ? String(store.projectId) : ''}
+                onChange={e => store.setProjectId(e.target.value ? Number(e.target.value) : null)}
+                className="w-full h-9 text-xs font-semibold bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 rounded-xl text-slate-800 dark:text-slate-200 font-bold"
+              >
+                <option value="">-- Standalone (No Specific Site) --</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.project_code || 'PROJ'})
+                  </option>
+                ))}
               </Select>
             </div>
 
@@ -376,8 +413,10 @@ export default function NewInvoicePage() {
                 grandTotal={grandTotal}
                 paidAmount={store.paidAmount}
                 paymentMode={store.paymentMode}
+                splitPayments={store.splitPayments}
                 onPaidAmountChange={store.setPaidAmount}
                 onPaymentModeChange={store.setPaymentMode}
+                onSplitPaymentsChange={store.setSplitPayments}
               />
             </Card>
           </div>

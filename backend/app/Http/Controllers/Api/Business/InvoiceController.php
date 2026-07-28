@@ -68,6 +68,9 @@ class InvoiceController extends Controller
             'discount' => 'nullable|numeric|min:0',
             'paid_amount' => 'nullable|numeric|min:0',
             'payment_mode' => 'nullable|string',
+            'payments' => 'nullable|array',
+            'payments.*.payment_mode' => 'nullable|string',
+            'payments.*.amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
             'terms_conditions' => 'nullable|string',
         ]);
@@ -98,11 +101,12 @@ class InvoiceController extends Controller
             $roundOff = round($roundedTotal - $invoiceTotals['grand_total'], 2);
 
             $paidAmount = $validated['paid_amount'] ?? 0;
-            $status = 'completed';
+            // FIX BUG-09: Use consistent status values that match OutstandingController filters
+            $status = 'paid';
             if ($validated['invoice_type'] === 'proforma' || $validated['invoice_type'] === 'quotation') {
                 $status = 'draft';
             } elseif ($paidAmount == 0) {
-                $status = 'pending';
+                $status = 'unpaid';
             } elseif ($paidAmount < $roundedTotal) {
                 $status = 'partially_paid';
             }
@@ -151,24 +155,39 @@ class InvoiceController extends Controller
                     'amount' => $ip['total_amount'],
                 ]);
 
-                // Deduct stock if it's a sales invoice or challan
+                // FIX EDGE-03: Check stock level BEFORE deducting — prevent negative inventory
                 if (in_array($validated['invoice_type'], ['sales_invoice', 'delivery_challan'])) {
                     $product = Product::find($ip['product_id']);
                     if ($product) {
+                        if ($product->quantity < $ip['quantity']) {
+                            throw new \Exception(
+                                "Insufficient stock for '{$product->model_name}': Available {$product->quantity}, Requested {$ip['quantity']}."
+                            );
+                        }
                         $product->decrement('quantity', $ip['quantity']);
-                        
+
                         InventoryMovement::create([
-                            'product_id' => $product->id,
-                            'type' => 'out',
-                            'quantity' => $ip['quantity'],
+                            'product_id'     => $product->id,
+                            'type'           => 'out',
+                            'quantity'       => $ip['quantity'],
                             'reference_type' => 'sale',
-                            'reference_id' => $sale->id,
+                            'reference_id'   => $sale->id,
                         ]);
                     }
                 }
             }
 
-            if ($paidAmount > 0) {
+            if (!empty($validated['payments']) && is_array($validated['payments'])) {
+                foreach ($validated['payments'] as $p) {
+                    if (($p['amount'] ?? 0) > 0) {
+                        SalePayment::create([
+                            'sale_id' => $sale->id,
+                            'payment_mode' => $p['payment_mode'] ?? 'Cash',
+                            'amount' => $p['amount'],
+                        ]);
+                    }
+                }
+            } elseif ($paidAmount > 0) {
                 SalePayment::create([
                     'sale_id' => $sale->id,
                     'payment_mode' => $validated['payment_mode'] ?? 'Cash',
@@ -176,16 +195,38 @@ class InvoiceController extends Controller
                 ]);
             }
 
-            // Update customer balance if it's a sales invoice
+            // Integrate automatic party ledger entries via LedgerService
             if ($validated['invoice_type'] === 'sales_invoice' && $sale->customer_id) {
-                $customer = \App\Models\Customer::find($sale->customer_id);
-                if ($customer) {
-                    $balanceDue = $roundedTotal - $paidAmount;
-                    if ($balanceDue > 0) {
-                        // Very naive balance update. Needs robust ledger.
-                        // Assuming opening balance is treated as separate, we just keep track via ledger theoretically.
-                        // For now, no strict column update, usually computed or ledger based.
-                    }
+                $ledgerService = app(\App\Services\LedgerService::class);
+                
+                // Record invoice debit (customer owes us)
+                $ledgerService->createEntry([
+                    'business_id' => $businessId,
+                    'party_type' => 'customer',
+                    'party_id' => $sale->customer_id,
+                    'entry_type' => 'invoice',
+                    'reference_type' => 'invoice',
+                    'reference_id' => $sale->id,
+                    'date' => $sale->date,
+                    'debit' => $roundedTotal,
+                    'credit' => 0,
+                    'narration' => "Sales Invoice #{$sale->invoice_number}",
+                ]);
+
+                // If upfront payment was made, record payment credit
+                if ($paidAmount > 0) {
+                    $ledgerService->createEntry([
+                        'business_id' => $businessId,
+                        'party_type' => 'customer',
+                        'party_id' => $sale->customer_id,
+                        'entry_type' => 'payment',
+                        'reference_type' => 'payment',
+                        'reference_id' => $sale->id,
+                        'date' => $sale->date,
+                        'debit' => 0,
+                        'credit' => $paidAmount,
+                        'narration' => "Payment received for #{$sale->invoice_number}" . (!empty($validated['payment_mode']) ? " via {$validated['payment_mode']}" : ""),
+                    ]);
                 }
             }
 
@@ -222,6 +263,9 @@ class InvoiceController extends Controller
             'discount' => 'nullable|numeric|min:0',
             'paid_amount' => 'nullable|numeric|min:0',
             'payment_mode' => 'nullable|string',
+            'payments' => 'nullable|array',
+            'payments.*.payment_mode' => 'nullable|string',
+            'payments.*.amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
             'terms_conditions' => 'nullable|string',
         ]);
@@ -248,6 +292,19 @@ class InvoiceController extends Controller
                 InventoryMovement::where('reference_type', 'sale')->where('reference_id', $sale->id)->delete();
             }
 
+            // FIX BUG-04: Delete old ledger entries for this invoice BEFORE creating new ones.
+            // Without this, update creates duplicate debit+credit entries causing double-counted outstanding balance.
+            \App\Models\LedgerEntry::where('business_id', $businessId)
+                ->where('reference_type', 'invoice')
+                ->where('reference_id', $sale->id)
+                ->delete();
+
+            // Also delete ledger payment entries linked to this sale (they will be recreated below)
+            \App\Models\LedgerEntry::where('business_id', $businessId)
+                ->where('reference_type', 'payment')
+                ->where('reference_id', $sale->id)
+                ->delete();
+
             // 2. Clear old items & payments
             $sale->items()->delete();
             $sale->payments()->delete();
@@ -265,11 +322,12 @@ class InvoiceController extends Controller
             $roundOff = round($roundedTotal - $invoiceTotals['grand_total'], 2);
 
             $paidAmount = $validated['paid_amount'] ?? 0;
-            $status = 'completed';
+            // FIX BUG-09: consistent status values
+            $status = 'paid';
             if ($validated['invoice_type'] === 'proforma' || $validated['invoice_type'] === 'quotation') {
                 $status = 'draft';
             } elseif ($paidAmount == 0) {
-                $status = 'pending';
+                $status = 'unpaid';
             } elseif ($paidAmount < $roundedTotal) {
                 $status = 'partially_paid';
             }
@@ -315,23 +373,39 @@ class InvoiceController extends Controller
                     'amount' => $ip['total_amount'],
                 ]);
 
+                // FIX EDGE-03: Stock check before deducting on update too
                 if (in_array($validated['invoice_type'], ['sales_invoice', 'delivery_challan'])) {
                     $product = Product::find($ip['product_id']);
                     if ($product) {
+                        if ($product->quantity < $ip['quantity']) {
+                            throw new \Exception(
+                                "Insufficient stock for '{$product->model_name}': Available {$product->quantity}, Requested {$ip['quantity']}."
+                            );
+                        }
                         $product->decrement('quantity', $ip['quantity']);
-                        
+
                         InventoryMovement::create([
-                            'product_id' => $product->id,
-                            'type' => 'out',
-                            'quantity' => $ip['quantity'],
+                            'product_id'     => $product->id,
+                            'type'           => 'out',
+                            'quantity'       => $ip['quantity'],
                             'reference_type' => 'sale',
-                            'reference_id' => $sale->id,
+                            'reference_id'   => $sale->id,
                         ]);
                     }
                 }
             }
 
-            if ($paidAmount > 0) {
+            if (!empty($validated['payments']) && is_array($validated['payments'])) {
+                foreach ($validated['payments'] as $p) {
+                    if (($p['amount'] ?? 0) > 0) {
+                        SalePayment::create([
+                            'sale_id' => $sale->id,
+                            'payment_mode' => $p['payment_mode'] ?? 'Cash',
+                            'amount' => $p['amount'],
+                        ]);
+                    }
+                }
+            } elseif ($paidAmount > 0) {
                 SalePayment::create([
                     'sale_id' => $sale->id,
                     'payment_mode' => $validated['payment_mode'] ?? 'Cash',

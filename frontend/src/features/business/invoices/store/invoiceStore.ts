@@ -19,8 +19,9 @@ export interface AdditionalCharge {
   rate?: number;
 }
 
-interface InvoiceStore {
+export interface InvoiceStore {
   customer: CustomerStub | null;
+  projectId: number | null;
   invoiceType: string;
   date: string;
   dueDate: string;
@@ -28,6 +29,7 @@ interface InvoiceStore {
   discount: number;
   paidAmount: number;
   paymentMode: string;
+  splitPayments: { mode: string; amount: number }[];
   notes: string;
   termsConditions: string;
   isTaxInclusive: boolean;
@@ -38,6 +40,7 @@ interface InvoiceStore {
   
   // Actions
   setCustomer: (customer: CustomerStub | null) => void;
+  setProjectId: (id: number | null) => void;
   setInvoiceType: (type: string) => void;
   setDate: (date: string) => void;
   setDueDate: (date: string) => void;
@@ -45,6 +48,7 @@ interface InvoiceStore {
   setDiscount: (discount: number) => void;
   setPaidAmount: (amount: number) => void;
   setPaymentMode: (mode: string) => void;
+  setSplitPayments: (splitPayments: { mode: string; amount: number }[]) => void;
   setNotes: (notes: string) => void;
   setTermsConditions: (terms: string) => void;
   setIsTaxInclusive: (val: boolean) => void;
@@ -65,6 +69,7 @@ interface InvoiceStore {
 
 const getInitialState = () => ({
   customer: null,
+  projectId: null,
   invoiceType: 'sales_invoice',
   date: new Date().toISOString().split('T')[0],
   dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
@@ -72,6 +77,10 @@ const getInitialState = () => ({
   discount: 0,
   paidAmount: 0,
   paymentMode: 'Cash',
+  splitPayments: [
+    { mode: 'Cash', amount: 0 },
+    { mode: 'UPI', amount: 0 }
+  ],
   notes: '',
   termsConditions: '1. Goods once sold will not be taken back.\n2. Subject to local jurisdiction.',
   isTaxInclusive: false,
@@ -84,6 +93,7 @@ const getInitialState = () => ({
 export const useInvoiceStore = create<InvoiceStore>((set) => ({
   ...getInitialState(),
   
+  setProjectId: (projectId) => set({ projectId }),
   setCustomer: (customer) => {
     let pos = '';
     if (customer?.state_code) {
@@ -108,6 +118,7 @@ export const useInvoiceStore = create<InvoiceStore>((set) => ({
   setDiscount: (discount) => set({ discount }),
   setPaidAmount: (paidAmount) => set({ paidAmount }),
   setPaymentMode: (paymentMode) => set({ paymentMode }),
+  setSplitPayments: (splitPayments) => set({ splitPayments }),
   setNotes: (notes) => set({ notes }),
   setTermsConditions: (termsConditions) => set({ termsConditions }),
   setIsTaxInclusive: (isTaxInclusive) => set((state) => ({ 

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useCreateRole, useUpdateRole } from '../api/useRoles';
 import type { Role, Permission } from '../api/useRoles';
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 const roleSchema = z.object({
   name: z.string().min(2, 'Role name must be at least 2 characters'),
@@ -76,8 +77,8 @@ export function RoleFormModal({ isOpen, onClose, role, availablePermissions }: R
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white dark:bg-[#111115] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         
         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-white/5 shrink-0">
@@ -186,6 +187,7 @@ export function RoleFormModal({ isOpen, onClose, role, availablePermissions }: R
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -10,7 +10,7 @@ export function useGstCalculation(
   additionalCharges: any[] = []
 ) {
   const activeBusiness = useTenantStore(state => state.activeBusiness);
-  const businessState = activeBusiness?.state_code || '27'; // Fallback arbitrary
+  const businessState = (activeBusiness as any)?.state_code || '27'; // Fallback arbitrary
   
   const bizCode = String(businessState).split(' - ')[0].trim();
   const posCode = String(placeOfSupply || '').split(' - ')[0].trim();

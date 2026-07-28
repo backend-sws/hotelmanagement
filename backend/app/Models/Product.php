@@ -24,6 +24,16 @@ class Product extends Model
     protected $appends = ['inventory_value'];
     protected $hidden = [];
 
+    /**
+     * FIX IMP-03: Products use 'model_name' as the canonical name field,
+     * but many parts of the codebase access ->name. This accessor provides
+     * a consistent ->name property with a safe fallback chain.
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->model_name ?? $this->item_code ?? 'Unnamed Product';
+    }
+
     public function getInventoryValueAttribute()
     {
         $batchValue = 0;
@@ -64,5 +74,10 @@ class Product extends Model
     public function batches()
     {
         return $this->hasMany(ProductBatch::class);
+    }
+
+    public function stockLocations()
+    {
+        return $this->hasMany(ProductStockLocation::class);
     }
 }

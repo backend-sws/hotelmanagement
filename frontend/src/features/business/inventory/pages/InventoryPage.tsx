@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Package, Plus, DollarSign, AlertTriangle, Search, RotateCcw, Layers } from 'lucide-react';
+import { Package, Plus, DollarSign, AlertTriangle, Search, RotateCcw, Layers, HelpCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/formatters';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ export default function InventoryPage() {
   const [categoryId, setCategoryId] = useState<number | undefined>();
   const [brandId, setBrandId] = useState<number | undefined>();
   const [lowStockDays, setLowStockDays] = useState<string>('');
+  const [showGuide, setShowGuide] = useState(false);
   const debouncedSearch = useDebounce(search, 400);
   const debouncedLowStockDays = useDebounce(lowStockDays, 600);
 
@@ -99,51 +101,113 @@ export default function InventoryPage() {
       </div>
 
       <div className="relative w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-2 pb-6 space-y-6 z-10">
-        
-        {/* Premium Control Panel */}
-        <div className="bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-[2rem] p-4 shadow-2xl shadow-slate-200/30 dark:shadow-black/50">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-            <div className="flex flex-col md:flex-row gap-4 flex-1">
-              <div className="flex-1 transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Total Products"
-                  value={totalItems}
-                  icon={<Package />}
-                  glowColor="primary"
-                  subtitle="Items in inventory"
-                />
+        {/* Premium Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm relative z-20">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-amber-500 text-white shadow-lg shadow-amber-500/30 flex items-center justify-center">
+                <Package className="w-6 h-6 animate-pulse-slow" />
               </div>
-              <div className="flex-1 transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Low Stock"
-                  value={lowStockCount}
-                  icon={<AlertTriangle />}
-                  glowColor="primary"
-                  subtitle="Products with qty <= 10"
-                />
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                  Inventory & Products <span className="text-amber-600 dark:text-amber-400 text-base font-bold px-2 py-0.5 rounded-md bg-amber-500/10">Stock & Items Catalog</span>
+                </h1>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  Track available product quantities, maintain accurate purchase/selling rates, and manage low stock warnings.
+                </p>
               </div>
-              <div className="flex-1 transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Est. Inventory Value"
-                  value={`₹${totalValue.toLocaleString()}`}
-                  icon={<DollarSign />}
-                  glowColor="primary"
-                  subtitle="Based on purchase price"
-                />
-              </div>
-            </div>
-            
-            <div className="flex-shrink-0 flex items-center justify-end px-2 sm:px-4">
-              <button 
-                onClick={handleCreate}
-                className="group relative flex items-center gap-3 h-12 px-6 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 hover:-translate-y-1 active:translate-y-0 transition-all duration-300 overflow-hidden w-full sm:w-auto justify-center"
-              >
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                <Plus className="w-4 h-4 relative z-10" />
-                <span className="relative z-10">Add Product</span>
-              </button>
             </div>
           </div>
+          
+          <div className="flex flex-wrap items-center gap-3 self-start sm:self-center">
+            <Button 
+              onClick={handleCreate}
+              className="rounded-xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white shadow-md shadow-primary-500/20 px-4 h-10 text-xs"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Add Product
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowGuide(!showGuide)}
+              className="rounded-xl font-bold bg-white/80 dark:bg-slate-900/80 hover:bg-slate-50 border-amber-200 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 shadow-sm h-10 px-3 text-xs"
+            >
+              <HelpCircle className="w-4 h-4 mr-1.5" /> 
+              {showGuide ? 'Hide Guide' : 'What is Inventory Management?'}
+              {showGuide ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Educational Guide Card */}
+        {showGuide && (
+          <Card className="p-6 rounded-2xl bg-gradient-to-br from-amber-50 via-slate-50 to-orange-50 dark:from-amber-950/40 dark:via-slate-900 dark:to-orange-950/20 border-2 border-amber-200 dark:border-amber-800/40 shadow-xl transition-all animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                <Sparkles className="w-5 h-5 fill-amber-500 text-amber-600 animate-spin-slow" />
+                <h3 className="text-base font-black uppercase tracking-wide">Business Guide: Stock Cataloging & Real-Time Inventory Control</h3>
+              </div>
+              
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                Effective <strong>Inventory Management (Stock Control)</strong> ensures your godown or showroom never misses a sale due to out-of-stock items while preventing precious working capital from being trapped in slow-moving stock!
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                    <span>📦</span> 1. Real-Time Stock Tracking
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Every billing sale automatically reduces sold quantities from your live stock, while purchase arrivals replenish available counts without manual tallying.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-orange-600 dark:text-orange-400 uppercase tracking-wider">
+                    <span>⚠️</span> 2. Instant Reorder Warnings
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Set minimum safety thresholds for items. When inventory drops below the alert limit, get highlighted visual cues to place purchase orders with vendors in time.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                    <span>🏷️</span> 3. Accurate HSN & Pricing
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Pre-define wholesale rates, MRPs, item tax slabs, and HSN/SAC codes in the catalog to guarantee instant, zero-error calculations during customer billing.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+        
+        {/* KPI Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <CustomKpiCard
+            title="Total Products"
+            value={totalItems}
+            icon={<Package className="w-5 h-5 text-white" />}
+            glowColor="primary"
+            subtitle="Items in inventory"
+          />
+          <CustomKpiCard
+            title="Low Stock"
+            value={lowStockCount}
+            icon={<AlertTriangle className="w-5 h-5 text-white" />}
+            glowColor="primary"
+            subtitle="Products with qty <= 10"
+          />
+          <CustomKpiCard
+            title="Est. Inventory Value"
+            value={`₹${totalValue.toLocaleString()}`}
+            icon={<DollarSign className="w-5 h-5 text-white" />}
+            glowColor="primary"
+            subtitle="Based on purchase price"
+          />
         </div>
 
         {/* Filters & Data Table */}

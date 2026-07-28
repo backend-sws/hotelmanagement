@@ -89,9 +89,76 @@ Route::prefix('v1')->group(function () {
             Route::post('quotations/{id}/convert', [\App\Http\Controllers\Api\Business\QuotationController::class, 'convert']);
             Route::apiResource('quotations', \App\Http\Controllers\Api\Business\QuotationController::class)->only(['index', 'show']);
 
-            // Credit Notes & Debit Notes
             Route::apiResource('credit-notes', \App\Http\Controllers\Api\Business\CreditNoteController::class)->only(['index', 'store', 'show']);
             Route::apiResource('debit-notes', \App\Http\Controllers\Api\Business\DebitNoteController::class)->only(['index', 'show']);
+
+            // Phase 4 — Purchase Bills, ITC, Ledgers & Outstanding
+            Route::get('purchases/itc-summary', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'itcSummary']);
+            Route::patch('purchases/itc-summary/{id}/toggle-claim', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'toggleItcClaim']);
+            Route::get('purchases/{id}/pdf', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'generatePdf']);
+            Route::post('purchases/{id}/payment', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'recordPayment']);
+            Route::apiResource('purchases', \App\Http\Controllers\Api\Business\PurchaseController::class);
+
+            // Ledger System
+            Route::get('ledger/customer/{id}', [\App\Http\Controllers\Api\Business\LedgerController::class, 'customerStatement']);
+            Route::get('ledger/supplier/{id}', [\App\Http\Controllers\Api\Business\LedgerController::class, 'supplierStatement']);
+            Route::get('ledger/customer/{id}/balance', [\App\Http\Controllers\Api\Business\LedgerController::class, 'customerBalance']);
+            Route::get('ledger/supplier/{id}/balance', [\App\Http\Controllers\Api\Business\LedgerController::class, 'supplierBalance']);
+            Route::get('ledger/customer/{id}/pdf', [\App\Http\Controllers\Api\Business\LedgerController::class, 'customerStatementPdf']);
+            Route::get('ledger/supplier/{id}/pdf', [\App\Http\Controllers\Api\Business\LedgerController::class, 'supplierStatementPdf']);
+
+            // Outstanding Receivables & Payables
+            Route::get('outstanding/customers', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'customers']);
+            Route::get('outstanding/suppliers', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'suppliers']);
+            Route::get('outstanding/summary', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'summary']);
+            Route::post('outstanding/reminder/{partyType}/{partyId}', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'sendReminder']);
+
+            // Phase 5 — Cash/Bank Entries, Bank Accounts & Cheque Register
+            Route::get('cash-bank/day-book', [\App\Http\Controllers\Api\Business\CashBankController::class, 'dayBook']);
+            Route::get('cash-bank/cash-balance', [\App\Http\Controllers\Api\Business\CashBankController::class, 'cashBalance']);
+            Route::get('cash-bank/bank-balance/{accountId}', [\App\Http\Controllers\Api\Business\CashBankController::class, 'bankBalance']);
+            Route::apiResource('cash-bank', \App\Http\Controllers\Api\Business\CashBankController::class);
+
+            Route::get('cheques/pending', [\App\Http\Controllers\Api\Business\ChequeController::class, 'pending']);
+            Route::get('cheques/upcoming', [\App\Http\Controllers\Api\Business\ChequeController::class, 'upcoming']);
+            Route::get('cheques/summary', [\App\Http\Controllers\Api\Business\ChequeController::class, 'summary']);
+            Route::patch('cheques/{id}/status', [\App\Http\Controllers\Api\Business\ChequeController::class, 'updateStatus']);
+            Route::apiResource('cheques', \App\Http\Controllers\Api\Business\ChequeController::class);
+
+            Route::apiResource('bank-accounts', \App\Http\Controllers\Api\Business\BankAccountController::class);
+
+            // Phase 6 — Stock Summary, Stock Transfer, Barcode
+            Route::get('stock/summary', [\App\Http\Controllers\Api\Business\StockSummaryController::class, 'index']);
+            Route::get('stock/location-wise', [\App\Http\Controllers\Api\Business\StockSummaryController::class, 'locationWise']);
+            Route::get('stock/movements/{productId}', [\App\Http\Controllers\Api\Business\StockSummaryController::class, 'movements']);
+            Route::get('stock/low-stock', [\App\Http\Controllers\Api\Business\StockSummaryController::class, 'lowStock']);
+
+            Route::get('stock-transfers/{id}/slip', [\App\Http\Controllers\Api\Business\StockTransferController::class, 'generateSlip']);
+            Route::patch('stock-transfers/{id}/cancel', [\App\Http\Controllers\Api\Business\StockTransferController::class, 'cancel']);
+            Route::apiResource('stock-transfers', \App\Http\Controllers\Api\Business\StockTransferController::class)->only(['index', 'store', 'show']);
+
+            Route::post('barcode/generate/{productId}', [\App\Http\Controllers\Api\Business\BarcodeController::class, 'generate']);
+            Route::post('barcode/scan', [\App\Http\Controllers\Api\Business\BarcodeController::class, 'scan']);
+
+            // Phase 7 — Projects, Sites, Material Consumption, BOQ, Labour
+            Route::get('projects/{id}/stats', [\App\Http\Controllers\Api\Business\ProjectController::class, 'stats']);
+            Route::get('projects/{id}/invoices', [\App\Http\Controllers\Api\Business\ProjectController::class, 'invoices']);
+            Route::get('projects/{id}/expenses', [\App\Http\Controllers\Api\Business\ProjectController::class, 'expenses']);
+            Route::apiResource('projects', \App\Http\Controllers\Api\Business\ProjectController::class);
+
+            Route::get('material-consumptions/project/{projectId}/summary', [\App\Http\Controllers\Api\Business\MaterialConsumptionController::class, 'projectConsumptionSummary']);
+            Route::get('material-consumptions/{id}/slip', [\App\Http\Controllers\Api\Business\MaterialConsumptionController::class, 'generateSlip']);
+            Route::apiResource('material-consumptions', \App\Http\Controllers\Api\Business\MaterialConsumptionController::class);
+
+            Route::patch('boq/{id}/status', [\App\Http\Controllers\Api\Business\BoqController::class, 'updateStatus']);
+            Route::post('boq/{id}/convert', [\App\Http\Controllers\Api\Business\BoqController::class, 'convertToInvoice']);
+            Route::get('boq/{id}/pdf', [\App\Http\Controllers\Api\Business\BoqController::class, 'generatePdf']);
+            Route::post('boq/{id}/duplicate', [\App\Http\Controllers\Api\Business\BoqController::class, 'duplicate']);
+            Route::apiResource('boq', \App\Http\Controllers\Api\Business\BoqController::class);
+
+            Route::get('labour/summary', [\App\Http\Controllers\Api\Business\LabourPaymentController::class, 'summary']);
+            Route::get('labour/project/{projectId}', [\App\Http\Controllers\Api\Business\LabourPaymentController::class, 'projectLabour']);
+            Route::post('labour/payment', [\App\Http\Controllers\Api\Business\LabourPaymentController::class, 'recordPayment']);
 
             // Keep sales as legacy if needed by other components for now
             Route::apiResource('sales', \App\Http\Controllers\Api\SaleController::class);

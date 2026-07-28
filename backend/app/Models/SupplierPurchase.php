@@ -15,17 +15,40 @@ class SupplierPurchase extends Model
     protected $fillable = [
         'business_id',
         'purchase_number',
+        'invoice_type',
         'supplier_id',
+        'bill_number',
+        'bill_date',
         'bill_amount',
+        'taxable_amount',
+        'cgst_amount',
+        'sgst_amount',
+        'igst_amount',
+        'total_tax_amount',
         'paid_amount',
+        'balance_amount',
         'purchase_date',
         'due_date',
+        'location_id',
+        'notes',
+        'status',
+        'is_itc_eligible',
         'invoice_file',
     ];
 
     protected $casts = [
         'purchase_date' => 'date',
+        'bill_date' => 'date',
         'due_date' => 'date',
+        'is_itc_eligible' => 'boolean',
+        'bill_amount' => 'float',
+        'taxable_amount' => 'float',
+        'cgst_amount' => 'float',
+        'sgst_amount' => 'float',
+        'igst_amount' => 'float',
+        'total_tax_amount' => 'float',
+        'paid_amount' => 'float',
+        'balance_amount' => 'float',
     ];
 
     public function supplier(): BelongsTo
@@ -41,6 +64,16 @@ class SupplierPurchase extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(SupplierPayment::class);
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(BusinessLocation::class, 'location_id');
+    }
+
+    public function itc(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(ItcLedger::class, 'supplier_purchase_id');
     }
 
     public function getInvoiceFileAttribute($value)

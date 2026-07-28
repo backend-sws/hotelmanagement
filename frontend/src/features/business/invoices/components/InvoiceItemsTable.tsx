@@ -1,11 +1,11 @@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Trash2, Package } from 'lucide-react';
-import type { useInvoiceStore } from '../store/invoiceStore';
+import type { InvoiceStore } from '../store/invoiceStore';
 
 interface InvoiceItemsTableProps {
   calculatedItems: any[];
-  store: ReturnType<typeof useInvoiceStore>;
+  store: InvoiceStore;
 }
 
 export function InvoiceItemsTable({ calculatedItems, store }: InvoiceItemsTableProps) {

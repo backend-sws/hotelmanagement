@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { quotationService } from '../api/quotationService';
 import { invoiceService } from '@/features/business/invoices/api/invoiceService';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText, ArrowRightLeft, CheckCircle, XCircle, Clock, Eye, Download, MessageSquare, Pencil, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Plus, FileText, ArrowRightLeft, CheckCircle, XCircle, Clock, Eye, Download, MessageSquare, Pencil, ChevronLeft, ChevronRight, FileSpreadsheet, HelpCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { FilterContainer, FilterSearch, FilterSelect, FilterReset } from '@/components/ui/filter-controls';
@@ -18,6 +19,7 @@ export default function QuotationListPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('all');
   const [search, setSearch] = useState('');
+  const [showGuide, setShowGuide] = useState(false);
   const debouncedSearch = useDebounce(search, 400);
 
   const { data, isLoading } = useQuery({
@@ -146,39 +148,109 @@ export default function QuotationListPage() {
       </div>
 
       <div className="relative w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-4 pb-14 space-y-6 z-10">
-        {/* Premium Control Panel (KPI Cards) */}
-        <div className="bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-[2rem] p-5 shadow-2xl shadow-slate-200/30 dark:shadow-black/50">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-              <div className="transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Total Quotation Value"
-                  value={formatCurrency(totalValue)}
-                  icon={<FileText className="w-5 h-5 text-white" />}
-                  glowColor="primary"
-                  subtitle="Estimated value of quotes on page"
-                />
+        {/* Premium Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm relative z-20">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center">
+                <FileSpreadsheet className="w-6 h-6 animate-pulse-slow" />
               </div>
-              <div className="transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Accepted / Converted"
-                  value={`${acceptedCount} Documents`}
-                  icon={<CheckCircle className="w-5 h-5 text-white" />}
-                  glowColor="emerald"
-                  subtitle="Successfully accepted proposals"
-                />
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                  Quotations & Estimates <span className="text-emerald-600 dark:text-emerald-400 text-base font-bold px-2 py-0.5 rounded-md bg-emerald-500/10">Sauda & Rate Estimate</span>
+                </h1>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  Send professional price quotations, track customer approvals & convert accepted deals directly into GST Invoices.
+                </p>
               </div>
             </div>
-            
-            <div className="flex-shrink-0 flex items-center justify-end px-2 sm:px-4">
-              <button 
-                onClick={() => navigate('/invoices/new?type=quotation')}
-                className="group relative flex items-center justify-center gap-2 px-6 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg hover:shadow-emerald-500/25 active:scale-95 transition-all duration-200"
-              >
-                <Plus className="w-5 h-5 transition-transform group-hover:rotate-90 duration-300" />
-                <span className="font-bold text-sm tracking-wide">New Quotation</span>
-              </button>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-3 self-start sm:self-center">
+            <Button 
+              onClick={() => navigate('/invoices/new?type=quotation')}
+              className="rounded-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-500/20 px-4 h-10 text-xs"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              New Quotation
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowGuide(!showGuide)}
+              className="rounded-xl font-bold bg-white/80 dark:bg-slate-900/80 hover:bg-slate-50 border-emerald-200 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400 shadow-sm h-10 px-3 text-xs"
+            >
+              <HelpCircle className="w-4 h-4 mr-1.5" /> 
+              {showGuide ? 'Hide Guide' : 'What is a Quotation?'}
+              {showGuide ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Educational Guide Card */}
+        {showGuide && (
+          <Card className="p-6 rounded-2xl bg-gradient-to-br from-emerald-50 via-slate-50 to-teal-50 dark:from-emerald-950/40 dark:via-slate-900 dark:to-teal-950/20 border-2 border-emerald-200 dark:border-emerald-800/40 shadow-xl transition-all animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                <Sparkles className="w-5 h-5 fill-emerald-500 text-emerald-600 animate-spin-slow" />
+                <h3 className="text-base font-black uppercase tracking-wide">Business Guide: Why & How to Use Quotations</h3>
+              </div>
+              
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                A <strong>Quotation (Price Estimate / Sauda Offer)</strong> is a formal business proposal sent to prospective clients detailing item rates, quantities, and terms before an order is placed. It establishes mutual agreement on prices prior to final billing!
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                    <span>🤝</span> 1. Price Agreement (Sauda & Estimate)
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Provide complete transparency to clients on item pricing, discounts, and terms before order confirmation. Prevents rate bargaining or misunderstandings later.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-teal-600 dark:text-teal-400 uppercase tracking-wider">
+                    <span>⚡</span> 2. One-Click Invoice Conversion
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Once accepted, instantly convert any proposal into a legitimate GST Tax Invoice with zero manual re-entry of item items and rates!
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-white/10 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                    <span>📑</span> 3. Zero Stock/Ledger Impact
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                    Quotations do not reduce stock inventory or modify customer ledger balances until they are officially accepted and converted into sales bills.
+                  </p>
+                </div>
+              </div>
             </div>
+          </Card>
+        )}
+
+        {/* KPI Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="sm:col-span-1 lg:col-span-2">
+            <CustomKpiCard
+              title="Total Quotation Value"
+              value={formatCurrency(totalValue)}
+              icon={<FileText className="w-5 h-5 text-white" />}
+              glowColor="primary"
+              subtitle="Estimated value of quotes on page"
+            />
+          </div>
+          <div className="sm:col-span-1 lg:col-span-2">
+            <CustomKpiCard
+              title="Accepted / Converted"
+              value={`${acceptedCount} Documents`}
+              icon={<CheckCircle className="w-5 h-5 text-white" />}
+              glowColor="emerald"
+              subtitle="Successfully accepted proposals"
+            />
           </div>
         </div>
 

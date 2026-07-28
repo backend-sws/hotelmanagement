@@ -14,6 +14,7 @@ class Expense extends Model
 
     protected $fillable = [
         'business_id',
+        'project_id',
         'category',
         'amount',
         'description',
@@ -30,5 +31,10 @@ class Expense extends Model
     public function addedBy()
     {
         return $this->belongsTo(User::class, 'added_by');
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class, 'project_id');
     }
 }

@@ -45,6 +45,9 @@ class LocationController extends BaseController
             }
 
             $data = $request->only(['name', 'latitude', 'longitude', 'radius_meters', 'address', 'is_default']);
+            $data['latitude'] = $data['latitude'] ?? 0.00000000;
+            $data['longitude'] = $data['longitude'] ?? 0.00000000;
+            $data['radius_meters'] = $data['radius_meters'] ?? 100;
 
             // If setting as default, unset other defaults
             if (!empty($data['is_default'])) {

@@ -133,53 +133,48 @@ export default function InvoicesPage() {
         <div className="absolute top-20 right-1/4 w-[400px] h-[400px] bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-[100px] animate-float2" />
       </div>
 
-      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 pt-2 pb-6 space-y-6 z-20">
-        
-        {/* Premium Control Panel */}
-        <div className="bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-[2rem] p-4 shadow-2xl shadow-slate-200/30 dark:shadow-black/50">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex flex-col sm:flex-row gap-4 flex-1 max-w-4xl">
-              <div className="flex-1 transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Total Invoices"
-                  value={totalInvoices}
-                  icon={<FileText />}
-                  glowColor="primary"
-                  subtitle="All time sales matching filter"
-                />
-              </div>
-              <div className="flex-1 transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Total Revenue"
-                  value={formatCurrency(totalRevenue)}
-                  icon={<TrendingUp />}
-                  glowColor="primary"
-                  subtitle="Total of filtered sales"
-                />
-              </div>
-              <div className="flex-1 transition-transform hover:-translate-y-1 duration-300">
-                <CustomKpiCard
-                  title="Total Udhar"
-                  value={formatCurrency(totalUdhar)}
-                  icon={<DollarSign />}
-                  glowColor={hasUdhar === 'yes' ? 'rose' : 'primary'}
-                  subtitle={hasUdhar === 'yes' ? 'Filter Active (Click to clear)' : 'Guarantor downpayments'}
-                  onClick={() => setHasUdhar(prev => prev === 'yes' ? '' : 'yes')}
-                />
-              </div>
+      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 pt-4 pb-12 space-y-6 z-20">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm relative z-30">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white shadow-lg shadow-primary-500/30">
+              <FileText className="w-6 h-6" />
             </div>
-            
-            <div className="flex-shrink-0 flex items-center justify-end px-2 sm:px-4">
-              <button 
-                onClick={() => navigate('/pos')}
-                className="group relative flex items-center gap-3 h-12 px-6 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 hover:-translate-y-1 active:translate-y-0 transition-all duration-300 overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                <Plus className="w-4 h-4 relative z-10" />
-                <span className="relative z-10">New Sale</span>
-              </button>
+            <div>
+              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300">Sales History & POS Bills</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">View, share, and manage retail & POS invoices</p>
             </div>
           </div>
+          <Button onClick={() => navigate('/pos')} className="bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white shadow-md shadow-primary-500/20 rounded-xl font-bold h-10 px-4 text-xs">
+            <Plus className="w-4 h-4 mr-1.5" />
+            New Sale (POS)
+          </Button>
+        </div>
+        
+        {/* KPI Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <CustomKpiCard
+            title="Total Invoices"
+            value={totalInvoices}
+            icon={<FileText className="w-5 h-5 text-white" />}
+            glowColor="primary"
+            subtitle="All time sales matching filter"
+          />
+          <CustomKpiCard
+            title="Total Revenue"
+            value={formatCurrency(totalRevenue)}
+            icon={<TrendingUp className="w-5 h-5 text-white" />}
+            glowColor="emerald"
+            subtitle="Total of filtered sales"
+          />
+          <CustomKpiCard
+            title="Total Udhar"
+            value={formatCurrency(totalUdhar)}
+            icon={<DollarSign className="w-5 h-5 text-white" />}
+            glowColor={hasUdhar === 'yes' ? 'rose' : 'primary'}
+            subtitle={hasUdhar === 'yes' ? 'Filter Active (Click to clear)' : 'Guarantor downpayments'}
+            onClick={() => setHasUdhar(prev => prev === 'yes' ? '' : 'yes')}
+          />
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 justify-start md:gap-8 lg:gap-12 items-stretch md:items-center bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-2xl p-4 shadow-sm relative z-30">

@@ -33,7 +33,7 @@ export function InventoryFormModal({ isOpen, onClose, productToEdit, onSuccess }
   const { data: gstSettings } = useGstSettings();
 
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(productSchema) as any,
     defaultValues: {
       category_id: '' as any,
       brand_id: '',
