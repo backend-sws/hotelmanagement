@@ -18,6 +18,9 @@ Route::prefix('v1')->group(function () {
     Route::post('/partner/register', [PartnerPortalController::class, 'register']);
 
     Route::get('/settings/public', [\App\Http\Controllers\Api\PublicSettingController::class, 'index']);
+    Route::get('/plans/public', function () {
+        return response()->json(\App\Models\Plan::where('is_active', true)->get());
+    });
     
     // Public Signed Route for QR Invoice Verification
     Route::get('/verify/invoice/{sale}', [\App\Http\Controllers\Api\SaleController::class, 'generatePdf'])
@@ -36,6 +39,9 @@ Route::prefix('v1')->group(function () {
 
         // CRM Routes (Scoped to Business via TenantMiddleware)
         Route::middleware(['tenant'])->prefix('business')->group(function () {
+            // ═══════════════════════════════════════════════════════════════
+            // FREE TIER — Available in ALL plans (Starter, Professional, Enterprise)
+            // ═══════════════════════════════════════════════════════════════
             Route::get('/dashboard/stats', [\App\Http\Controllers\Api\Business\DashboardController::class, 'stats']);
             Route::get('/dashboard/staff-earnings', [\App\Http\Controllers\Api\Business\DashboardController::class, 'staffEarnings']);
 
@@ -56,143 +62,38 @@ Route::prefix('v1')->group(function () {
             Route::get('settings/gst', [\App\Http\Controllers\Api\Business\GstSettingController::class, 'show']);
             Route::post('settings/gst', [\App\Http\Controllers\Api\Business\GstSettingController::class, 'update']);
             
-            // Supplier Routes
+            // Supplier Routes (basic CRUD is free)
             Route::apiResource('suppliers', \App\Http\Controllers\Api\SupplierController::class);
-            Route::post('suppliers/{supplier}/purchases', [\App\Http\Controllers\Api\SupplierController::class, 'storePurchase']);
             Route::post('suppliers/{supplier}/payments', [\App\Http\Controllers\Api\SupplierController::class, 'storePayment']);
             
             // Customer Routes
             Route::apiResource('customers', \App\Http\Controllers\Api\CustomerController::class);
             
-            // Sales Routes
+            // Sales / Invoices (core billing — always free)
             Route::get('sales/{sale}/invoice-pdf', [\App\Http\Controllers\Api\SaleController::class, 'generatePdf']);
-            // Invoices
             Route::get('invoices/stats', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'stats']);
             Route::post('invoices/{invoice}/convert', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'convert']);
             Route::get('invoices/{invoice}/pdf', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'generatePdf']);
             Route::get('invoices/{invoice}/whatsapp', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'sendWhatsapp']);
             Route::apiResource('invoices', \App\Http\Controllers\Api\Business\InvoiceController::class);
 
-            // Phase 3 — Document Type Routes
-            // Delivery Challans
+            // Document Types (Challans, Proforma, Quotations — free)
             Route::get('challans/pending', [\App\Http\Controllers\Api\Business\ChallanController::class, 'pendingChallans']);
             Route::get('challans/{id}/truck-slip', [\App\Http\Controllers\Api\Business\ChallanController::class, 'generateTruckSlip']);
             Route::post('challans/convert', [\App\Http\Controllers\Api\Business\ChallanController::class, 'convert']);
             Route::apiResource('challans', \App\Http\Controllers\Api\Business\ChallanController::class)->only(['index', 'show']);
-
-            // Proforma Invoices
             Route::post('proforma/{id}/convert', [\App\Http\Controllers\Api\Business\ProformaController::class, 'convert']);
             Route::apiResource('proforma', \App\Http\Controllers\Api\Business\ProformaController::class)->only(['index', 'show']);
-
-            // Quotations
             Route::patch('quotations/{id}/status', [\App\Http\Controllers\Api\Business\QuotationController::class, 'updateStatus']);
             Route::post('quotations/{id}/convert', [\App\Http\Controllers\Api\Business\QuotationController::class, 'convert']);
             Route::apiResource('quotations', \App\Http\Controllers\Api\Business\QuotationController::class)->only(['index', 'show']);
-
             Route::apiResource('credit-notes', \App\Http\Controllers\Api\Business\CreditNoteController::class)->only(['index', 'store', 'show']);
             Route::apiResource('debit-notes', \App\Http\Controllers\Api\Business\DebitNoteController::class)->only(['index', 'show']);
 
-            // Phase 4 — Purchase Bills, ITC, Ledgers & Outstanding
-            Route::get('purchases/itc-summary', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'itcSummary']);
-            Route::patch('purchases/itc-summary/{id}/toggle-claim', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'toggleItcClaim']);
-            Route::get('purchases/{id}/pdf', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'generatePdf']);
-            Route::post('purchases/{id}/payment', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'recordPayment']);
-            Route::apiResource('purchases', \App\Http\Controllers\Api\Business\PurchaseController::class);
-
-            // Ledger System
-            Route::get('ledger/customer/{id}', [\App\Http\Controllers\Api\Business\LedgerController::class, 'customerStatement']);
-            Route::get('ledger/supplier/{id}', [\App\Http\Controllers\Api\Business\LedgerController::class, 'supplierStatement']);
-            Route::get('ledger/customer/{id}/balance', [\App\Http\Controllers\Api\Business\LedgerController::class, 'customerBalance']);
-            Route::get('ledger/supplier/{id}/balance', [\App\Http\Controllers\Api\Business\LedgerController::class, 'supplierBalance']);
-            Route::get('ledger/customer/{id}/pdf', [\App\Http\Controllers\Api\Business\LedgerController::class, 'customerStatementPdf']);
-            Route::get('ledger/supplier/{id}/pdf', [\App\Http\Controllers\Api\Business\LedgerController::class, 'supplierStatementPdf']);
-
-            // Outstanding Receivables & Payables
-            Route::get('outstanding/customers', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'customers']);
-            Route::get('outstanding/suppliers', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'suppliers']);
-            Route::get('outstanding/summary', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'summary']);
-            Route::post('outstanding/reminder/{partyType}/{partyId}', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'sendReminder']);
-
-            // Phase 5 — Cash/Bank Entries, Bank Accounts & Cheque Register
-            Route::get('cash-bank/day-book', [\App\Http\Controllers\Api\Business\CashBankController::class, 'dayBook']);
-            Route::get('cash-bank/cash-balance', [\App\Http\Controllers\Api\Business\CashBankController::class, 'cashBalance']);
-            Route::get('cash-bank/bank-balance/{accountId}', [\App\Http\Controllers\Api\Business\CashBankController::class, 'bankBalance']);
-            Route::apiResource('cash-bank', \App\Http\Controllers\Api\Business\CashBankController::class);
-
-            Route::get('cheques/pending', [\App\Http\Controllers\Api\Business\ChequeController::class, 'pending']);
-            Route::get('cheques/upcoming', [\App\Http\Controllers\Api\Business\ChequeController::class, 'upcoming']);
-            Route::get('cheques/summary', [\App\Http\Controllers\Api\Business\ChequeController::class, 'summary']);
-            Route::patch('cheques/{id}/status', [\App\Http\Controllers\Api\Business\ChequeController::class, 'updateStatus']);
-            Route::apiResource('cheques', \App\Http\Controllers\Api\Business\ChequeController::class);
-
-            Route::apiResource('bank-accounts', \App\Http\Controllers\Api\Business\BankAccountController::class);
-
-            // Phase 6 — Stock Summary, Stock Transfer, Barcode
-            Route::get('stock/summary', [\App\Http\Controllers\Api\Business\StockSummaryController::class, 'index']);
-            Route::get('stock/location-wise', [\App\Http\Controllers\Api\Business\StockSummaryController::class, 'locationWise']);
-            Route::get('stock/movements/{productId}', [\App\Http\Controllers\Api\Business\StockSummaryController::class, 'movements']);
-            Route::get('stock/low-stock', [\App\Http\Controllers\Api\Business\StockSummaryController::class, 'lowStock']);
-
-            Route::get('stock-transfers/{id}/slip', [\App\Http\Controllers\Api\Business\StockTransferController::class, 'generateSlip']);
-            Route::patch('stock-transfers/{id}/cancel', [\App\Http\Controllers\Api\Business\StockTransferController::class, 'cancel']);
-            Route::apiResource('stock-transfers', \App\Http\Controllers\Api\Business\StockTransferController::class)->only(['index', 'store', 'show']);
-
-            Route::post('barcode/generate/{productId}', [\App\Http\Controllers\Api\Business\BarcodeController::class, 'generate']);
-            Route::post('barcode/scan', [\App\Http\Controllers\Api\Business\BarcodeController::class, 'scan']);
-
-            // Phase 7 — Projects, Sites, Material Consumption, BOQ, Labour
-            Route::get('projects/{id}/stats', [\App\Http\Controllers\Api\Business\ProjectController::class, 'stats']);
-            Route::get('projects/{id}/invoices', [\App\Http\Controllers\Api\Business\ProjectController::class, 'invoices']);
-            Route::get('projects/{id}/expenses', [\App\Http\Controllers\Api\Business\ProjectController::class, 'expenses']);
-            Route::apiResource('projects', \App\Http\Controllers\Api\Business\ProjectController::class);
-
-            Route::get('material-consumptions/project/{projectId}/summary', [\App\Http\Controllers\Api\Business\MaterialConsumptionController::class, 'projectConsumptionSummary']);
-            Route::get('material-consumptions/{id}/slip', [\App\Http\Controllers\Api\Business\MaterialConsumptionController::class, 'generateSlip']);
-            Route::apiResource('material-consumptions', \App\Http\Controllers\Api\Business\MaterialConsumptionController::class);
-
-            Route::patch('boq/{id}/status', [\App\Http\Controllers\Api\Business\BoqController::class, 'updateStatus']);
-            Route::post('boq/{id}/convert', [\App\Http\Controllers\Api\Business\BoqController::class, 'convertToInvoice']);
-            Route::get('boq/{id}/pdf', [\App\Http\Controllers\Api\Business\BoqController::class, 'generatePdf']);
-            Route::post('boq/{id}/duplicate', [\App\Http\Controllers\Api\Business\BoqController::class, 'duplicate']);
-            Route::apiResource('boq', \App\Http\Controllers\Api\Business\BoqController::class);
-
-            Route::get('labour/summary', [\App\Http\Controllers\Api\Business\LabourPaymentController::class, 'summary']);
-            Route::get('labour/project/{projectId}', [\App\Http\Controllers\Api\Business\LabourPaymentController::class, 'projectLabour']);
-            Route::post('labour/payment', [\App\Http\Controllers\Api\Business\LabourPaymentController::class, 'recordPayment']);
-
-            // Phase 8 — GST Reports & Core Financial Accounting Suite
-            Route::prefix('reports')->group(function () {
-                Route::get('gst/gstr1', [\App\Http\Controllers\Api\Business\GstReportController::class, 'gstr1']);
-                Route::get('gst/gstr3b', [\App\Http\Controllers\Api\Business\GstReportController::class, 'gstr3b']);
-                Route::get('gst/hsn', [\App\Http\Controllers\Api\Business\GstReportController::class, 'hsnSummary']);
-                Route::get('profit-loss', [\App\Http\Controllers\Api\Business\ProfitLossController::class, 'index']);
-                Route::get('balance-sheet', [\App\Http\Controllers\Api\Business\BalanceSheetController::class, 'index']);
-                Route::get('sales-analysis', [\App\Http\Controllers\Api\Business\SalesReportController::class, 'index']);
-            });
-
-            // Keep sales as legacy if needed by other components for now
+            // Keep sales as legacy
             Route::apiResource('sales', \App\Http\Controllers\Api\SaleController::class);
-            
-            // Expense Routes
-            Route::get('expenses/analytics', [\App\Http\Controllers\Api\Business\ExpenseController::class, 'analytics']);
-            Route::get('expenses/categories', [\App\Http\Controllers\Api\Business\ExpenseController::class, 'categories']);
-            Route::apiResource('expenses', \App\Http\Controllers\Api\Business\ExpenseController::class);
-            
-            // EMI & Installments Routes (DEPRECATED: Replaced by Ledger System)
-            /* 
-            Route::middleware(['feature:has_finance'])->group(function () {
-                Route::get('emis/customer/{customerId}', [\App\Http\Controllers\Api\Business\EmiController::class, 'getCustomerEmis']);
-                Route::post('emis/installments/{installmentId}/pay', [\App\Http\Controllers\Api\Business\EmiController::class, 'payInstallment']);
-                Route::post('emis/{emiDetailId}/payout', [\App\Http\Controllers\Api\Business\EmiController::class, 'markPayoutReceived']);
-                
-                // Finance Ledger Routes
-                Route::get('finance/pending', [\App\Http\Controllers\Api\FinanceController::class, 'pending']);
-                Route::get('finance/completed', [\App\Http\Controllers\Api\FinanceController::class, 'completed']);
-                Route::post('finance/{id}/mark-received', [\App\Http\Controllers\Api\FinanceController::class, 'markReceived']);
-            });
-            */
 
-            // Staff Management Routes
+            // Staff Management (basic free)
             Route::get('staff/performance', [\App\Http\Controllers\Api\Business\StaffPerformanceController::class, 'index']);
             Route::get('staff/{id}/sales', [\App\Http\Controllers\Api\Business\StaffController::class, 'salesReport']);
             Route::get('staff/{id}/permissions', [\App\Http\Controllers\Api\Business\StaffController::class, 'getPermissions']);
@@ -204,9 +105,109 @@ Route::prefix('v1')->group(function () {
             // Business Locations (Geo-fence)
             Route::apiResource('locations', \App\Http\Controllers\Api\Business\LocationController::class);
 
-            // HR & Payroll Module Routes
+            // Stock Summary (basic read — free)
+            Route::get('stock/summary', [\App\Http\Controllers\Api\Business\StockSummaryController::class, 'index']);
+            Route::get('stock/movements/{productId}', [\App\Http\Controllers\Api\Business\StockSummaryController::class, 'movements']);
+            Route::get('stock/low-stock', [\App\Http\Controllers\Api\Business\StockSummaryController::class, 'lowStock']);
+            Route::post('barcode/generate/{productId}', [\App\Http\Controllers\Api\Business\BarcodeController::class, 'generate']);
+            Route::post('barcode/scan', [\App\Http\Controllers\Api\Business\BarcodeController::class, 'scan']);
+
+            // ═══════════════════════════════════════════════════════════════
+            // PREMIUM TIER — Feature-Gated (Professional / Enterprise only)
+            // ═══════════════════════════════════════════════════════════════
+
+            // 🔒 Expenses Module (Professional+)
+            Route::middleware(['feature:has_expenses'])->group(function () {
+                Route::get('expenses/analytics', [\App\Http\Controllers\Api\Business\ExpenseController::class, 'analytics']);
+                Route::get('expenses/categories', [\App\Http\Controllers\Api\Business\ExpenseController::class, 'categories']);
+                Route::apiResource('expenses', \App\Http\Controllers\Api\Business\ExpenseController::class);
+            });
+
+            // 🔒 Purchase Bills & ITC (Professional+)
+            Route::middleware(['feature:has_purchase_bills'])->group(function () {
+                Route::get('purchases/itc-summary', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'itcSummary']);
+                Route::patch('purchases/itc-summary/{id}/toggle-claim', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'toggleItcClaim']);
+                Route::get('purchases/{id}/pdf', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'generatePdf']);
+                Route::post('purchases/{id}/payment', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'recordPayment']);
+                Route::apiResource('purchases', \App\Http\Controllers\Api\Business\PurchaseController::class);
+                Route::post('suppliers/{supplier}/purchases', [\App\Http\Controllers\Api\SupplierController::class, 'storePurchase']);
+            });
+
+            // 🔒 Khata / Ledger & Outstanding (Professional+)
+            Route::middleware(['feature:has_khata_ledger'])->group(function () {
+                Route::get('ledger/customer/{id}', [\App\Http\Controllers\Api\Business\LedgerController::class, 'customerStatement']);
+                Route::get('ledger/supplier/{id}', [\App\Http\Controllers\Api\Business\LedgerController::class, 'supplierStatement']);
+                Route::get('ledger/customer/{id}/balance', [\App\Http\Controllers\Api\Business\LedgerController::class, 'customerBalance']);
+                Route::get('ledger/supplier/{id}/balance', [\App\Http\Controllers\Api\Business\LedgerController::class, 'supplierBalance']);
+                Route::get('ledger/customer/{id}/pdf', [\App\Http\Controllers\Api\Business\LedgerController::class, 'customerStatementPdf']);
+                Route::get('ledger/supplier/{id}/pdf', [\App\Http\Controllers\Api\Business\LedgerController::class, 'supplierStatementPdf']);
+                Route::get('outstanding/customers', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'customers']);
+                Route::get('outstanding/suppliers', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'suppliers']);
+                Route::get('outstanding/summary', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'summary']);
+                Route::post('outstanding/reminder/{partyType}/{partyId}', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'sendReminder']);
+            });
+
+            // 🔒 Cash/Bank Book & Day Book (Professional+)
+            Route::middleware(['feature:has_cashbook'])->group(function () {
+                Route::get('cash-bank/day-book', [\App\Http\Controllers\Api\Business\CashBankController::class, 'dayBook']);
+                Route::get('cash-bank/cash-balance', [\App\Http\Controllers\Api\Business\CashBankController::class, 'cashBalance']);
+                Route::get('cash-bank/bank-balance/{accountId}', [\App\Http\Controllers\Api\Business\CashBankController::class, 'bankBalance']);
+                Route::apiResource('cash-bank', \App\Http\Controllers\Api\Business\CashBankController::class);
+                Route::apiResource('bank-accounts', \App\Http\Controllers\Api\Business\BankAccountController::class);
+            });
+
+            // 🔒 Cheque Register (Enterprise only)
+            Route::middleware(['feature:has_cheques'])->group(function () {
+                Route::get('cheques/pending', [\App\Http\Controllers\Api\Business\ChequeController::class, 'pending']);
+                Route::get('cheques/upcoming', [\App\Http\Controllers\Api\Business\ChequeController::class, 'upcoming']);
+                Route::get('cheques/summary', [\App\Http\Controllers\Api\Business\ChequeController::class, 'summary']);
+                Route::patch('cheques/{id}/status', [\App\Http\Controllers\Api\Business\ChequeController::class, 'updateStatus']);
+                Route::apiResource('cheques', \App\Http\Controllers\Api\Business\ChequeController::class);
+            });
+
+            // 🔒 Multi-Godown Stock Transfers (Professional+)
+            Route::middleware(['feature:has_stock_transfer'])->group(function () {
+                Route::get('stock/location-wise', [\App\Http\Controllers\Api\Business\StockSummaryController::class, 'locationWise']);
+                Route::get('stock-transfers/{id}/slip', [\App\Http\Controllers\Api\Business\StockTransferController::class, 'generateSlip']);
+                Route::patch('stock-transfers/{id}/cancel', [\App\Http\Controllers\Api\Business\StockTransferController::class, 'cancel']);
+                Route::apiResource('stock-transfers', \App\Http\Controllers\Api\Business\StockTransferController::class)->only(['index', 'store', 'show']);
+            });
+
+            // 🔒 Projects, BOQ, Material Consumption & Labour (Enterprise only)
+            Route::middleware(['feature:has_projects'])->group(function () {
+                Route::get('projects/{id}/stats', [\App\Http\Controllers\Api\Business\ProjectController::class, 'stats']);
+                Route::get('projects/{id}/invoices', [\App\Http\Controllers\Api\Business\ProjectController::class, 'invoices']);
+                Route::get('projects/{id}/expenses', [\App\Http\Controllers\Api\Business\ProjectController::class, 'expenses']);
+                Route::apiResource('projects', \App\Http\Controllers\Api\Business\ProjectController::class);
+                Route::get('material-consumptions/project/{projectId}/summary', [\App\Http\Controllers\Api\Business\MaterialConsumptionController::class, 'projectConsumptionSummary']);
+                Route::get('material-consumptions/{id}/slip', [\App\Http\Controllers\Api\Business\MaterialConsumptionController::class, 'generateSlip']);
+                Route::apiResource('material-consumptions', \App\Http\Controllers\Api\Business\MaterialConsumptionController::class);
+                Route::patch('boq/{id}/status', [\App\Http\Controllers\Api\Business\BoqController::class, 'updateStatus']);
+                Route::post('boq/{id}/convert', [\App\Http\Controllers\Api\Business\BoqController::class, 'convertToInvoice']);
+                Route::get('boq/{id}/pdf', [\App\Http\Controllers\Api\Business\BoqController::class, 'generatePdf']);
+                Route::post('boq/{id}/duplicate', [\App\Http\Controllers\Api\Business\BoqController::class, 'duplicate']);
+                Route::apiResource('boq', \App\Http\Controllers\Api\Business\BoqController::class);
+                Route::get('labour/summary', [\App\Http\Controllers\Api\Business\LabourPaymentController::class, 'summary']);
+                Route::get('labour/project/{projectId}', [\App\Http\Controllers\Api\Business\LabourPaymentController::class, 'projectLabour']);
+                Route::post('labour/payment', [\App\Http\Controllers\Api\Business\LabourPaymentController::class, 'recordPayment']);
+            });
+
+            // 🔒 GST Reports (Professional+)
+            Route::middleware(['feature:has_gst_reports'])->prefix('reports')->group(function () {
+                Route::get('gst/gstr1', [\App\Http\Controllers\Api\Business\GstReportController::class, 'gstr1']);
+                Route::get('gst/gstr3b', [\App\Http\Controllers\Api\Business\GstReportController::class, 'gstr3b']);
+                Route::get('gst/hsn', [\App\Http\Controllers\Api\Business\GstReportController::class, 'hsnSummary']);
+            });
+
+            // 🔒 Financial Reports — P&L, Balance Sheet, Sales Analysis (Enterprise only)
+            Route::middleware(['feature:has_financial_reports'])->prefix('reports')->group(function () {
+                Route::get('profit-loss', [\App\Http\Controllers\Api\Business\ProfitLossController::class, 'index']);
+                Route::get('balance-sheet', [\App\Http\Controllers\Api\Business\BalanceSheetController::class, 'index']);
+                Route::get('sales-analysis', [\App\Http\Controllers\Api\Business\SalesReportController::class, 'index']);
+            });
+
+            // 🔒 HR & Payroll Module (Professional+)
             Route::middleware(['feature:has_payroll'])->group(function () {
-                // Attendance Routes
                 Route::post('attendance/import', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'import']);
                 Route::get('attendance/today', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'todayStatus']);
                 Route::post('attendance/check-in', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'checkIn']);
@@ -216,8 +217,6 @@ Route::prefix('v1')->group(function () {
                 Route::put('attendance/{id}/approve', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'approve']);
                 Route::put('attendance/{id}/unapprove', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'unapprove']);
                 Route::apiResource('attendance', \App\Http\Controllers\Api\Business\AttendanceController::class)->only(['index']);
-
-                // Payroll Routes
                 Route::post('payroll/generate', [\App\Http\Controllers\Api\Business\PayrollController::class, 'generate']);
                 Route::post('payroll/{payroll}/confirm', [\App\Http\Controllers\Api\Business\PayrollController::class, 'confirm']);
                 Route::post('payroll/{payroll}/mark-paid', [\App\Http\Controllers\Api\Business\PayrollController::class, 'markPaid']);
@@ -225,27 +224,27 @@ Route::prefix('v1')->group(function () {
                 Route::get('payroll/{payroll}', [\App\Http\Controllers\Api\Business\PayrollController::class, 'show']);
                 Route::put('payroll/{payroll}', [\App\Http\Controllers\Api\Business\PayrollController::class, 'update']);
                 Route::apiResource('payroll-components', \App\Http\Controllers\Api\Business\PayrollComponentController::class);
-
-                // Leave Policies
                 Route::get('leave-policies', [\App\Http\Controllers\Api\Business\PayrollController::class, 'leavePolicies']);
                 Route::post('leave-policies', [\App\Http\Controllers\Api\Business\PayrollController::class, 'storeLeavePolicy']);
                 Route::put('leave-policies/{leavePolicy}', [\App\Http\Controllers\Api\Business\PayrollController::class, 'updateLeavePolicy']);
                 Route::delete('leave-policies/{leavePolicy}', [\App\Http\Controllers\Api\Business\PayrollController::class, 'deleteLeavePolicy']);
-
-                // Salary Advances
                 Route::get('salary-advances', [\App\Http\Controllers\Api\Business\PayrollController::class, 'salaryAdvances']);
                 Route::post('salary-advances', [\App\Http\Controllers\Api\Business\PayrollController::class, 'storeSalaryAdvance']);
                 Route::patch('salary-advances/{salaryAdvance}/status', [\App\Http\Controllers\Api\Business\PayrollController::class, 'updateSalaryAdvanceStatus']);
-                
-                // Leave Requests
                 Route::apiResource('leave-requests', \App\Http\Controllers\Api\Business\LeaveRequestController::class);
                 Route::patch('leave-requests/{leave_request}/status', [\App\Http\Controllers\Api\Business\LeaveRequestController::class, 'updateStatus']);
             });
 
-            // System Audit Logs
+            // 🔒 System Audit Logs (Professional+)
             Route::middleware(['feature:has_activity_logs'])->group(function () {
                 Route::get('activity-logs', [\App\Http\Controllers\Api\Business\ActivityLogController::class, 'index']);
             });
+
+            // Subscription & Billing
+            Route::get('subscriptions/history', [\App\Http\Controllers\Api\Business\SubscriptionController::class, 'history']);
+            Route::post('subscriptions/create-order', [\App\Http\Controllers\Api\Business\SubscriptionController::class, 'createOrder']);
+            Route::post('subscriptions/verify-payment', [\App\Http\Controllers\Api\Business\SubscriptionController::class, 'verifyPayment']);
+            Route::get('subscriptions/{paymentId}/invoice', [\App\Http\Controllers\Api\Business\SubscriptionController::class, 'invoicePdf']);
         });
 
 
@@ -263,6 +262,9 @@ Route::prefix('v1')->group(function () {
             // Dashboard
             Route::get('/dashboard/stats', [\App\Http\Controllers\Api\Superadmin\SuperadminDashboardController::class, 'stats']);
 
+            // Subscriptions
+            Route::get('/subscriptions', [\App\Http\Controllers\Api\Superadmin\SuperadminSubscriptionController::class, 'index']);
+            
             // Settings
             Route::put('/settings', [\App\Http\Controllers\Api\Superadmin\SettingController::class, 'update']);
             Route::post('/settings/logo', [\App\Http\Controllers\Api\Superadmin\SettingController::class, 'uploadLogo']);

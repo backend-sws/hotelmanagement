@@ -60,8 +60,20 @@ export const getOnboardFormConfig = (
         placeholder: 'No Plan (Free/Manual)',
         options: plans?.map((plan) => ({
           value: plan.id,
-          label: `${plan.name} (₹${plan.price_monthly}/mo)`,
+          label: plan.name,
         })) || [],
+      },
+      {
+        name: 'billing_cycle',
+        label: 'Billing Cycle',
+        type: 'select',
+        tooltip: 'Duration of the plan. Monthly = 1 month, Yearly = 1 year.',
+        options: [
+          { value: 'monthly', label: 'Monthly' },
+          { value: 'yearly', label: 'Yearly' },
+          { value: 'lifetime', label: 'Lifetime (No Expiry)' },
+        ],
+        dependsOn: 'plan_id',
       },
       {
         name: 'partner_id',

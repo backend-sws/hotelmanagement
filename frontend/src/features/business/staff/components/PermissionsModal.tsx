@@ -14,13 +14,18 @@ interface PermissionsModalProps {
 const AVAILABLE_PERMISSIONS = [
   { id: 'view_dashboard', label: 'View Dashboard', description: 'Can see overview and statistics' },
   { id: 'manage_sales', label: 'Manage Sales', description: 'Can create and edit invoices' },
+  { id: 'manage_purchases', label: 'Manage Purchases', description: 'Can record purchases and stock' },
   { id: 'manage_inventory', label: 'Manage Inventory', description: 'Can add products and update stock' },
   { id: 'manage_customers', label: 'Manage Customers', description: 'Can add and edit customer details' },
   { id: 'manage_suppliers', label: 'Manage Suppliers', description: 'Can add and edit supplier details' },
+  { id: 'manage_ledger', label: 'Manage Ledger', description: 'Can view and settle Khata balances' },
+  { id: 'manage_finance', label: 'Manage Finance', description: 'Can access Cash/Bank books and Cheques' },
   { id: 'manage_expenses', label: 'Manage Expenses', description: 'Can record business expenses' },
+  { id: 'manage_projects', label: 'Manage Projects', description: 'Can manage Projects, Sites, and BOQ' },
   { id: 'manage_staff', label: 'Manage Staff', description: 'Can add staff and manage roles' },
   { id: 'manage_payroll', label: 'Manage Payroll', description: 'Can generate and confirm salary slips' },
   { id: 'view_attendance', label: 'View Attendance', description: 'Can see attendance records of all staff' },
+  { id: 'view_reports', label: 'View Reports', description: 'Can view GST and Financial Reports' },
 ];
 
 export function PermissionsModal({ isOpen, onClose, staff }: PermissionsModalProps) {

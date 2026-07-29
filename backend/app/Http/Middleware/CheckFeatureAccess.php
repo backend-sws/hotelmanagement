@@ -21,8 +21,21 @@ class CheckFeatureAccess
             return response()->json(['message' => 'No active business context.'], 403);
         }
 
-        // If Superadmin or Plan doesn't exist, we might allow or deny based on business logic.
-        // But normally every business needs a plan. Let's load the plan:
+        // Allow Superadmin to bypass all feature checks
+        if ($request->user() && $request->user()->hasRole('Superadmin')) {
+            return $next($request);
+        }
+
+        // Check plan expiry first
+        if ($business->plan_expires_at && $business->plan_expires_at->isPast()) {
+            return response()->json([
+                'error' => 'plan_expired',
+                'feature' => $feature,
+                'message' => 'Your subscription has expired. Please renew your plan to continue using this feature.',
+                'expired_at' => $business->plan_expires_at->toISOString(),
+            ], 403);
+        }
+
         $plan = $business->plan;
         
         if (!$plan) {
@@ -33,14 +46,13 @@ class CheckFeatureAccess
             ], 403);
         }
 
-        $features = $plan->features ?? [];
-        
-        // If the feature is false or missing, block access
-        if (!isset($features[$feature]) || $features[$feature] == false) {
+        // Use the Business model's hasFeature() method which checks custom_features first
+        if (!$business->hasFeature($feature)) {
             return response()->json([
                 'error' => 'plan_upgrade_required',
                 'feature' => $feature,
-                'message' => 'This feature requires a plan upgrade.'
+                'plan_name' => $plan->name,
+                'message' => 'This feature requires a plan upgrade. Please contact your administrator.',
             ], 403);
         }
 

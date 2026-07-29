@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, Loader2, Settings, UploadCloud, FileText, LayoutGrid, MapPin, MessageCircle } from 'lucide-react';
+import { Save, Loader2, Settings, UploadCloud, FileText, LayoutGrid, MapPin, MessageCircle, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,7 +10,7 @@ import { Image } from '@/components/ui/image';
 import { uploadToR2 } from '@/lib/r2';
 import { useTenantStore } from '@/store/tenantStore';
 import { toast } from "sonner";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useUpdateBusiness } from '../../profile/api/useBusinessMutations';
@@ -22,6 +22,7 @@ import { InvoicePatternBuilder } from '../components/InvoicePatternBuilder';
 import { InvoicePrintSettings } from '../../profile/components/InvoicePrintSettings';
 import { WhatsAppSettings } from '../components/WhatsAppSettings';
 import { GstSettingsTab } from '../components/GstSettingsTab';
+import { PlanSubscriptionTab } from '../components/PlanSubscriptionTab';
 
 const businessSettingsSchema = z.object({
   settings: z.object({
@@ -44,14 +45,23 @@ type BusinessSettingsFormValues = z.infer<typeof businessSettingsSchema>;
 export default function BusinessSettingsPage() {
   const { activeBusiness, updateBusiness, isLoading } = useTenantStore();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const updateBusinessMutation = useUpdateBusiness();
 
   const [isUploadingWlLogo, setIsUploadingWlLogo] = useState(false);
   const [isUploadingWlFavicon, setIsUploadingWlFavicon] = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'general');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const tabs = [
+    { id: 'plan', label: 'Subscription & Plan', icon: Crown },
     { id: 'general', label: 'General', icon: Settings },
     { id: 'gst', label: 'GST & Billing', icon: FileText },
     { id: 'invoice', label: 'Invoice Formats', icon: FileText },
@@ -365,7 +375,7 @@ export default function BusinessSettingsPage() {
         ]}
       />
 
-      <div className="w-full px-3 sm:px-6 py-3 sm:py-4 md:py-6 overflow-x-hidden min-w-0">
+      <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-6 py-3 sm:py-4 md:py-6 overflow-x-hidden min-w-0">
         <div className="grid lg:grid-cols-12 gap-4 lg:gap-6 min-w-0">
           
           <div className="lg:col-span-12 min-w-0 flex flex-col gap-4">
@@ -412,13 +422,17 @@ export default function BusinessSettingsPage() {
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
 
               <div className="relative z-10 w-full space-y-6">
-                <div className={activeTab !== 'locations' && activeTab !== 'gst' ? 'block' : 'hidden'}>
+                <div className={activeTab !== 'locations' && activeTab !== 'gst' && activeTab !== 'plan' ? 'block' : 'hidden'}>
                   <DynamicForm 
                     id="settings-form"
                     form={form}
                     onSubmit={onSubmit}
                     sections={settingsFormConfig}
                   />
+                </div>
+
+                <div className={activeTab === 'plan' ? 'block' : 'hidden'}>
+                  <PlanSubscriptionTab />
                 </div>
 
                 <div className={activeTab === 'gst' ? 'block' : 'hidden'}>
@@ -429,7 +443,7 @@ export default function BusinessSettingsPage() {
                   <BusinessLocationsSection />
                 </div>
 
-                <div className={activeTab !== 'locations' && activeTab !== 'gst' ? 'flex justify-end mt-4 pt-6 border-t border-slate-200/80 dark:border-white/10' : 'hidden'}>
+                <div className={activeTab !== 'locations' && activeTab !== 'gst' && activeTab !== 'plan' ? 'flex justify-end mt-4 pt-6 border-t border-slate-200/80 dark:border-white/10' : 'hidden'}>
                   <Button 
                     type="submit" 
                     form="settings-form" 

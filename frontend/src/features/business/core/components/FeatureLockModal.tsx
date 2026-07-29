@@ -1,6 +1,7 @@
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Lock, Crown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface FeatureLockModalProps {
   isOpen: boolean;
@@ -9,6 +10,8 @@ interface FeatureLockModalProps {
 }
 
 export function FeatureLockModal({ isOpen, onClose, featureName }: FeatureLockModalProps) {
+  const navigate = useNavigate();
+
   if (!isOpen) return null;
 
   return (
@@ -39,8 +42,7 @@ export function FeatureLockModal({ isOpen, onClose, featureName }: FeatureLockMo
             className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white shadow-md"
             onClick={() => {
               onClose();
-              // In the future, this can navigate to a billing page
-              // window.location.href = '/settings/billing';
+              navigate('/setup/settings?tab=plan');
             }}
           >
             Upgrade Plan Now

@@ -99,7 +99,7 @@ const RolesPage = lazy(() => import('@/features/superadmin/roles/pages/RolesPage
 const TemplatesPage = lazy(() => import('@/features/superadmin/templates/pages/TemplatesPage'));
 const MessageLogsPage = lazy(() => import('@/features/superadmin/templates/pages/MessageLogsPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
-
+const SubscriptionsPage = lazy(() => import('@/features/superadmin/subscriptions/pages/SubscriptionsPage'));
 // Partner Portal Pages
 const PartnerRegister = lazy(() => import('@/features/auth/pages/PartnerRegisterPage'));
 const PartnerDashboard = lazy(() => import('@/features/partner/dashboard/pages/PartnerDashboardPage'));
@@ -350,6 +350,7 @@ function App() {
             <Route path="/superadmin/tenants" element={<SuperadminRoute><PermissionGuard permission="manage_tenants"><TenantsPage /></PermissionGuard></SuperadminRoute>} />
             <Route path="/superadmin/partners" element={<SuperadminRoute><PermissionGuard permission="manage_partners"><PartnersPage /></PermissionGuard></SuperadminRoute>} />
             <Route path="/superadmin/commissions" element={<SuperadminRoute><PermissionGuard permission="manage_commissions"><CommissionsPage /></PermissionGuard></SuperadminRoute>} />
+            <Route path="/superadmin/subscriptions" element={<SuperadminRoute><SubscriptionsPage /></SuperadminRoute>} />
             <Route path="/superadmin/leads" element={<SuperadminRoute><PermissionGuard permission="manage_leads"><LeadsPage /></PermissionGuard></SuperadminRoute>} />
             <Route path="/superadmin/users" element={<SuperadminRoute><PermissionGuard permission="manage_users"><UsersPage /></PermissionGuard></SuperadminRoute>} />
             <Route path="/superadmin/roles" element={<SuperadminRoute><PermissionGuard permission="manage_roles"><RolesPage /></PermissionGuard></SuperadminRoute>} />

@@ -126,6 +126,7 @@ class TenantController extends BaseController
             // Business Details
             'business_name' => 'required|string|max:255',
             'plan_id' => 'nullable|exists:plans,id',
+            'billing_cycle' => 'nullable|in:monthly,yearly,lifetime',
             'custom_features' => 'nullable|array',
             'partner_id' => 'nullable|exists:partners,id',
             'amount_paid' => 'nullable|numeric|min:0',

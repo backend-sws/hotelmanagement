@@ -45,24 +45,24 @@ export const businessMenuGroups = [
       { name: "PROFORMA", href: "/proforma", icon: FileStack },
       { name: "QUOTATIONS", href: "/quotations", icon: Receipt },
       { name: "CREDIT NOTES", href: "/credit-notes", icon: Activity },
-      { name: "EXPENSES", href: "/expenses", icon: Receipt },
+      { name: "EXPENSES", href: "/expenses", icon: Receipt, feature: 'has_expenses' },
     ]
   },
   {
     title: "PURCHASE & KHATA",
     items: [
-      { name: "PURCHASE BILLS", href: "/business/purchases", icon: ShoppingBag },
-      { name: "CUSTOMER KHATA", href: "/business/ledger/customers", icon: BookOpen },
-      { name: "SUPPLIER KHATA", href: "/business/ledger/suppliers", icon: BookOpen },
-      { name: "OUTSTANDING AGING", href: "/business/outstanding", icon: Clock },
+      { name: "PURCHASE BILLS", href: "/business/purchases", icon: ShoppingBag, feature: 'has_purchase_bills' },
+      { name: "CUSTOMER KHATA", href: "/business/ledger/customers", icon: BookOpen, feature: 'has_khata_ledger' },
+      { name: "SUPPLIER KHATA", href: "/business/ledger/suppliers", icon: BookOpen, feature: 'has_khata_ledger' },
+      { name: "OUTSTANDING AGING", href: "/business/outstanding", icon: Clock, feature: 'has_khata_ledger' },
     ]
   },
   {
     title: "CASH, BANK & CHEQUES",
     items: [
-      { name: "CASH & BANK BOOK", href: "/business/cash-bank", icon: Wallet },
-      { name: "ROZKA DAY BOOK", href: "/business/daybook", icon: ClipboardList },
-      { name: "CHEQUE REGISTER", href: "/business/cheques", icon: Receipt },
+      { name: "CASH & BANK BOOK", href: "/business/cash-bank", icon: Wallet, feature: 'has_cashbook' },
+      { name: "ROZKA DAY BOOK", href: "/business/daybook", icon: ClipboardList, feature: 'has_cashbook' },
+      { name: "CHEQUE REGISTER", href: "/business/cheques", icon: Receipt, feature: 'has_cheques' },
     ]
   },
   {
@@ -85,16 +85,16 @@ export const businessMenuGroups = [
     title: "STOCK & GODOWNS",
     items: [
       { name: "STOCK SUMMARY", href: "/stock/summary", icon: BarChart3 },
-      { name: "STOCK TRANSFERS", href: "/stock/transfer", icon: ArrowLeftRight },
+      { name: "STOCK TRANSFERS", href: "/stock/transfer", icon: ArrowLeftRight, feature: 'has_stock_transfer' },
       { name: "GODOWNS", href: "/stock/godowns", icon: Warehouse },
     ]
   },
   {
     title: "PROJECTS & BOQ",
     items: [
-      { name: "PROJECTS & SITES", href: "/business/projects", icon: Building2 },
-      { name: "BOQ & ESTIMATES", href: "/boq", icon: PieChart },
-      { name: "LABOUR & WAGES", href: "/business/labour/summary", icon: HardHat },
+      { name: "PROJECTS & SITES", href: "/business/projects", icon: Building2, feature: 'has_projects' },
+      { name: "BOQ & ESTIMATES", href: "/boq", icon: PieChart, feature: 'has_projects' },
+      { name: "LABOUR & WAGES", href: "/business/labour/summary", icon: HardHat, feature: 'has_projects' },
     ]
   },
   {
@@ -110,10 +110,10 @@ export const businessMenuGroups = [
   {
     title: "GST & FINANCIAL REPORTS",
     items: [
-      { name: "GST RETURNS (GSTR-1, 3B, HSN)", href: "/business/reports/gst", icon: FileText },
-      { name: "PROFIT & LOSS STATEMENT", href: "/business/reports/profit-loss", icon: Calculator },
-      { name: "BALANCE SHEET", href: "/business/reports/balance-sheet", icon: BookOpen },
-      { name: "SALES ANALYSIS REPORT", href: "/business/reports/sales", icon: BarChart3 },
+      { name: "GST RETURNS (GSTR-1, 3B, HSN)", href: "/business/reports/gst", icon: FileText, feature: 'has_gst_reports' },
+      { name: "PROFIT & LOSS STATEMENT", href: "/business/reports/profit-loss", icon: Calculator, feature: 'has_financial_reports' },
+      { name: "BALANCE SHEET", href: "/business/reports/balance-sheet", icon: BookOpen, feature: 'has_financial_reports' },
+      { name: "SALES ANALYSIS REPORT", href: "/business/reports/sales", icon: BarChart3, feature: 'has_financial_reports' },
     ]
   },
   {
@@ -138,6 +138,7 @@ export const superadminMenuGroups = [
     items: [
       { name: "SYSTEM OVERVIEW", href: "/superadmin/dashboard", icon: ShieldAlert, permission: "view_dashboard" },
       { name: "SUBSCRIPTION PLANS", href: "/superadmin/plans", icon: Package, permission: "manage_plans" },
+      { name: "SUBSCRIPTION LOGS", href: "/superadmin/subscriptions", icon: Receipt, permission: "manage_plans" },
       { name: "TENANTS / BUSINESSES", href: "/superadmin/tenants", icon: Building2, permission: "manage_tenants" },
     ]
   },
@@ -236,7 +237,7 @@ export function Sidebar({ className }: { className?: string }) {
   const { appName, appLogo } = useAppStore();
   const { activeBusiness } = useTenantStore();
   const { hasPermission } = usePermissions();
-  const { hasFeature } = useFeature();
+  const { hasFeature, isFeatureHidden } = useFeature();
   const [lockedFeatureName, setLockedFeatureName] = useState<string | undefined>();
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
 
@@ -293,7 +294,7 @@ export function Sidebar({ className }: { className?: string }) {
       if (hasFeature('has_finance')) {
         operationsItems.push({ name: "FINANCE LEDGER", href: "/finance", icon: Wallet });
       }
-      operationsItems.push({ name: "EXPENSES", href: "/expenses", icon: Receipt });
+      operationsItems.push({ name: "EXPENSES", href: "/expenses", icon: Receipt, feature: 'has_expenses' });
     }
     if (operationsItems.length > 0) {
       filteredStaffGroups.push({
@@ -315,29 +316,67 @@ export function Sidebar({ className }: { className?: string }) {
       title: "RELATIONSHIPS",
       items: relationshipItems
     });
+  }
 
+  if (hasPermission('manage_ledger') || hasPermission('manage_purchases')) {
     const khataItems = [];
-    if (hasPermission('manage_suppliers')) {
-      khataItems.push({ name: "PURCHASE BILLS", href: "/business/purchases", icon: ShoppingBag });
-      khataItems.push({ name: "SUPPLIER KHATA", href: "/business/ledger/suppliers", icon: BookOpen });
+    if (hasPermission('manage_purchases')) {
+      khataItems.push({ name: "PURCHASE BILLS", href: "/business/purchases", icon: ShoppingBag, feature: 'has_purchase_bills' });
     }
-    if (hasPermission('manage_customers')) {
-      khataItems.push({ name: "CUSTOMER KHATA", href: "/business/ledger/customers", icon: BookOpen });
+    if (hasPermission('manage_ledger')) {
+      khataItems.push({ name: "CUSTOMER KHATA", href: "/business/ledger/customers", icon: BookOpen, feature: 'has_khata_ledger' });
+      khataItems.push({ name: "SUPPLIER KHATA", href: "/business/ledger/suppliers", icon: BookOpen, feature: 'has_khata_ledger' });
+      khataItems.push({ name: "OUTSTANDING AGING", href: "/business/outstanding", icon: Clock, feature: 'has_khata_ledger' });
     }
-    khataItems.push({ name: "OUTSTANDING AGING", href: "/business/outstanding", icon: Clock });
     if (khataItems.length > 0) {
       filteredStaffGroups.push({
         title: "PURCHASE & KHATA",
         items: khataItems
       });
     }
+  }
 
+  if (hasPermission('manage_finance')) {
     filteredStaffGroups.push({
       title: "CASH, BANK & CHEQUES",
       items: [
-        { name: "CASH & BANK BOOK", href: "/business/cash-bank", icon: Wallet },
-        { name: "ROZKA DAY BOOK", href: "/business/daybook", icon: ClipboardList },
-        { name: "CHEQUE REGISTER", href: "/business/cheques", icon: Receipt },
+        { name: "CASH & BANK BOOK", href: "/business/cash-bank", icon: Wallet, feature: 'has_cashbook' },
+        { name: "ROZKA DAY BOOK", href: "/business/daybook", icon: ClipboardList, feature: 'has_cashbook' },
+        { name: "CHEQUE REGISTER", href: "/business/cheques", icon: Receipt, feature: 'has_cheques' },
+      ]
+    });
+  }
+
+  if (hasPermission('manage_inventory')) {
+    filteredStaffGroups.push({
+      title: "STOCK & GODOWNS",
+      items: [
+        { name: "STOCK SUMMARY", href: "/stock/summary", icon: BarChart3 },
+        { name: "STOCK TRANSFERS", href: "/stock/transfer", icon: ArrowLeftRight, feature: 'has_stock_transfer' },
+        { name: "GODOWNS", href: "/stock/godowns", icon: Warehouse },
+      ]
+    });
+  }
+
+  if (hasPermission('manage_projects')) {
+    filteredStaffGroups.push({
+      title: "PROJECTS & BOQ",
+      items: [
+        { name: "PROJECTS & SITES", href: "/business/projects", icon: Building2, feature: 'has_projects' },
+        { name: "BOQ & ESTIMATES", href: "/boq", icon: PieChart, feature: 'has_projects' },
+        { name: "LABOUR & WAGES", href: "/business/labour/summary", icon: HardHat, feature: 'has_projects' },
+      ]
+    });
+  }
+
+  if (hasPermission('view_reports')) {
+    filteredStaffGroups.push({
+      title: "GST & FINANCIAL REPORTS",
+      items: [
+        { name: "GST RETURNS (GSTR-1, 3B, HSN)", href: "/business/reports/gst", icon: FileText, feature: 'has_gst_reports' },
+        { name: "PROFIT & LOSS STATEMENT", href: "/business/reports/profit-loss", icon: Calculator, feature: 'has_financial_reports' },
+        { name: "BALANCE SHEET", href: "/business/reports/balance-sheet", icon: BookOpen, feature: 'has_financial_reports' },
+        { name: "SALES ANALYSIS REPORT", href: "/business/reports/sales", icon: BarChart3, feature: 'has_financial_reports' },
       ]
     });
   }
@@ -348,10 +387,10 @@ export function Sidebar({ className }: { className?: string }) {
       hrItems.push({ name: "STAFF", href: "/staff", icon: Users });
     }
     if (hasPermission('view_attendance') && hasFeature('has_payroll')) {
-      hrItems.push({ name: "ATTENDANCE", href: "/attendance", icon: ClipboardList });
+      hrItems.push({ name: "ATTENDANCE", href: "/attendance", icon: ClipboardList, feature: 'has_payroll' });
     }
     if (hasPermission('manage_payroll') && hasFeature('has_payroll')) {
-      hrItems.push({ name: "PAYROLL", href: "/payroll", icon: Wallet });
+      hrItems.push({ name: "PAYROLL", href: "/payroll", icon: Wallet, feature: 'has_payroll' });
     }
     if (hrItems.length > 0) {
       filteredStaffGroups.push({
@@ -365,10 +404,10 @@ export function Sidebar({ className }: { className?: string }) {
     title: "SELF SERVICE",
     items: [
       { name: "DASHBOARD", href: "/dashboard", icon: LayoutDashboard },
-      hasFeature('has_payroll') ? { name: "MY ATTENDANCE", href: "/attendance", icon: ClipboardList } : null,
-      hasFeature('has_payroll') ? { name: "MY SALARY SLIPS", href: "/payroll", icon: Wallet } : null,
-      hasFeature('has_payroll') ? { name: "REQUEST LEAVE", href: "/hr/leave-requests", icon: Calendar } : null,
-      hasFeature('has_payroll') ? { name: "SALARY ADVANCE", href: "/hr/advances", icon: Wallet } : null,
+      hasFeature('has_payroll') ? { name: "MY ATTENDANCE", href: "/attendance", icon: ClipboardList, feature: 'has_payroll' } : null,
+      hasFeature('has_payroll') ? { name: "MY SALARY SLIPS", href: "/payroll", icon: Wallet, feature: 'has_payroll' } : null,
+      hasFeature('has_payroll') ? { name: "REQUEST LEAVE", href: "/hr/leave-requests", icon: Calendar, feature: 'has_payroll' } : null,
+      hasFeature('has_payroll') ? { name: "SALARY ADVANCE", href: "/hr/advances", icon: Wallet, feature: 'has_payroll' } : null,
     ].filter(Boolean) as any[]
   });
 
@@ -389,7 +428,7 @@ export function Sidebar({ className }: { className?: string }) {
       )}
 
       <div className={cn(
-        "fixed lg:static inset-y-0 left-0 h-screen bg-white dark:bg-[#09090b] border-r border-slate-200 dark:border-white/5 flex-col shadow-2xl lg:shadow-sm z-50 shrink-0 transition-all duration-300 ease-in-out flex",
+        "fixed lg:static inset-y-0 left-0 h-screen bg-white dark:bg-[#09090b] border-r border-slate-200 dark:border-white/5 flex-col shadow-2xl lg:shadow-sm z-50 shrink-0 transition-all duration-300 ease-in-out flex overflow-x-hidden",
         isSidebarCollapsed ? "w-[210px] lg:w-[80px] -translate-x-full lg:translate-x-0" : "w-[210px] translate-x-0",
         className
       )}>
@@ -434,6 +473,11 @@ export function Sidebar({ className }: { className?: string }) {
                     const isActive = location.pathname === item.href
                       || (item.href === '/superadmin/dashboard' && location.pathname === '/superadmin')
                       || (item.href === '/dashboard' && location.pathname === '/');
+                    
+                    if (item.feature && isFeatureHidden(item.feature)) {
+                      return null;
+                    }
+                    
                     const isLocked = item.feature && !hasFeature(item.feature);
 
                     if (isLocked) {

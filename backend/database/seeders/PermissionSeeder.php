@@ -53,6 +53,10 @@ class PermissionSeeder extends Seeder
             'manage_attendance',
             'manage_payroll',
             'manage_business_settings',
+            'manage_ledger',
+            'manage_finance',
+            'manage_projects',
+            'view_reports',
         ];
 
         // Create all permissions

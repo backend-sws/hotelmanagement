@@ -255,5 +255,312 @@ Keep track of what items are in your shop and who you bought them from.
 * जो माल आप यहाँ चढ़ाएंगे, वो अपने आप आपकी दुकान के स्टॉक (Inventory) में जुड़ जाएगा!
       `
     }
+  },
+  {
+    id: "plan-subscription",
+    title: {
+      en: "Plans & Subscription",
+      hi: "प्लान और सब्सक्रिप्शन",
+    },
+    icon: "Crown",
+    content: {
+      en: `
+### Plans & Subscription
+
+Manage your shop's CRM subscription and billing easily.
+
+**Checking Your Plan Validity:**
+* You can always check your active plan and remaining days directly from the top header on any page (e.g., "PROFESSIONAL PLAN - 365 Days Left").
+
+**Renewing or Changing Your Plan:**
+1. Go to **Settings** and open the **Subscription** tab.
+2. Here you will see your current active plan, its expiry date, and a history of all your past payments.
+3. To renew, simply click on the **Renew/Upgrade** button, choose your preferred billing cycle (Monthly or Yearly), and complete the payment securely via Razorpay.
+4. Your plan will be updated instantly!
+      `,
+      hi: `
+### प्लान और सब्सक्रिप्शन (Recharge)
+
+अपने शॉप CRM के रिचार्ज और प्लान की जानकारी यहाँ देखें।
+
+**अपने प्लान की वैलिडिटी (Validity) कैसे चेक करें:**
+* आप किसी भी पेज पर सबसे ऊपर (Header में) अपना एक्टिव प्लान और बचे हुए दिन देख सकते हैं (जैसे: "PROFESSIONAL PLAN - 365 Days Left")। 
+
+**प्लान रिन्यू (Renew) कैसे करें:**
+1. **Settings** में जाएं और **Subscription** टैब खोलें।
+2. यहाँ आपको आपका मौजूदा प्लान, उसके ख़त्म होने की तारीख़, और आपकी पिछली पेमेंट्स की पूरी हिस्ट्री दिखेगी।
+3. रिचार्ज करने के लिए **Renew/Upgrade** बटन दबाएं, अपना नया प्लान चुनें, और Razorpay के ज़रिए सुरक्षित पेमेंट करें।
+4. पेमेंट होते ही आपका प्लान तुरंत अपडेट हो जाएगा!
+      `
+    }
+  },
+  {
+    id: "billing-documents",
+    title: {
+      en: "Billing & Documents",
+      hi: "बिलिंग और डाक्यूमेंट्स",
+    },
+    icon: "FileText",
+    content: {
+      en: `
+### Billing & Documents (Invoices, Quotations, Challans)
+
+This module handles all your official documentation and billing needs.
+
+**1. Sales Invoices & Proforma:**
+* Create professional tax invoices for your B2B and B2C sales.
+* Need to send an estimate before confirming the sale? Create a **Proforma Invoice** first.
+
+**2. Quotations (Estimates):**
+* Use Quotations to give your customers price estimates. These do not affect your stock or accounting until converted into a final invoice.
+
+**3. Delivery Challans:**
+* If you are dispatching goods without an immediate invoice (e.g., for approval or job work), generate a **Delivery Challan** to accompany the shipment.
+      `,
+      hi: `
+### बिलिंग और डाक्यूमेंट्स (Invoices, Quotations, Challans)
+
+यह मॉड्यूल आपके सभी ज़रूरी डाक्यूमेंट्स और बिल बनाने के काम आता है।
+
+**1. पक्के बिल (Sales Invoices) और प्रोफार्मा:**
+* अपने B2B और B2C ग्राहकों के लिए पक्के टैक्स इनवॉइस बनाएं।
+* अगर कस्टमर को डील फाइनल करने से पहले एस्टीमेट (कच्चा बिल) चाहिए, तो आप **Proforma Invoice** बना कर दे सकते हैं।
+
+**2. कोटेशन (Quotations):**
+* कोटेशन का इस्तेमाल ग्राहकों को रेट लिस्ट या एस्टीमेट देने के लिए होता है। इसे बनाने से आपके स्टॉक या खाते पर कोई असर नहीं पड़ता।
+
+**3. डिलीवरी चालान (Challans):**
+* अगर आप बिना पक्के बिल के माल भेज रहे हैं (जैसे अप्रूवल के लिए या कारीगर के पास), तो माल के साथ भेजने के लिए **Delivery Challan** बनाएं।
+      `
+    }
+  },
+  {
+    id: "khata-outstanding",
+    title: {
+      en: "Khata & Outstanding",
+      hi: "खाता और बकाया (Khata)",
+    },
+    icon: "BookOpen",
+    content: {
+      en: `
+### Khata (Ledger) & Outstanding Management
+
+Track who owes you money and who you owe money to.
+
+**1. Customer & Supplier Khata (Ledger):**
+* Every customer and supplier has a dedicated Ledger (Khata).
+* It automatically tracks all their invoices, payments, and outstanding balances.
+* You can easily view their full transaction history in one place.
+
+**2. Outstanding Aging Report:**
+* This powerful report shows you exactly which payments are overdue and by how many days (e.g., 0-30 days, 30-60 days).
+* Use this to follow up with customers for pending payments and improve your cash flow!
+      `,
+      hi: `
+### खाता (Ledger) और बकाया (Outstanding)
+
+यहाँ आप देख सकते हैं कि किससे कितना पैसा लेना है और किसको कितना देना है।
+
+**1. कस्टमर और सप्लायर खाता (Ledger):**
+* हर ग्राहक और सप्लायर का एक अलग खाता (Ledger) होता है।
+* यह सिस्टम उनके सारे बिलों, पेमेंट्स और बकाया (उधार) का खुद हिसाब रखता है।
+* आप किसी भी कस्टमर का पूरा लेन-देन एक ही जगह देख सकते हैं।
+
+**2. बकाया रिपोर्ट (Outstanding Aging):**
+* यह रिपोर्ट आपको बताती है कि किन ग्राहकों का पैसा कितने दिनों से रुका हुआ है (जैसे: 0-30 दिन, 30-60 दिन)।
+* इसका इस्तेमाल करके आप समय पर तगादा (Follow-up) कर सकते हैं और अपनी पेमेंट निकलवा सकते हैं!
+      `
+    }
+  },
+  {
+    id: "cash-bank-cheques",
+    title: {
+      en: "Cash, Bank & Cheques",
+      hi: "कैश, बैंक और चेक",
+    },
+    icon: "Wallet",
+    content: {
+      en: `
+### Cash, Bank & Cheque Management
+
+Keep tight control over your daily cash flow and bank transactions.
+
+**1. Cash & Bank Book (Rozka Day Book):**
+* Tracks every single rupee coming in or going out of your business.
+* You can maintain multiple bank accounts, petty cash, and digital wallets (UPI/GPay).
+* View daily summaries in the **Rozka Day Book** to tally your cash counter at the end of the day.
+
+**2. Cheque Register:**
+* When a customer pays by cheque, record it here.
+* Track the status of every cheque (Received, Deposited, Cleared, or Bounced).
+* Never lose track of a post-dated cheque again!
+      `,
+      hi: `
+### कैश, बैंक और चेक का हिसाब
+
+अपने रोज़ के कैश और बैंक के लेन-देन का पक्का हिसाब रखें।
+
+**1. कैश और बैंक बुक (रोज़का Day Book):**
+* व्यापार में आने और जाने वाले हर एक रुपये का हिसाब रखता है।
+* आप अलग-अलग बैंक खाते, गल्ले का कैश (Petty Cash), और UPI (PhonePe/GPay) सब जोड़ सकते हैं।
+* शाम को गल्ला मिलाने के लिए **रोज़का Day Book** देखें।
+
+**2. चेक रजिस्टर (Cheque Register):**
+* जब कोई कस्टमर चेक से पेमेंट दे, तो उसकी एंट्री यहाँ करें।
+* हर चेक का स्टेटस ट्रैक करें (जैसे: बैंक में लगाया, पास हो गया, या बाउंस हो गया)।
+* आगे की तारीख़ (PDC) वाले चेकों का भी हिसाब रखें ताकि कोई चेक छूटे नहीं!
+      `
+    }
+  },
+  {
+    id: "relationships",
+    title: {
+      en: "Customers & Suppliers",
+      hi: "कस्टमर्स और सप्लायर्स",
+    },
+    icon: "Users",
+    content: {
+      en: `
+### Managing Relationships
+
+Maintain a complete directory of your business contacts.
+
+**1. Customers:**
+* Store important details like Phone, Address, GSTIN, and Credit Limits.
+* Set opening balances if they already owed you money before you started using the CRM.
+
+**2. Suppliers (Vendors):**
+* Manage the details of distributors and companies you purchase goods from.
+* Similar to customers, you can track their GST details and opening balances.
+      `,
+      hi: `
+### कस्टमर्स और सप्लायर्स (Directory)
+
+अपने सभी व्यापारिक संपर्कों (Contacts) की जानकारी एक जगह सुरक्षित रखें।
+
+**1. कस्टमर्स (Customers):**
+* ग्राहकों का फ़ोन नंबर, पता, GST नंबर और उनकी उधार सीमा (Credit Limit) सेव करें।
+* अगर CRM शुरू करने से पहले ही किसी का पुराना उधार बाकी है, तो उसे 'Opening Balance' में डाल दें।
+
+**2. सप्लायर्स (Suppliers/Vendors):**
+* उन डिस्ट्रीब्यूटर्स और कंपनियों की डिटेल रखें जिनसे आप माल खरीदते हैं।
+* ग्राहकों की तरह ही आप सप्लायर्स के भी पुराने बकाया (Opening Balance) सेट कर सकते हैं।
+      `
+    }
+  },
+  {
+    id: "stock-godowns",
+    title: {
+      en: "Stock & Godowns",
+      hi: "स्टॉक और गोदाम (Godowns)",
+    },
+    icon: "Warehouse",
+    content: {
+      en: `
+### Advanced Stock Management
+
+Track your inventory accurately across multiple locations.
+
+**1. Godowns (Warehouses):**
+* If you store goods in multiple shops or godowns, you can create them here.
+* Easily see exactly how much stock is present in which specific godown using the **Stock Summary**.
+
+**2. Stock Transfers:**
+* Need to move items from the main godown to your retail shop? 
+* Use the **Stock Transfer** feature to officially record the movement of goods between your locations to prevent theft and discrepancies.
+      `,
+      hi: `
+### एडवांस स्टॉक मैनेजमेंट
+
+अलग-अलग जगहों पर रखे अपने स्टॉक की पूरी जानकारी रखें।
+
+**1. गोदाम (Godowns/Warehouses):**
+* अगर आपका माल अलग-अलग दुकानों या गोदामों में रखा है, तो आप उन्हें सिस्टम में जोड़ सकते हैं।
+* **Stock Summary** में आप देख सकते हैं कि कौन सा माल किस गोदाम में कितना पड़ा है।
+
+**2. स्टॉक ट्रांसफर (Stock Transfers):**
+* क्या आपको मेन गोदाम से दुकान पर माल भेजना है?
+* माल इधर-उधर करने के लिए **Stock Transfer** की एंट्री करें। इससे माल की चोरी नहीं होगी और स्टॉक का हिसाब एकदम पक्का रहेगा।
+      `
+    }
+  },
+  {
+    id: "projects",
+    title: {
+      en: "Projects & BOQ",
+      hi: "प्रोजेक्ट्स और BOQ",
+    },
+    icon: "Building2",
+    content: {
+      en: `
+### Project & Site Management
+
+Ideal for contractors, builders, and service providers.
+
+**1. Projects & Sites:**
+* Create a dedicated Project/Site to track all expenses, material consumption, and billing related to a specific job.
+
+**2. BOQ (Bill of Quantities):**
+* Create detailed estimates and material requirements for large contracts.
+
+**3. Labour & Wages:**
+* Track daily labour attendance at specific sites and calculate their wages accurately based on the project they worked on.
+      `,
+      hi: `
+### प्रोजेक्ट्स और साइट (Sites) का काम
+
+यह फीचर ठेकेदारों (Contractors), बिल्डर्स और सर्विस देने वालों के लिए बहुत काम का है।
+
+**1. प्रोजेक्ट्स और साइट्स (Projects):**
+* किसी भी नए ठेके या साइट के लिए एक 'प्रोजेक्ट' बनाएं।
+* उस साइट पर कितना माल लगा, कितना खर्चा हुआ और कितने के बिल बने, यह सब अलग से ट्रैक करें।
+
+**2. BOQ (Bill of Quantities):**
+* बड़े टेंडर या ठेके के लिए माल का एस्टीमेट (BOQ) तैयार करें।
+
+**3. लेबर और दिहाड़ी (Labour & Wages):**
+* ट्रैक करें कि कौन सी लेबर किस साइट पर कितने दिन काम पर आई, और उनकी दिहाड़ी का पूरा हिसाब रखें।
+      `
+    }
+  },
+  {
+    id: "reports",
+    title: {
+      en: "GST & Financial Reports",
+      hi: "GST और फाइनेंस रिपोर्ट्स",
+    },
+    icon: "Calculator",
+    content: {
+      en: `
+### Comprehensive Reporting
+
+Understand the financial health of your business instantly.
+
+**1. GST Returns:**
+* The system automatically generates your GSTR-1, GSTR-3B, and HSN summary reports based on your sales and purchases. You can hand these directly to your CA.
+
+**2. Financial Statements:**
+* View your **Profit & Loss Statement** to see exactly how much money your business is making.
+* Check your **Balance Sheet** for a snapshot of your assets and liabilities.
+
+**3. Sales Analysis:**
+* Understand which products are selling the most, who your top customers are, and track the performance of your sales staff!
+      `,
+      hi: `
+### बिज़नेस की पूरी रिपोर्ट (Reports)
+
+एक क्लिक में जानिए कि आपका बिज़नेस कैसा चल रहा है।
+
+**1. GST रिटर्न्स (GST Returns):**
+* आपके बनाए हुए बिलों के आधार पर सिस्टम खुद ही GSTR-1, GSTR-3B और HSN रिपोर्ट तैयार कर देता है। आप इसे सीधा अपने CA (वकील) को दे सकते हैं।
+
+**2. फाइनेंस रिपोर्ट्स (P&L):**
+* अपनी **Profit & Loss (P&L)** रिपोर्ट देखें और जानें कि आपको असल में कितना मुनाफा (Profit) या नुकसान हो रहा है।
+* अपनी दुकान की पूरी संपत्ति और देनदारी देखने के लिए **Balance Sheet** चेक करें।
+
+**3. सेल्स एनालिसिस (Sales Analysis):**
+* जानें कि कौन सा सामान सबसे ज़्यादा बिक रहा है, आपके सबसे अच्छे ग्राहक कौन हैं, और आपके किस सेल्समैन ने सबसे ज़्यादा सेल की है!
+      `
+    }
   }
 ];

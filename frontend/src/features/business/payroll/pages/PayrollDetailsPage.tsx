@@ -146,7 +146,7 @@ export default function PayrollDetailsPage() {
       </div>
 
       {/* Screen Layout Container */}
-      <div className="w-full max-w-5xl px-4 pt-0 pb-6 space-y-6 print:hidden">
+      <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 pt-4 pb-8 space-y-6 print:hidden">
         
         {/* Hero split layout (Employee + Net Salary + Status widget) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -363,7 +363,7 @@ export default function PayrollDetailsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* Earnings card */}
-          <div className="bg-white/70 dark:bg-zinc-950/30 border border-slate-200/80 dark:border-white/5 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div className="bg-white/70 dark:bg-zinc-950/30 border border-slate-200/80 dark:border-white/5 rounded-2xl p-6 shadow-sm flex flex-col">
             <div>
               <div className="flex items-center gap-2 pb-4 border-b border-slate-100 dark:border-white/5">
                 <div className="p-1.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg text-emerald-600 dark:text-emerald-400">
@@ -488,7 +488,7 @@ export default function PayrollDetailsPage() {
           </div>
 
           {/* Deductions card */}
-          <div className="bg-white/70 dark:bg-zinc-950/30 border border-slate-200/80 dark:border-white/5 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div className="bg-white/70 dark:bg-zinc-950/30 border border-slate-200/80 dark:border-white/5 rounded-2xl p-6 shadow-sm flex flex-col">
             <div>
               <div className="flex items-center gap-2 pb-4 border-b border-slate-100 dark:border-white/5">
                 <div className="p-1.5 bg-rose-50 dark:bg-rose-500/10 rounded-lg text-rose-500 dark:text-rose-400">

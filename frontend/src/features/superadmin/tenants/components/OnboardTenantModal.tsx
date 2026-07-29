@@ -25,7 +25,7 @@ export function OnboardTenantModal({ isOpen, onClose }: OnboardTenantModalProps)
   const plans = plansData?.data;
   const { data: partnersData } = usePartners({ all: true });
   const partners = partnersData?.data;
-  const [selectedFeatures, setSelectedFeatures] = useState<Record<string, boolean>>({});
+  const [selectedFeatures, setSelectedFeatures] = useState<Record<string, boolean | 'hidden'>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm({
@@ -37,6 +37,7 @@ export function OnboardTenantModal({ isOpen, onClose }: OnboardTenantModalProps)
       owner_password: '',
       business_name: '',
       plan_id: undefined as number | undefined,
+      billing_cycle: 'yearly' as 'monthly' | 'yearly' | 'lifetime',
       partner_id: undefined as number | null | undefined,
     }
   });
@@ -52,7 +53,7 @@ export function OnboardTenantModal({ isOpen, onClose }: OnboardTenantModalProps)
     }
   }, [isOpen, reset]);
 
-  const toggleCustomFeature = (featureId: string, value: boolean) => {
+  const toggleCustomFeature = (featureId: string, value: boolean | 'hidden') => {
     setSelectedFeatures(prev => ({
       ...prev,
       [featureId]: value
@@ -131,9 +132,16 @@ export function OnboardTenantModal({ isOpen, onClose }: OnboardTenantModalProps)
                     <button
                       type="button"
                       onClick={() => toggleCustomFeature(feature.id, false)}
-                      className={`flex-1 py-1 text-xs font-semibold rounded ${overrideVal === false ? 'bg-red-500 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-white/20'}`}
+                      className={`flex-1 py-1 text-xs font-semibold rounded ${overrideVal === false ? 'bg-amber-500 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-white/20'}`}
                     >
                       Force OFF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleCustomFeature(feature.id, 'hidden')}
+                      className={`flex-1 py-1 text-xs font-semibold rounded ${overrideVal === 'hidden' ? 'bg-red-500 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-white/20'}`}
+                    >
+                      Hide
                     </button>
                     {overrideVal !== undefined && (
                       <button

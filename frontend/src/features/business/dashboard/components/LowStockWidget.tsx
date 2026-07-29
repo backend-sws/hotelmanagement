@@ -105,7 +105,7 @@ export function LowStockWidget({ items = [] }: LowStockWidgetProps) {
       {/* Footer Action */}
       <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
         <Button
-          onClick={() => navigate('/stock-transfers/new')}
+          onClick={() => navigate('/stock/transfer/new')}
           variant="outline"
           size="sm"
           className="w-full text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"

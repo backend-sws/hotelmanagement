@@ -576,7 +576,7 @@ export function Header({ className }: { className?: string }) {
 
         {/* Plan Info Badge */}
         {!isSuperadminMode && !isPartnerMode && isBusinessManager && activeBusiness?.plan && (
-          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/10 border border-yellow-200/60 dark:border-yellow-700/30 rounded-sm shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/setup/profile')}>
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/10 border border-yellow-200/60 dark:border-yellow-700/30 rounded-sm shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/setup/settings?tab=plan')}>
             <div className="w-6 h-6 rounded-full bg-yellow-100 dark:bg-yellow-800/50 flex items-center justify-center shrink-0">
               <Crown className="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-400" />
             </div>

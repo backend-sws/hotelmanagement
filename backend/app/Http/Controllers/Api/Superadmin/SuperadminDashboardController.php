@@ -39,15 +39,15 @@ class SuperadminDashboardController extends BaseController
         $end = $toDate ? Carbon::parse($toDate)->endOfDay() : null;
 
         // 1. Summary Metrics
-        // Total Revenue (sum of amount_paid_by_tenant)
-        $revenueQuery = Commission::query();
+        // Total Subscription Revenue
+        $revenueQuery = \App\Models\BusinessPayment::query()->where('status', 'successful');
         if ($start) {
             $revenueQuery->where('created_at', '>=', $start);
         }
         if ($end) {
             $revenueQuery->where('created_at', '<=', $end);
         }
-        $totalRevenue = (float) $revenueQuery->sum('amount_paid_by_tenant');
+        $totalRevenue = (float) $revenueQuery->sum('amount');
 
         // Commissions Paid (sum of commission_amount where status = paid)
         $commPaidQuery = Commission::query()->where('status', 'paid');
@@ -103,20 +103,20 @@ class SuperadminDashboardController extends BaseController
         $totalUsers = $usersQuery->count();
 
         // 2. Revenue & Profit Trend (Monthly)
-        $commTrendQuery = Commission::query();
+        $paymentTrendQuery = \App\Models\BusinessPayment::query()->where('status', 'successful');
         if ($start) {
-            $commTrendQuery->where('created_at', '>=', $start);
+            $paymentTrendQuery->where('created_at', '>=', $start);
         }
         if ($end) {
-            $commTrendQuery->where('created_at', '<=', $end);
+            $paymentTrendQuery->where('created_at', '<=', $end);
         }
 
         // If no date range specified, default to the last 6 months
         if (!$start && !$end) {
             $trendStart = Carbon::now()->subMonths(5)->startOfMonth();
-            $commTrendQuery->where('created_at', '>=', $trendStart);
+            $paymentTrendQuery->where('created_at', '>=', $trendStart);
         } else {
-            $trendStart = $start ? $start->copy() : Commission::min('created_at');
+            $trendStart = $start ? $start->copy() : \App\Models\BusinessPayment::where('status', 'successful')->min('created_at');
             if (!$trendStart) {
                 $trendStart = Carbon::now()->subMonths(5)->startOfMonth();
             } else {
@@ -125,6 +125,16 @@ class SuperadminDashboardController extends BaseController
         }
         $trendEnd = $end ? $end->copy() : Carbon::now()->endOfMonth();
 
+        $paymentTrend = $paymentTrendQuery->get();
+        
+        // Also get commissions for the trend
+        $commTrendQuery = Commission::query();
+        if ($start) {
+            $commTrendQuery->where('created_at', '>=', $start);
+        }
+        if ($end) {
+            $commTrendQuery->where('created_at', '<=', $end);
+        }
         $commTrend = $commTrendQuery->get();
 
         $months = [];
@@ -139,14 +149,24 @@ class SuperadminDashboardController extends BaseController
             $tempStart->addMonth();
         }
 
+        // Add Revenue
+        foreach ($paymentTrend as $payment) {
+            $monthKey = $payment->created_at->format('Y-m');
+            if (isset($months[$monthKey])) {
+                $months[$monthKey]['revenue'] += (float)$payment->amount;
+                $months[$monthKey]['profit'] += (float)$payment->amount; // initially all revenue is profit
+            }
+        }
+        
+        // Deduct Commissions
         foreach ($commTrend as $comm) {
             $monthKey = $comm->created_at->format('Y-m');
             if (isset($months[$monthKey])) {
-                $months[$monthKey]['revenue'] += (float)$comm->amount_paid_by_tenant;
                 $paidComm = $comm->status === 'paid' ? (float)$comm->commission_amount : 0.0;
-                $months[$monthKey]['profit'] += ((float)$comm->amount_paid_by_tenant - $paidComm);
+                $months[$monthKey]['profit'] -= $paidComm;
             }
         }
+        
         $trend = array_values($months);
 
         // 3. Profit Distribution

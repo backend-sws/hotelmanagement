@@ -1,12 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useFeature } from '@/hooks/useFeature';
+import { useState } from 'react';
+import { FeatureLockModal } from '@/features/business/core/components/FeatureLockModal';
 import { 
   Receipt, ShoppingCart, ArrowRightLeft, 
-  Wallet, Building, PieChart, PlusCircle 
+  Wallet, Building, PieChart, PlusCircle,
+  Crown
 } from 'lucide-react';
 
 export function QuickActionsPanel() {
   const navigate = useNavigate();
+  const { hasFeature, isFeatureHidden } = useFeature();
+  const [lockedFeatureName, setLockedFeatureName] = useState<string | undefined>();
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
 
   const actions = [
     {
@@ -25,7 +32,8 @@ export function QuickActionsPanel() {
       color: 'from-emerald-500 to-teal-600',
       textColor: 'text-emerald-600 dark:text-emerald-400',
       bgColor: 'bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/50',
-      route: '/suppliers/add-purchase',
+      route: '/business/purchases/new',
+      featureKey: 'has_purchase_bills'
     },
     {
       label: 'Stock Transfer',
@@ -34,7 +42,8 @@ export function QuickActionsPanel() {
       color: 'from-amber-500 to-orange-600',
       textColor: 'text-amber-600 dark:text-amber-400',
       bgColor: 'bg-amber-500/10 border-amber-500/20 hover:border-amber-500/50',
-      route: '/stock-transfers/new',
+      route: '/stock/transfer/new',
+      featureKey: 'has_stock_transfer'
     },
     {
       label: 'Cash & Bank Entry',
@@ -43,7 +52,8 @@ export function QuickActionsPanel() {
       color: 'from-purple-500 to-pink-600',
       textColor: 'text-purple-600 dark:text-purple-400',
       bgColor: 'bg-purple-500/10 border-purple-500/20 hover:border-purple-500/50',
-      route: '/cash-bank',
+      route: '/business/cash-bank',
+      featureKey: 'has_cashbook'
     },
     {
       label: 'Material Consumption',
@@ -52,7 +62,8 @@ export function QuickActionsPanel() {
       color: 'from-blue-500 to-cyan-600',
       textColor: 'text-blue-600 dark:text-blue-400',
       bgColor: 'bg-blue-500/10 border-blue-500/20 hover:border-blue-500/50',
-      route: '/projects/consumptions/new',
+      route: '/business/projects',
+      featureKey: 'has_projects'
     },
     {
       label: 'GST Reports Suite',
@@ -62,6 +73,7 @@ export function QuickActionsPanel() {
       textColor: 'text-rose-600 dark:text-rose-400',
       bgColor: 'bg-rose-500/10 border-rose-500/20 hover:border-rose-500/50',
       route: '/reports/gst',
+      featureKey: 'has_gst_reports'
     },
   ];
 
@@ -81,15 +93,31 @@ export function QuickActionsPanel() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {actions.map((act, idx) => {
+          if (act.featureKey && isFeatureHidden(act.featureKey)) return null;
+
+          const isLocked = act.featureKey ? !hasFeature(act.featureKey) : false;
           const Icon = act.icon;
+
           return (
             <button
               key={idx}
-              onClick={() => navigate(act.route)}
-              className={`p-4 rounded-xl border transition-all duration-200 text-left group flex flex-col justify-between hover:shadow-lg dark:bg-slate-900/40 backdrop-blur-sm ${act.bgColor}`}
+              onClick={() => {
+                if (isLocked) {
+                  setLockedFeatureName(act.label);
+                  setIsLockModalOpen(true);
+                } else {
+                  navigate(act.route);
+                }
+              }}
+              className={`relative p-4 rounded-xl border transition-all duration-200 text-left group flex flex-col justify-between hover:shadow-lg dark:bg-slate-900/40 backdrop-blur-sm ${isLocked ? 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 opacity-70 grayscale' : act.bgColor}`}
             >
+              {isLocked && (
+                <div className="absolute top-3 right-3 p-1 rounded-md bg-amber-500/20 text-amber-600">
+                  <Crown className="w-4 h-4" />
+                </div>
+              )}
               <div className="flex justify-between items-start mb-3">
-                <div className={`p-2.5 rounded-lg bg-gradient-to-br ${act.color} text-white shadow-md group-hover:scale-110 transition-transform`}>
+                <div className={`p-2.5 rounded-lg bg-gradient-to-br ${isLocked ? 'from-slate-400 to-slate-500' : act.color} text-white shadow-md group-hover:scale-110 transition-transform`}>
                   <Icon className="w-5 h-5" />
                 </div>
               </div>
@@ -98,13 +126,19 @@ export function QuickActionsPanel() {
                   {act.label}
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
-                  {act.description}
+                  {isLocked ? 'Upgrade Plan to Unlock' : act.description}
                 </p>
               </div>
             </button>
           );
         })}
       </div>
+
+      <FeatureLockModal 
+        isOpen={isLockModalOpen}
+        onClose={() => setIsLockModalOpen(false)}
+        featureName={lockedFeatureName}
+      />
     </div>
   );
 }

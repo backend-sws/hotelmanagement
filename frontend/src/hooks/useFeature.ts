@@ -9,7 +9,7 @@ export function useFeature() {
     // Check custom_features override first (true/false)
     const customFeatures = activeBusiness.custom_features || {};
     if (customFeatures[featureKey] !== undefined) {
-      return Boolean(customFeatures[featureKey]);
+      return customFeatures[featureKey] === true;
     }
 
     // Fallback to plan features object
@@ -21,6 +21,12 @@ export function useFeature() {
     return false;
   };
 
+  const isFeatureHidden = (featureKey: string): boolean => {
+    if (!activeBusiness) return false;
+    const customFeatures = activeBusiness.custom_features || {};
+    return customFeatures[featureKey] === 'hidden';
+  };
+
   const getFeatureLimit = (featureKey: string, defaultValue: number = 1): number => {
     if (!activeBusiness) return defaultValue;
     const planFeatures = activeBusiness.plan?.features;
@@ -30,5 +36,5 @@ export function useFeature() {
     return defaultValue;
   };
 
-  return { hasFeature, getFeatureLimit };
+  return { hasFeature, isFeatureHidden, getFeatureLimit };
 }

@@ -36,7 +36,7 @@ export function EditTenantModal({ isOpen, onClose, tenant }: EditTenantModalProp
 
   // Plan State
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
-  const [selectedFeatures, setSelectedFeatures] = useState<Record<string, boolean>>({});
+  const [selectedFeatures, setSelectedFeatures] = useState<Record<string, boolean | 'hidden'>>({});
   const [planExpiresAt, setPlanExpiresAt] = useState<string>('');
 
   const profileForm = useForm<ProfileFormValues>({
@@ -110,7 +110,7 @@ export function EditTenantModal({ isOpen, onClose, tenant }: EditTenantModalProp
     }
   };
 
-  const toggleCustomFeature = (featureId: string, value: boolean) => {
+  const toggleCustomFeature = (featureId: string, value: boolean | 'hidden') => {
     setSelectedFeatures(prev => ({
       ...prev,
       [featureId]: value
@@ -237,9 +237,16 @@ export function EditTenantModal({ isOpen, onClose, tenant }: EditTenantModalProp
                         <button
                           type="button"
                           onClick={() => toggleCustomFeature(feature.id, false)}
-                          className={`flex-1 py-1 text-xs font-semibold rounded ${overrideVal === false ? 'bg-red-500 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-white/20'}`}
+                          className={`flex-1 py-1 text-xs font-semibold rounded ${overrideVal === false ? 'bg-amber-500 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-white/20'}`}
                         >
                           Force OFF
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleCustomFeature(feature.id, 'hidden')}
+                          className={`flex-1 py-1 text-xs font-semibold rounded ${overrideVal === 'hidden' ? 'bg-red-500 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-white/20'}`}
+                        >
+                          Hide
                         </button>
                         {overrideVal !== undefined && (
                           <button

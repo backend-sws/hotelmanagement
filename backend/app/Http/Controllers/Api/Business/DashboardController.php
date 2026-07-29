@@ -179,11 +179,11 @@ class DashboardController extends Controller
             ->take(5)
             ->map(function ($prod) {
                 return [
-                    'id' => $prod->id,
-                    'name' => $prod->name,
-                    'unit' => $prod->unit ?? 'pcs',
-                    'min_stock_alert' => floatval($prod->min_stock_alert ?? 0),
-                    'total_stock' => floatval($prod->total_stock ?? 0),
+                    'id' => $prod['id'],
+                    'name' => $prod['name'],
+                    'unit' => $prod['unit'] ?? 'pcs',
+                    'min_stock_alert' => floatval($prod['min_stock_alert'] ?? 0),
+                    'total_stock' => floatval($prod['current_qty'] ?? 0),
                 ];
             })->values()->toArray();
 

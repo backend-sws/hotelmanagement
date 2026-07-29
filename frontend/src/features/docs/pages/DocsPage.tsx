@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Search, Monitor, Store, Users, LayoutDashboard, Globe } from 'lucide-react';
+import { BookOpen, Search, Monitor, Store, Users, LayoutDashboard, Globe, Crown, FileText, Wallet, Warehouse, Building2, Calculator } from 'lucide-react';
 import { docsData, type Language } from '../data/docsContent';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,13 @@ const getIcon = (name: string) => {
     case 'Monitor': return <Monitor className="w-5 h-5" />;
     case 'Store': return <Store className="w-5 h-5" />;
     case 'Users': return <Users className="w-5 h-5" />;
+    case 'Crown': return <Crown className="w-5 h-5" />;
+    case 'FileText': return <FileText className="w-5 h-5" />;
+    case 'Wallet': return <Wallet className="w-5 h-5" />;
+    case 'Warehouse': return <Warehouse className="w-5 h-5" />;
+    case 'Building2': return <Building2 className="w-5 h-5" />;
+    case 'Calculator': return <Calculator className="w-5 h-5" />;
+    case 'BookOpen': return <BookOpen className="w-5 h-5" />;
     default: return <BookOpen className="w-5 h-5" />;
   }
 };

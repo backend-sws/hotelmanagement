@@ -23,6 +23,7 @@ export const onboardSchema = z.object({
   owner_password: z.string().min(8, 'Password must be at least 8 characters'),
   business_name: z.string().min(2, 'Business name is required'),
   plan_id: z.coerce.number().optional(),
+  billing_cycle: z.enum(['monthly', 'yearly', 'lifetime']).optional().default('yearly'),
   partner_id: z.coerce.number().optional().nullable(),
 });
 

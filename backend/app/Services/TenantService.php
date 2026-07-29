@@ -74,6 +74,15 @@ class TenantService
             ]);
         }
 
+        $planExpiresAt = null;
+        if (!empty($data['plan_id']) && !empty($data['billing_cycle'])) {
+            if ($data['billing_cycle'] === 'monthly') {
+                $planExpiresAt = now()->addMonth();
+            } elseif ($data['billing_cycle'] === 'yearly') {
+                $planExpiresAt = now()->addYear();
+            }
+        }
+
         // Create the Business
         $business = Business::create([
             'name' => $data['business_name'],
@@ -81,6 +90,7 @@ class TenantService
             'phone' => $data['owner_phone'] ?? null,
             'owner_id' => $user->id,
             'plan_id' => $data['plan_id'] ?? null,
+            'plan_expires_at' => $planExpiresAt,
             'custom_features' => $data['custom_features'] ?? null,
             'partner_id' => $data['partner_id'] ?? null,
             'status' => 'active',
@@ -110,7 +120,8 @@ class TenantService
         // Generate Commission if partner and plan exist
         if (!empty($data['partner_id']) && !empty($data['plan_id'])) {
             $paymentCollectedBy = ($data['payment_method'] ?? 'online') === 'offline' ? 'partner' : 'system';
-            $this->generateCommission($business, $data['partner_id'], $data['plan_id'], $data['amount_paid'] ?? 0, $paymentCollectedBy);
+            $billingCycle = $data['billing_cycle'] ?? 'yearly';
+            $this->generateCommission($business, $data['partner_id'], $data['plan_id'], $data['amount_paid'] ?? 0, $paymentCollectedBy, $billingCycle);
         }
 
         return $business->load(['owner', 'plan']);
@@ -173,16 +184,16 @@ class TenantService
     /**
      * Generate commission records for referral partners.
      */
-    public function generateCommission(Business $business, int $partnerId, int $planId, float $amountPaid, string $paymentCollectedBy = 'system'): void
+    public function generateCommission(Business $business, int $partnerId, int $planId, float $amountPaid, string $paymentCollectedBy = 'system', string $billingCycle = 'yearly'): void
     {
         $partner = Partner::find($partnerId);
         $plan = Plan::find($planId);
 
         if (!$partner || !$plan) return;
 
-        // If no amount is provided, use yearly price as a fallback estimate
+        // If no amount is provided, use cycle price as a fallback estimate
         if ($amountPaid <= 0) {
-            $amountPaid = $plan->price_yearly > 0 ? $plan->price_yearly : $plan->price_monthly;
+            $amountPaid = $billingCycle === 'monthly' ? $plan->price_monthly : $plan->price_yearly;
         }
 
         $commissionAmount = 0;

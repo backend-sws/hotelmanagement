@@ -74,7 +74,7 @@ class Business extends Model
 
         // If explicitly set (true/false) in custom features, respect that
         if (array_key_exists($featureKey, $customFeatures)) {
-            return (bool) $customFeatures[$featureKey];
+            return $customFeatures[$featureKey] === true;
         }
 
         // Fallback to plan features

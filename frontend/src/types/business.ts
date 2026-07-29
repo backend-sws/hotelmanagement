@@ -31,10 +31,11 @@ export interface Business {
     purchase_invoice_prefix?: string;
     [key: string]: any;
   } | null;
+  plan_id?: number | null;
   plan_expires_at?: string | null;
   plan?: {
     name: string;
-    features?: string[];
+    features?: Record<string, boolean | number>;
   } | null;
-  custom_features?: Record<string, boolean> | null;
+  custom_features?: Record<string, boolean | 'hidden'> | null;
 }

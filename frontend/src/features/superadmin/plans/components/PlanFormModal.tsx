@@ -12,8 +12,17 @@ import { DynamicForm } from '@/components/ui/dynamic-form';
 import { getPlanFormConfig } from '../constants/planForm';
 
 export const PREMIUM_FEATURES = [
-  { id: 'has_finance', label: 'EMI & Finance', description: 'Enable EMI tracking and finance ledgers.' },
+  { id: 'has_expenses', label: 'Expenses', description: 'Track business expenses and analytics.' },
+  { id: 'has_purchase_bills', label: 'Purchase Bills & ITC', description: 'Manage supplier purchase bills and GST Input Tax Credit.' },
+  { id: 'has_khata_ledger', label: 'Khata / Ledger', description: 'Customer/Supplier Khata books and outstanding tracking.' },
+  { id: 'has_cashbook', label: 'Cash & Bank Book', description: 'Cash/Bank entries, Day Book, and bank account management.' },
+  { id: 'has_cheques', label: 'Cheque Register', description: 'Track issued/received cheques with status management.' },
+  { id: 'has_stock_transfer', label: 'Multi-Godown Stock', description: 'Inter-godown stock transfers and location-wise stock.' },
+  { id: 'has_projects', label: 'Projects, BOQ & Labour', description: 'Site projects, BOQ estimates, material consumption, and labour payments.' },
+  { id: 'has_gst_reports', label: 'GST Reports', description: 'GSTR-1, GSTR-3B, and HSN summary reports.' },
+  { id: 'has_financial_reports', label: 'Financial Reports', description: 'Profit & Loss, Balance Sheet, and Sales Analysis reports.' },
   { id: 'has_payroll', label: 'HR & Payroll', description: 'Enable staff attendance, advance salary, and commission tracking.' },
+  { id: 'has_finance', label: 'EMI & Finance', description: 'Enable EMI tracking and finance ledgers.' },
   { id: 'can_whitelabel_invoice', label: 'Invoice Customization', description: 'Allow custom letterheads and remove CRM watermark.' },
   { id: 'has_activity_logs', label: 'Activity Logs', description: 'Detailed audit logs for staff actions.' },
 ];
@@ -38,11 +47,20 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
       features: {
         max_locations: 1,
         max_staff: 1,
-        has_finance: false,
+        attendance_photo_retention_days: 0,
+        has_expenses: false,
+        has_purchase_bills: false,
+        has_khata_ledger: false,
+        has_cashbook: false,
+        has_cheques: false,
+        has_stock_transfer: false,
+        has_projects: false,
+        has_gst_reports: false,
+        has_financial_reports: false,
         has_payroll: false,
+        has_finance: false,
         can_whitelabel_invoice: false,
         has_activity_logs: false,
-        attendance_photo_retention_days: 0,
       },
       is_active: true
     }
@@ -64,11 +82,20 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
         features: {
           max_locations: planToEdit.features?.max_locations || 1,
           max_staff: planToEdit.features?.max_staff || 1,
-          has_finance: !!planToEdit.features?.has_finance,
+          attendance_photo_retention_days: planToEdit.features?.attendance_photo_retention_days || 0,
+          has_expenses: !!planToEdit.features?.has_expenses,
+          has_purchase_bills: !!planToEdit.features?.has_purchase_bills,
+          has_khata_ledger: !!planToEdit.features?.has_khata_ledger,
+          has_cashbook: !!planToEdit.features?.has_cashbook,
+          has_cheques: !!planToEdit.features?.has_cheques,
+          has_stock_transfer: !!planToEdit.features?.has_stock_transfer,
+          has_projects: !!planToEdit.features?.has_projects,
+          has_gst_reports: !!planToEdit.features?.has_gst_reports,
+          has_financial_reports: !!planToEdit.features?.has_financial_reports,
           has_payroll: !!planToEdit.features?.has_payroll,
+          has_finance: !!planToEdit.features?.has_finance,
           can_whitelabel_invoice: !!planToEdit.features?.can_whitelabel_invoice,
           has_activity_logs: !!planToEdit.features?.has_activity_logs,
-          attendance_photo_retention_days: planToEdit.features?.attendance_photo_retention_days || 0,
         }
       });
     } else {
@@ -80,11 +107,20 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
         features: {
           max_locations: 1,
           max_staff: 1,
-          has_finance: false,
+          attendance_photo_retention_days: 0,
+          has_expenses: false,
+          has_purchase_bills: false,
+          has_khata_ledger: false,
+          has_cashbook: false,
+          has_cheques: false,
+          has_stock_transfer: false,
+          has_projects: false,
+          has_gst_reports: false,
+          has_financial_reports: false,
           has_payroll: false,
+          has_finance: false,
           can_whitelabel_invoice: false,
           has_activity_logs: false,
-          attendance_photo_retention_days: 0,
         },
         is_active: true
       });
