@@ -268,6 +268,7 @@ Route::prefix('v1')->group(function () {
             // Settings
             Route::put('/settings', [\App\Http\Controllers\Api\Superadmin\SettingController::class, 'update']);
             Route::post('/settings/logo', [\App\Http\Controllers\Api\Superadmin\SettingController::class, 'uploadLogo']);
+            Route::post('/settings/favicon', [\App\Http\Controllers\Api\Superadmin\SettingController::class, 'uploadFavicon']);
 
             // Plans
             Route::apiResource('plans', \App\Http\Controllers\Api\Superadmin\PlanController::class);

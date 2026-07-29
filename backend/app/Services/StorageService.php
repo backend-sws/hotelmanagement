@@ -8,7 +8,12 @@ use Illuminate\Support\Str;
 
 class StorageService
 {
-    protected string $disk = 's3'; // Cloudflare R2 via S3-compatible driver
+    protected string $disk;
+
+    public function __construct()
+    {
+        $this->disk = config('filesystems.default', 'public');
+    }
 
     /**
      * Generate a presigned URL for secure frontend upload to Cloudflare R2 / S3

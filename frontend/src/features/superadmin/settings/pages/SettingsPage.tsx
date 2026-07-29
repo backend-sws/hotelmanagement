@@ -11,6 +11,7 @@ import { settingsSchema, type SettingsFormValues } from '../schemas/settingsSche
 import { BrandIdentityForm } from '../components/BrandIdentityForm';
 import { PartnerSettingsForm } from '../components/PartnerSettingsForm';
 import { LogoUpload } from '../components/LogoUpload';
+import { FaviconUpload } from '../components/FaviconUpload';
 import { IntegrationsCard } from '../components/IntegrationsCard';
 
 export function SettingsPage() {
@@ -125,7 +126,10 @@ export function SettingsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             <BrandIdentityForm isPending={updateSettings.isPending} onSubmit={onSubmit} />
             <PartnerSettingsForm isPending={updateSettings.isPending} onSubmit={onSubmit} />
-            <LogoUpload />
+            <div className="lg:col-span-2 space-y-8">
+              <LogoUpload />
+              <FaviconUpload />
+            </div>
             <IntegrationsCard />
           </div>
         </FormProvider>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { identifierSchema, loginPasswordSchema, otpSchema, setPasswordSchema } from '../schemas/authSchema';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { useCheckUser, useSendOtp, useLogin, useVerifyOtp, useSetPassword } from
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
 import { useNavigate } from 'react-router-dom';
+import { ModernOtpInput } from '@/components/ui/ModernOtpInput';
 
 // --- IDENTIFIER FORM ---
 export const IdentifierForm = ({ onNext, setIdentifier }: any) => {
@@ -63,11 +64,25 @@ export const IdentifierForm = ({ onNext, setIdentifier }: any) => {
 };
 
 // --- LOGIN PASSWORD FORM ---
-export const LoginForm = ({ identifier, goBack }: any) => {
+export const LoginForm = ({ identifier, goBack, onNext }: any) => {
   const setAuth = useAuthStore((state) => state.setAuth);
   const navigate = useNavigate();
   const form = useForm({ resolver: zodResolver(loginPasswordSchema) });
   const loginMutation = useLogin();
+  const sendOtpMutation = useSendOtp();
+
+  const handleForgotPassword = (e: React.MouseEvent) => {
+    e.preventDefault();
+    sendOtpMutation.mutate({ identifier }, {
+      onSuccess: () => {
+        toast.success(`OTP sent to ${identifier} for password reset`);
+        onNext('OTP');
+      },
+      onError: (err: any) => {
+        toast.error(err.response?.data?.message || 'Failed to send OTP for password reset');
+      }
+    });
+  };
 
   const onSubmit = (data: any) => {
     loginMutation.mutate({ identifier, password: data.password }, {
@@ -90,7 +105,11 @@ export const LoginForm = ({ identifier, goBack }: any) => {
       <div className="space-y-2 animate-in slide-in-from-right-4 fade-in duration-500 delay-200 fill-mode-both">
         <div className="flex justify-between items-center px-1">
           <label htmlFor="password" className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest cursor-pointer select-none">Secret</label>
-          <a href="#" className="text-xs font-bold text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 transition-colors">Forgot Password?</a>
+          {sendOtpMutation.isPending ? (
+            <span className="text-xs font-bold text-slate-400">Sending...</span>
+          ) : (
+            <button type="button" onClick={handleForgotPassword} className="text-xs font-bold text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 transition-colors">Forgot Password?</button>
+          )}
         </div>
         <Input 
           id="password"
@@ -148,17 +167,18 @@ export const OtpForm = ({ identifier, onNext, goBack, setOtpToken }: any) => {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 w-full mx-auto">
-      <div className="space-y-2 animate-in slide-in-from-bottom-4 fade-in duration-500 delay-200 fill-mode-both">
-        <label htmlFor="otp" className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 cursor-pointer select-none">Secure Code</label>
-        <Input 
-          id="otp"
-          type="text"
-          icon={<KeyRound size={20} />}
-          className="h-12 bg-white dark:bg-[#151726] border border-slate-200 dark:border-white/10 rounded-xl text-center text-base tracking-widest font-black focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-primary-500 dark:text-primary-400 placeholder-slate-400 dark:placeholder-zinc-500 transition-all duration-300"
-          {...form.register('otp')} 
-          placeholder="123456"
-          maxLength={6}
-          error={form.formState.errors.otp?.message as string}
+      <div className="space-y-4 animate-in slide-in-from-bottom-4 fade-in duration-500 delay-200 fill-mode-both">
+        <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 cursor-pointer select-none text-center block mb-2">Enter Secure Code</label>
+        <Controller
+          name="otp"
+          control={form.control}
+          render={({ field: { onChange, value } }) => (
+            <ModernOtpInput 
+              value={value || ''} 
+              onChange={onChange} 
+              error={form.formState.errors.otp?.message as string} 
+            />
+          )}
         />
       </div>
       <Button type="submit" isLoading={verifyOtpMutation.isPending} loadingText="Verifying" className="w-full h-12 bg-gradient-to-r from-primary-500 to-indigo-600 hover:from-primary-600 hover:to-indigo-700 text-white rounded-xl text-sm font-black uppercase tracking-wider shadow-lg shadow-primary-500/15 active:translate-y-0.5 transition-all duration-200 border-none animate-in slide-in-from-bottom-4 fade-in duration-500 delay-300 fill-mode-both">

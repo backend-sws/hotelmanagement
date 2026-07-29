@@ -48,4 +48,21 @@ class SettingController extends BaseController
             'Logo uploaded successfully.'
         );
     }
+
+    /**
+     * Upload a setting file (e.g. favicon).
+     */
+    public function uploadFavicon(Request $request): JsonResponse
+    {
+        $request->validate([
+            'favicon' => 'required|image|mimes:jpeg,png,jpg,svg,webp,ico|max:1024',
+        ]);
+
+        $url = $this->settingService->uploadFile('app_favicon', $request->file('favicon'));
+
+        return $this->success(
+            ['url' => $url],
+            'Favicon uploaded successfully.'
+        );
+    }
 }
