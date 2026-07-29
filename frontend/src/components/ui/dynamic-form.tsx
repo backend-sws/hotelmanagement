@@ -31,6 +31,7 @@ export interface FormFieldConfig {
   searchable?: boolean;
   creatable?: boolean;
   onCreate?: (inputValue: string) => void | Promise<void>;
+  dependsOn?: string; // Optional field dependency
 }
 
 export interface FormSectionConfig {
