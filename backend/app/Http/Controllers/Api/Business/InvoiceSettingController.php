@@ -51,6 +51,8 @@ class InvoiceSettingController extends Controller
         $updatedInvoiceSettings = array_merge($currentInvoiceSettings, [
             'template' => $request->input('template', $currentInvoiceSettings['template']),
             'signature_label' => $request->input('signature_label', $currentInvoiceSettings['signature_label'] ?? 'Authorized Signatory'),
+            'default_terms' => $request->input('default_terms', $currentInvoiceSettings['default_terms'] ?? ''),
+            'default_bank_details' => $request->input('default_bank_details', $currentInvoiceSettings['default_bank_details'] ?? ''),
             'custom_fields' => $request->input('custom_fields', $currentInvoiceSettings['custom_fields'] ?? []),
             'fields' => $request->input('fields', $currentInvoiceSettings['fields']),
             'styles' => $request->input('styles', $currentInvoiceSettings['styles']),

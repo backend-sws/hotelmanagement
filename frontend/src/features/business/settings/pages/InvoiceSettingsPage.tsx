@@ -466,7 +466,14 @@ export const InvoiceSettingsTab = () => {
               <Toggle label="Show Logo" checked={settings.fields.show_logo} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_logo: v}})} />
               <Toggle label="Show Amount in Words" checked={settings.fields.show_amount_in_words} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_amount_in_words: v}})} />
               <Toggle label="Show Bank Details" checked={settings.fields.show_bank_details} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_bank_details: v}})} />
-              <Toggle label="Show Terms & Conditions" checked={settings.fields.show_terms} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_terms: v}})} />
+              <div className="space-y-2">
+                <Toggle label="Show Terms & Conditions" checked={settings.fields.show_terms} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_terms: v}})} />
+                {settings.fields.show_terms && (
+                  <div className="pl-6">
+                    <Toggle label="Print Terms on a Separate Page (Annexure)" checked={!!settings.fields.terms_on_new_page} onChange={(v) => setSettings({...settings, fields: {...settings.fields, terms_on_new_page: v}})} />
+                  </div>
+                )}
+              </div>
               <Toggle label="Show PO / Reference No" checked={settings.fields.show_reference_number} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_reference_number: v}})} />
               <div className="space-y-2">
                 <Toggle label="Show Watermark" checked={settings.fields.show_watermark} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_watermark: v}})} />

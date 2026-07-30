@@ -15,6 +15,7 @@ export interface InvoiceSettings {
     show_hsn: boolean;
     show_bank_details: boolean;
     show_terms: boolean;
+    terms_on_new_page?: boolean;
     show_discount: boolean;
     show_vehicle_info: boolean;
     show_amount_in_words: boolean;

@@ -204,7 +204,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
 
       <div style={{ display: 'flex', marginTop: '20px' }}>
         <div style={{ width: '60%', paddingRight: '20px' }}>
-          {settings.fields.show_terms !== false && (
+          {settings.fields.show_terms !== false && !settings.fields.terms_on_new_page && (
             <div style={{ marginBottom: '15px' }}>
               <p style={{ fontWeight: 'bold', margin: '0 0 5px 0', color: primaryColor, fontSize: '14px' }}>Terms & Conditions:</p>
               <p style={{ fontSize: '13px', margin: 0, whiteSpace: 'pre-wrap', color: '#475569', lineHeight: 1.4 }}>{invoice.terms}</p>
@@ -390,7 +390,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
 
           <tr>
             <td colSpan={leftColSpan} style={{ border: `1px solid ${primaryColor}`, padding: '10px', height: '100px', verticalAlign: 'top' }}>
-              {settings.fields.show_terms !== false && (
+              {settings.fields.show_terms !== false && !settings.fields.terms_on_new_page && (
                 <>
                   <p style={{ fontWeight: 'bold', margin: '0 0 6px 0', fontSize: '13px', color: primaryColor }}>Category of Service / Terms:</p>
                   <p style={{ fontSize: '12px', margin: '4px 0', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{invoice.terms}</p>
@@ -539,7 +539,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
             </div>
           )}
 
-          {settings.fields.show_terms !== false && (
+          {settings.fields.show_terms !== false && !settings.fields.terms_on_new_page && (
             <>
               <p style={{ fontWeight: 'bold', margin: '0 0 5px 0', fontSize: '11px', color: primaryColor }}>Terms & Conditions</p>
               <p style={{ fontSize: '0.85em', color: secondaryColor, margin: 0, lineHeight: 1.4, whiteSpace: 'pre-wrap' }}>{invoice.terms}</p>
@@ -700,7 +700,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ width: '55%', paddingRight: '40px' }}>
-          {settings.fields.show_terms !== false && (
+          {settings.fields.show_terms !== false && !settings.fields.terms_on_new_page && (
             <div style={{ marginBottom: '25px' }}>
               <p style={{ fontWeight: '700', textTransform: 'uppercase', fontSize: '11px', margin: '0 0 8px 0', color: primaryColor, letterSpacing: '0.5px' }}>Terms & Conditions</p>
               <p style={{ margin: 0, lineHeight: 1.6, color: '#64748b', whiteSpace: 'pre-wrap', fontSize: '12px' }}>{settings.default_terms || invoice.terms}</p>
@@ -824,6 +824,29 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
       {settings.template === 'classic' && renderClassicTemplate()}
       {settings.template === 'default' && renderDefaultTemplate()}
       {settings.template === 'premium' && renderPremiumTemplate()}
+      
+      {settings.fields.show_terms !== false && settings.fields.terms_on_new_page && (
+        <div style={{ pageBreakBefore: 'always', marginTop: '30px', paddingTop: '30px', borderTop: `2px solid ${primaryColor}` }}>
+          <h2 style={{ color: primaryColor, textAlign: 'center', marginBottom: '20px', fontSize: '24px', textTransform: 'uppercase', fontWeight: 'bold' }}>Terms & Conditions / Annexure</h2>
+          <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap', lineHeight: '1.6', color: '#334155', marginBottom: '60px', padding: '0 20px' }}>
+            {invoice.terms}
+          </div>
+          
+          {settings.fields.show_signature !== false && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '50px', paddingRight: '20px' }}>
+              <div style={{ textAlign: 'center', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
+                {settings.signature_image ? (
+                  <img src={settings.signature_image} alt="Signature" style={{ maxHeight: '80px', marginBottom: '10px', objectFit: 'contain' }} />
+                ) : (
+                  <div style={{ borderBottom: '1px solid #94a3b8', width: '200px', height: '80px', marginBottom: '10px' }}></div>
+                )}
+                <p style={{ fontWeight: 'bold', margin: '0 0 5px 0', color: primaryColor, fontSize: '16px' }}>{settings.signature_label || 'Authorized Signatory'}</p>
+                <p style={{ fontSize: '14px', color: '#475569', margin: 0 }}>For {business.name}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -862,7 +885,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
       </thead>
       <tbody>
         <tr>
-          <td style={{ padding: `0 ${framePadding}`, margin: 0, border: 'none', position: 'relative', height: '100%', overflow: 'hidden' }}>
+          <td style={{ padding: `0 ${framePadding}`, margin: 0, border: 'none', position: 'relative', height: '100%' }}>
             {renderWatermark()}
             {renderInnerContent()}
           </td>
@@ -888,8 +911,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
         backgroundImage: frameBgImage !== 'none' ? frameBgImage : undefined,
         backgroundPosition: frameBgPos,
         backgroundSize: frameBgSize,
-        backgroundRepeat: frameBgRepeat as any,
-        overflow: 'hidden'
+        backgroundRepeat: frameBgRepeat as any
       }}
     >
       {renderHeaderImage()}

@@ -76,8 +76,8 @@ const PublicInvoiceView = () => {
     discount: parseFloat(sale.discount || 0).toFixed(2),
     total: parseFloat(sale.final_amount).toFixed(2),
     amount_in_words: sale.amount_in_words || '',
-    terms: settings?.terms_conditions || '1. Goods once sold will not be taken back.\n2. Subject to local jurisdiction.',
-    bank_details: sale.bank_details || (business?.bank_settings ? `Bank Name: ${business.bank_settings.bank_name}\nAcct No: ${business.bank_settings.account_number}\nIFSC: ${business.bank_settings.ifsc_code}` : ''),
+    terms: sale.terms_conditions || settings?.default_terms || '1. Goods once sold will not be taken back.\n2. Subject to local jurisdiction.',
+    bank_details: sale.bank_details || settings?.default_bank_details || (business?.bank_settings ? `Bank Name: ${business.bank_settings.bank_name}\nAcct No: ${business.bank_settings.account_number}\nIFSC: ${business.bank_settings.ifsc_code}` : ''),
     uuid: sale.uuid
   };
 
