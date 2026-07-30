@@ -188,7 +188,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
           </tr>
         </thead>
         <tbody>
-          {invoice.items.map((item, index) => (
+          {invoice.items.map((item: any, index: number) => (
             <tr key={index}>
               <td style={{ border: '1px solid #ddd', padding: '5px' }}>{index + 1}</td>
               <td style={{ border: '1px solid #ddd', padding: '5px' }}>{item.name}</td>
@@ -342,7 +342,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
             <td style={{ border: `1px solid ${primaryColor}`, padding: '8px', width: '10%' }}>Amount</td>
           </tr>
           
-          {invoice.items.map((item, index) => (
+          {invoice.items.map((item: any, index: number) => (
             <tr key={index} style={{ fontSize: '13px' }}>
               <td style={{ border: `1px solid ${primaryColor}`, padding: '6px 8px', textAlign: 'center' }}>{index + 1}</td>
               {settings.fields.show_hsn !== false && <td style={{ border: `1px solid ${primaryColor}`, padding: '6px 8px', textAlign: 'center' }}>{item.hsn}</td>}
@@ -510,7 +510,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
           </tr>
         </thead>
         <tbody>
-          {invoice.items.map((item, index) => (
+          {invoice.items.map((item: any, index: number) => (
             <tr key={index} style={{ borderBottom: index < invoice.items.length - 1 ? `1px ${frameStyle === 'none' ? 'solid' : frameStyle} ${borderColor}` : 'none' }}>
               <td style={{ padding: '12px 10px' }}><span style={{ fontWeight: 'bold' }}>{item.name}</span></td>
               {settings.fields.show_hsn !== false && <td style={{ padding: '12px 10px', fontSize: '0.85em', color: secondaryColor }}>{item.hsn}</td>}
@@ -682,7 +682,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
           </tr>
         </thead>
         <tbody>
-          {invoice.items.map((item, index) => (
+          {invoice.items.map((item: any, index: number) => (
             <tr key={index} style={{ borderBottom: `1px solid ${borderColor}` }}>
               <td style={{ padding: '15px 0', textAlign: 'left' }}>
                 <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '14px' }}>{item.name}</div>

@@ -31,6 +31,8 @@ export interface InvoiceSettings {
     show_watermark: boolean;
     show_receiver_signature: boolean;
     show_qr_code: boolean;
+    watermark_text?: string;
+    watermark_size?: number;
   };
   styles: {
     primary_color: string;
