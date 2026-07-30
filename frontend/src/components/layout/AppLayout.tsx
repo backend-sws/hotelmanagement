@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { useThemeStore } from "@/store/themeStore";
@@ -21,6 +21,22 @@ export function AppLayout() {
   useEffect(() => {
     fetchBusinesses();
   }, [fetchBusinesses]);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (hasFetched && activeBusiness && isReady) {
+      const defaultRedirect = activeBusiness.settings?.default_login_redirect;
+      if (location.pathname === '/dashboard' && defaultRedirect && defaultRedirect !== '/dashboard') {
+        // Also check if the redirect target isn't hidden (just in case they configure it wrongly)
+        const hiddenItems = activeBusiness.settings?.hidden_sidebar_items || [];
+        if (!hiddenItems.includes(defaultRedirect)) {
+           navigate(defaultRedirect, { replace: true });
+        }
+      }
+    }
+  }, [hasFetched, activeBusiness, isReady, location.pathname, navigate]);
 
   // When active business changes or businesses are fetched, re-fetch profile to get tenant-specific roles
   useEffect(() => {

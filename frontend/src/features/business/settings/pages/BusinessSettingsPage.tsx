@@ -24,6 +24,7 @@ import { WhatsAppSettings } from '../components/WhatsAppSettings';
 import { GstSettingsTab } from '../components/GstSettingsTab';
 import { PlanSubscriptionTab } from '../components/PlanSubscriptionTab';
 import { InvoiceSettingsTab } from './InvoiceSettingsPage';
+import { NavigationSettingsTab } from '../components/NavigationSettingsTab';
 
 const businessSettingsSchema = z.object({
   settings: z.object({
@@ -34,10 +35,14 @@ const businessSettingsSchema = z.object({
     whitelabel_logo: z.string().nullable().optional(),
     whitelabel_favicon: z.string().nullable().optional(),
     whatsapp_message_format: z.string().nullable().optional(),
+    hidden_sidebar_items: z.array(z.string()).default([]),
+    default_login_redirect: z.string().default('/dashboard'),
   }).default({
     commission_calculation_base: 'sales',
     sale_invoice_prefix: 'INV-{YYYY}-{MM}-{SEQ:4}',
-    purchase_invoice_prefix: 'PUR-{YYYY}-{MM}-{SEQ:4}'
+    purchase_invoice_prefix: 'PUR-{YYYY}-{MM}-{SEQ:4}',
+    hidden_sidebar_items: [],
+    default_login_redirect: '/dashboard'
   })
 });
 
@@ -68,6 +73,7 @@ export default function BusinessSettingsPage() {
     { id: 'invoice', label: 'Invoice Formats', icon: FileText },
     { id: 'invoice_design', label: 'Invoice Design', icon: FileText },
     { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+    { id: 'navigation', label: 'Navigation', icon: LayoutGrid },
     { id: 'config', label: 'Configurations', icon: LayoutGrid },
     { id: 'locations', label: 'Business Locations', icon: MapPin },
   ];
@@ -88,7 +94,9 @@ export default function BusinessSettingsPage() {
     defaultValues: activeBusiness ? {
       settings: {
         ...activeBusiness.settings,
-        whatsapp_message_format: activeBusiness.settings?.whatsapp_message_format || 'Hello {customer_name}! Here is your invoice {invoice_number} for Rs.{amount}.\n\nYou can view and download your original PDF receipt here:\n{link}'
+        whatsapp_message_format: activeBusiness.settings?.whatsapp_message_format || 'Hello {customer_name}! Here is your invoice {invoice_number} for Rs.{amount}.\n\nYou can view and download your original PDF receipt here:\n{link}',
+        hidden_sidebar_items: activeBusiness.settings?.hidden_sidebar_items || [],
+        default_login_redirect: activeBusiness.settings?.default_login_redirect || '/dashboard'
       }
     } : undefined
   });
@@ -433,9 +441,9 @@ export default function BusinessSettingsPage() {
                   />
                 </div>
 
-                <div className={activeTab === 'invoice_design' ? 'block' : 'hidden'}>
-                  <InvoiceSettingsTab />
-                </div>
+                {activeTab === 'invoice_design' && <InvoiceSettingsTab />}
+                {activeTab === 'whatsapp' && <WhatsAppSettings settings={activeBusiness?.settings || {}} onSave={async (s) => { if (activeBusiness) await updateBusinessMutation.mutateAsync({ id: activeBusiness.id, data: { ...activeBusiness, settings: { ...activeBusiness.settings, ...s } } as any }); }} isLoading={isLoading || updateBusinessMutation.isPending} />}
+                {activeTab === 'navigation' && <NavigationSettingsTab form={form} />}
 
                 <div className={activeTab === 'plan' ? 'block' : 'hidden'}>
                   <PlanSubscriptionTab />

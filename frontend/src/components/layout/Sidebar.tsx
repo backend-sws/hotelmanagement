@@ -250,7 +250,11 @@ export function Sidebar({ className }: { className?: string }) {
   const isSuperadmin = user?.roles?.some((r) => r.name === 'Superadmin');
   const isPartner = user?.roles?.some((r) => r.name === 'Partner');
 
-  const filteredBusinessGroups = businessMenuGroups;
+  const hiddenSidebarItems: string[] = activeBusiness?.settings?.hidden_sidebar_items || [];
+  const filteredBusinessGroups = businessMenuGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => !hiddenSidebarItems.includes(item.href))
+  })).filter(group => group.items.length > 0);
 
   const filteredSuperadminGroups = superadminMenuGroups.map(group => ({
     ...group,
