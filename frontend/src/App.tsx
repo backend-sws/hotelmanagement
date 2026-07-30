@@ -13,6 +13,7 @@ import { PermissionGuard } from '@/features/auth/components/PermissionGuard';
 import { useAppStore } from '@/store/appStore';
 
 const Login = lazy(() => import('@/features/auth/pages/LoginPage'));
+const PublicInvoiceView = lazy(() => import('@/pages/PublicInvoiceView'));
 const Dashboard = lazy(() => import('@/features/business/dashboard/pages/DashboardPage'));
 const BusinessProfile = lazy(() => import('@/features/business/profile/pages/BusinessProfilePage'));
 const BusinessSettings = lazy(() => import('@/features/business/settings/pages/BusinessSettingsPage'));
@@ -245,6 +246,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/invoice/:uuid" element={<PublicInvoiceView />} />
           <Route path="/partner/register" element={<PartnerRegister />} />
 
           <Route element={

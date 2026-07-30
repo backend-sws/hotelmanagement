@@ -22,7 +22,7 @@ class StorageService
     {
         $filename = $folder . '/' . Str::uuid() . '.' . $extension;
         
-        $disk = Storage::disk($this->disk);
+        $disk = Storage::disk('s3');
         
         $client = $disk->getClient();
         $bucket = config('filesystems.disks.s3.bucket');

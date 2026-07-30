@@ -105,23 +105,13 @@ export default function InvoicesListPage() {
     }
   };
 
-  const handleDownloadPdf = async (e: React.MouseEvent, id: number, invoiceNum: string) => {
+  const handleDownloadPdf = async (e: React.MouseEvent, invoice: any) => {
     e.stopPropagation();
-    try {
-      toast.info('Generating PDF...');
-      const blob = await invoiceService.getPdf(id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${invoiceNum}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success('PDF downloaded successfully');
-    } catch (err) {
-      toast.error('Failed to download PDF');
+    if (!invoice.uuid) {
+      toast.error('Invoice UUID missing');
+      return;
     }
+    window.open(`/invoice/${invoice.uuid}`, '_blank');
   };
 
   const handleWhatsapp = async (e: React.MouseEvent, id: number) => {
@@ -425,7 +415,7 @@ export default function InvoicesListPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            onClick={(e) => handleDownloadPdf(e, invoice.id, invoice.invoice_number)}
+                            onClick={(e) => handleDownloadPdf(e, invoice)}
                             title="Download PDF"
                             className="h-8 w-8 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg"
                           >

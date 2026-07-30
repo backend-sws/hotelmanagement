@@ -58,6 +58,10 @@ class InvoiceController extends Controller
             'date' => 'required|date',
             'due_date' => 'nullable|date',
             'place_of_supply' => 'nullable|string|max:2',
+            'tax_type' => 'nullable|in:gst,custom_vat,exempt',
+            'reference_number' => 'nullable|string|max:100',
+            'vehicle_number' => 'nullable|string|max:50',
+            'driver_name' => 'nullable|string|max:100',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
@@ -82,7 +86,11 @@ class InvoiceController extends Controller
         // Determine tax type
         $businessState = $business->state_code ?? '27'; // fallback to arbitrary state code if missing
         $customerState = $validated['place_of_supply'] ?? ($customer->state_code ?? null);
-        $taxType = $this->gstService->getTaxType($businessState, $customerState);
+        
+        $taxType = $validated['tax_type'] ?? 'gst';
+        if ($taxType === 'gst') {
+            $taxType = $this->gstService->getTaxType($businessState, $customerState);
+        }
 
         $invoice = DB::transaction(function () use ($validated, $businessId, $taxType, $request) {
             $invoiceNumber = $this->invoiceNumberService->generate($businessId, $validated['invoice_type']);
@@ -137,6 +145,10 @@ class InvoiceController extends Controller
                 'status' => $status,
                 'notes' => $validated['notes'] ?? null,
                 'terms_conditions' => $validated['terms_conditions'] ?? null,
+                'bank_details' => $validated['bank_details'] ?? null,
+                'reference_number' => $validated['reference_number'] ?? null,
+                'vehicle_number' => $validated['vehicle_number'] ?? null,
+                'driver_name' => $validated['driver_name'] ?? null,
             ]);
 
             foreach ($itemsPayload as $ip) {
@@ -253,6 +265,7 @@ class InvoiceController extends Controller
             'date' => 'required|date',
             'due_date' => 'nullable|date',
             'place_of_supply' => 'nullable|string|max:2',
+            'tax_type' => 'nullable|in:gst,custom_vat,exempt',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
@@ -278,7 +291,11 @@ class InvoiceController extends Controller
         // Determine tax type
         $businessState = $business->state_code ?? '27';
         $customerState = $validated['place_of_supply'] ?? ($customer->state_code ?? null);
-        $taxType = $this->gstService->getTaxType($businessState, $customerState);
+        
+        $taxType = $validated['tax_type'] ?? 'gst';
+        if ($taxType === 'gst') {
+            $taxType = $this->gstService->getTaxType($businessState, $customerState);
+        }
 
         $updatedInvoice = DB::transaction(function () use ($validated, $businessId, $taxType, $request, $sale) {
             // 1. Restore old inventory if it was reduced
@@ -354,6 +371,10 @@ class InvoiceController extends Controller
                 'status' => $status,
                 'notes' => $validated['notes'] ?? null,
                 'terms_conditions' => $validated['terms_conditions'] ?? null,
+                'bank_details' => $validated['bank_details'] ?? null,
+                'reference_number' => $validated['reference_number'] ?? null,
+                'vehicle_number' => $validated['vehicle_number'] ?? null,
+                'driver_name' => $validated['driver_name'] ?? null,
             ]);
 
             // 5. Create new items and deduct stock if needed
@@ -424,12 +445,25 @@ class InvoiceController extends Controller
         $invoice = Sale::with(['items.product', 'customer', 'business', 'payments'])
             ->where('business_id', app('current_business_id'))
             ->findOrFail($id);
-
-        if (!view()->exists('pdfs.gst_invoice')) {
-            return response()->json(['error' => 'View not found'], 500);
+            
+        $business = $invoice->business ?? \App\Models\Business::find($invoice->business_id);
+        $settings = $business->settings['invoice_settings'] ?? [];
+        
+        $template = $settings['template'] ?? 'default';
+        $viewName = "pdfs.invoice_templates.{$template}";
+        
+        if (!view()->exists($viewName)) {
+            $viewName = 'pdfs.invoice_templates.default';
         }
 
-        $pdf = Pdf::loadView('pdfs.gst_invoice', compact('invoice'));
+        if (!view()->exists($viewName)) {
+            $viewName = 'pdfs.gst_invoice';
+        }
+
+        $pdf = Pdf::loadView($viewName, compact('invoice', 'settings'))->setOptions([
+            'isRemoteEnabled' => true, 
+            'isHtml5ParserEnabled' => true,
+        ]);
         return $pdf->download("{$invoice->invoice_number}.pdf");
     }
 
@@ -464,7 +498,9 @@ class InvoiceController extends Controller
         $invoice = Sale::with('customer')->where('business_id', $businessId)->findOrFail($id);
         
         $phone = $invoice->customer->phone ?? '';
-        $text = "Hello, here is your invoice {$invoice->invoice_number}. Link: " . $invoice->public_url;
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:8000');
+        $publicUrl = $frontendUrl . '/invoice/' . $invoice->uuid;
+        $text = "Hello, here is your invoice {$invoice->invoice_number}. Link: " . $publicUrl;
         $url = "https://api.whatsapp.com/send?phone=91{$phone}&text=" . urlencode($text);
 
         return response()->json(['data' => ['whatsapp_url' => $url]]);

@@ -14,6 +14,9 @@ Route::prefix('v1')->group(function () {
     Route::post('/set-password', [AuthController::class, 'setPassword']);
     Route::post('/login', [AuthController::class, 'login']);
 
+    // Public Routes
+    Route::get('/public/invoice/{uuid}', [App\Http\Controllers\Api\PublicInvoiceController::class, 'show']);
+
     // Partner self-registration (public)
     Route::post('/partner/register', [PartnerPortalController::class, 'register']);
 
@@ -58,6 +61,12 @@ Route::prefix('v1')->group(function () {
             Route::post('price-lists/{priceList}/items', [\App\Http\Controllers\Api\Business\PriceListController::class, 'addItem']);
             Route::delete('price-lists/{priceList}/items/{item}', [\App\Http\Controllers\Api\Business\PriceListController::class, 'removeItem']);
             
+            // Invoice Settings
+            Route::get('settings/invoice', [\App\Http\Controllers\Api\Business\InvoiceSettingController::class, 'getSettings']);
+            Route::post('settings/invoice', [\App\Http\Controllers\Api\Business\InvoiceSettingController::class, 'updateSettings']);
+            Route::post('settings/invoice/image/{type}', [\App\Http\Controllers\Api\Business\InvoiceSettingController::class, 'uploadImage']);
+            Route::delete('settings/invoice/image/{type}', [\App\Http\Controllers\Api\Business\InvoiceSettingController::class, 'deleteImage']);
+
             // GST Settings
             Route::get('settings/gst', [\App\Http\Controllers\Api\Business\GstSettingController::class, 'show']);
             Route::post('settings/gst', [\App\Http\Controllers\Api\Business\GstSettingController::class, 'update']);

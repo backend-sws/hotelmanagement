@@ -56,8 +56,11 @@ return [
             'url' => env('R2_URL'),
             'endpoint' => env('R2_ENDPOINT'),
             'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', true),
-            'throw' => false,
-            'report' => false,
+            'http' => [
+                'verify' => false,
+            ],
+            'throw' => true,
+            'report' => true,
         ],
 
     ],

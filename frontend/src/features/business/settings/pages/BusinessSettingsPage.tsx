@@ -23,6 +23,7 @@ import { InvoicePrintSettings } from '../../profile/components/InvoicePrintSetti
 import { WhatsAppSettings } from '../components/WhatsAppSettings';
 import { GstSettingsTab } from '../components/GstSettingsTab';
 import { PlanSubscriptionTab } from '../components/PlanSubscriptionTab';
+import { InvoiceSettingsTab } from './InvoiceSettingsPage';
 
 const businessSettingsSchema = z.object({
   settings: z.object({
@@ -65,6 +66,7 @@ export default function BusinessSettingsPage() {
     { id: 'general', label: 'General', icon: Settings },
     { id: 'gst', label: 'GST & Billing', icon: FileText },
     { id: 'invoice', label: 'Invoice Formats', icon: FileText },
+    { id: 'invoice_design', label: 'Invoice Design', icon: FileText },
     { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
     { id: 'config', label: 'Configurations', icon: LayoutGrid },
     { id: 'locations', label: 'Business Locations', icon: MapPin },
@@ -422,13 +424,17 @@ export default function BusinessSettingsPage() {
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
 
               <div className="relative z-10 w-full space-y-6">
-                <div className={activeTab !== 'locations' && activeTab !== 'gst' && activeTab !== 'plan' ? 'block' : 'hidden'}>
+                <div className={activeTab !== 'locations' && activeTab !== 'gst' && activeTab !== 'plan' && activeTab !== 'invoice_design' ? 'block' : 'hidden'}>
                   <DynamicForm 
                     id="settings-form"
                     form={form}
                     onSubmit={onSubmit}
                     sections={settingsFormConfig}
                   />
+                </div>
+
+                <div className={activeTab === 'invoice_design' ? 'block' : 'hidden'}>
+                  <InvoiceSettingsTab />
                 </div>
 
                 <div className={activeTab === 'plan' ? 'block' : 'hidden'}>
@@ -443,7 +449,7 @@ export default function BusinessSettingsPage() {
                   <BusinessLocationsSection />
                 </div>
 
-                <div className={activeTab !== 'locations' && activeTab !== 'gst' && activeTab !== 'plan' ? 'flex justify-end mt-4 pt-6 border-t border-slate-200/80 dark:border-white/10' : 'hidden'}>
+                <div className={activeTab !== 'locations' && activeTab !== 'gst' && activeTab !== 'plan' && activeTab !== 'invoice_design' ? 'flex justify-end mt-4 pt-6 border-t border-slate-200/80 dark:border-white/10' : 'hidden'}>
                   <Button 
                     type="submit" 
                     form="settings-form" 

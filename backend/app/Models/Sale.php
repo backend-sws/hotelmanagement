@@ -11,7 +11,17 @@ class Sale extends Model
 {
     use HasFactory, BelongsToBusiness, LogsActivity;
 
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
+
     protected $fillable = [
+        'uuid',
         'business_id',
         'customer_id',
         'user_id',
@@ -45,6 +55,7 @@ class Sale extends Model
         'converted_at',
         'reference_number',
         'terms_conditions',
+        'bank_details',
         'validity_date',
         'narration',
         'draft_data',

@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { GST_STATES } from '@/features/business/customers/constants/gstStates';
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '../../projects/api/projectService';
+import { useInvoiceSettings } from '../../settings/api/useInvoiceSettings';
 
 export default function NewInvoicePage() {
   const navigate = useNavigate();
@@ -33,6 +34,8 @@ export default function NewInvoicePage() {
     queryKey: ['projects', 'active'],
     queryFn: () => projectService.getProjects({ status: 'active' }),
   });
+
+  const { data: settings } = useInvoiceSettings();
 
   const editId = searchParams.get('edit') || searchParams.get('id');
 
@@ -54,6 +57,10 @@ export default function NewInvoicePage() {
           }
           if (data.notes) store.setNotes(data.notes);
           if (data.terms_conditions) store.setTermsConditions(data.terms_conditions);
+          if (data.reference_number) store.setReferenceNumber(data.reference_number);
+          if (data.vehicle_number) store.setVehicleNumber(data.vehicle_number);
+          if (data.driver_name) store.setDriverName(data.driver_name);
+          if (data.tax_type) store.setTaxMode(data.tax_type === 'igst' ? 'gst' : data.tax_type);
           if (data.items && Array.isArray(data.items)) {
             store.setItems(data.items.map((i: any) => ({
               id: String(i.id || Math.random()),
@@ -82,6 +89,12 @@ export default function NewInvoicePage() {
       if (projParam) {
         store.setProjectId(Number(projParam));
       }
+      if (settings?.default_terms) {
+        store.setTermsConditions(settings.default_terms);
+      }
+      if (settings?.default_bank_details) {
+        store.setBankDetails(settings.default_bank_details);
+      }
     }
     return () => store.reset(); // Cleanup on unmount
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -101,6 +114,10 @@ export default function NewInvoicePage() {
         date: store.date,
         due_date: store.dueDate || undefined,
         place_of_supply: store.placeOfSupply ? String(store.placeOfSupply).split(' - ')[0].trim().slice(0, 2) : undefined,
+        tax_type: store.taxMode,
+        reference_number: store.referenceNumber || undefined,
+        vehicle_number: store.vehicleNumber || undefined,
+        driver_name: store.driverName || undefined,
         discount: store.discount,
         paid_amount: store.paidAmount,
         payment_mode: store.paymentMode,
@@ -109,6 +126,7 @@ export default function NewInvoicePage() {
           : (store.paidAmount > 0 ? [{ payment_mode: store.paymentMode, amount: Number(store.paidAmount) }] : []),
         notes: store.notes,
         terms_conditions: store.termsConditions,
+        bank_details: store.bankDetails,
         items: calculatedItems.map(i => ({
           product_id: i.product_id,
           quantity: Number(i.quantity),
@@ -260,7 +278,7 @@ export default function NewInvoicePage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-slate-400" /> Due Date
+                  <Calendar className="w-3 h-3 text-slate-400" /> Due / Validity Date
                 </Label>
                 <Input 
                   type="date" 
@@ -268,6 +286,38 @@ export default function NewInvoicePage() {
                   onChange={e => store.setDueDate(e.target.value)} 
                   className="h-9 text-xs bg-slate-50 dark:bg-white/[0.02]"
                 />
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">PO / Reference No.</Label>
+                <Input 
+                  value={store.referenceNumber} 
+                  onChange={e => store.setReferenceNumber(e.target.value)} 
+                  placeholder="e.g. PO-2023-45"
+                  className="h-9 text-xs bg-slate-50 dark:bg-white/[0.02]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Vehicle No.</Label>
+                  <Input 
+                    value={store.vehicleNumber} 
+                    onChange={e => store.setVehicleNumber(e.target.value)} 
+                    placeholder="e.g. MH 01 AB 1234"
+                    className="h-9 text-xs bg-slate-50 dark:bg-white/[0.02]"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Driver Name</Label>
+                  <Input 
+                    value={store.driverName} 
+                    onChange={e => store.setDriverName(e.target.value)} 
+                    placeholder="e.g. John Doe"
+                    className="h-9 text-xs bg-slate-50 dark:bg-white/[0.02]"
+                  />
+                </div>
               </div>
             </div>
           </Card>
@@ -376,6 +426,16 @@ export default function NewInvoicePage() {
                   onChange={e => store.setTermsConditions(e.target.value)} 
                   className="w-full text-xs bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium text-slate-700 dark:text-slate-300"
                   rows={3} 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Bank Details</Label>
+                <textarea 
+                  value={store.bankDetails} 
+                  onChange={e => store.setBankDetails(e.target.value)} 
+                  className="w-full text-xs bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium text-slate-700 dark:text-slate-300"
+                  rows={2} 
+                  placeholder="A/c No, IFSC, etc."
                 />
               </div>
             </Card>

@@ -19,13 +19,11 @@ export default function InvoiceDetailPage() {
   });
 
   const handlePdf = async () => {
-    try {
-      const blob = await invoiceService.getPdf(Number(id));
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-    } catch {
-      toast.error('Failed to generate PDF');
+    if (!invoice.uuid) {
+      toast.error('Invoice UUID missing');
+      return;
     }
+    window.open(`/invoice/${invoice.uuid}`, '_blank');
   };
 
   const handleWhatsapp = async () => {

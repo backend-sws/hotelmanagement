@@ -32,6 +32,10 @@ export interface InvoiceStore {
   splitPayments: { mode: string; amount: number }[];
   notes: string;
   termsConditions: string;
+  bankDetails: string;
+  referenceNumber: string;
+  vehicleNumber: string;
+  driverName: string;
   isTaxInclusive: boolean;
   taxMode: 'gst' | 'custom_vat' | 'exempt';
   customTaxLabel: string;
@@ -51,6 +55,10 @@ export interface InvoiceStore {
   setSplitPayments: (splitPayments: { mode: string; amount: number }[]) => void;
   setNotes: (notes: string) => void;
   setTermsConditions: (terms: string) => void;
+  setBankDetails: (bankDetails: string) => void;
+  setReferenceNumber: (ref: string) => void;
+  setVehicleNumber: (vehicle: string) => void;
+  setDriverName: (driver: string) => void;
   setIsTaxInclusive: (val: boolean) => void;
   setTaxMode: (mode: 'gst' | 'custom_vat' | 'exempt') => void;
   setCustomTaxLabel: (label: string) => void;
@@ -82,7 +90,11 @@ const getInitialState = () => ({
     { mode: 'UPI', amount: 0 }
   ],
   notes: '',
-  termsConditions: '1. Goods once sold will not be taken back.\n2. Subject to local jurisdiction.',
+  termsConditions: '',
+  bankDetails: '',
+  referenceNumber: '',
+  vehicleNumber: '',
+  driverName: '',
   isTaxInclusive: false,
   taxMode: 'gst' as const,
   customTaxLabel: 'VAT / Custom Tax',
@@ -121,6 +133,10 @@ export const useInvoiceStore = create<InvoiceStore>((set) => ({
   setSplitPayments: (splitPayments) => set({ splitPayments }),
   setNotes: (notes) => set({ notes }),
   setTermsConditions: (termsConditions) => set({ termsConditions }),
+  setBankDetails: (bankDetails) => set({ bankDetails }),
+  setReferenceNumber: (referenceNumber) => set({ referenceNumber }),
+  setVehicleNumber: (vehicleNumber) => set({ vehicleNumber }),
+  setDriverName: (driverName) => set({ driverName }),
   setIsTaxInclusive: (isTaxInclusive) => set((state) => ({ 
     isTaxInclusive,
     items: state.items.map((i) => ({ ...i, is_tax_inclusive: isTaxInclusive }))
