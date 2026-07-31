@@ -365,4 +365,89 @@ class StaffService
 
         return $report;
     }
+
+    public function getStaffProductsSoldPaginated($staffId, $filters)
+    {
+        $businessId = app('current_business_id');
+        $fromDate = $filters['from_date'] ?? now()->startOfMonth()->toDateString();
+        $toDate = $filters['to_date'] ?? now()->endOfMonth()->toDateString();
+        $search = $filters['search'] ?? '';
+        $perPage = $filters['per_page'] ?? 15;
+
+        // Verify staff belongs to this business
+        $staffExists = DB::table('business_user')
+            ->where('business_id', $businessId)
+            ->where('user_id', $staffId)
+            ->exists();
+
+        if (!$staffExists) {
+            throw new \Exception("Staff member not found or does not belong to this business.");
+        }
+
+        $staffName = DB::table('users')->where('id', $staffId)->value('name');
+
+        $query = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->leftJoin('product_batches', 'sale_items.product_batch_id', '=', 'product_batches.id')
+            ->where('sales.business_id', $businessId)
+            ->where('sales.user_id', $staffId)
+            ->where('sales.status', 'completed')
+            ->whereBetween('sales.date', [$fromDate, $toDate]);
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('products.model_name', 'like', "%{$search}%")
+                  ->orWhere('products.item_code', 'like', "%{$search}%");
+            });
+        }
+
+        $query->select(
+            'products.id as product_id',
+            'products.model_name as name',
+            'products.item_code',
+            DB::raw('SUM(sale_items.quantity) as quantity'),
+            DB::raw('SUM(sale_items.rate * sale_items.quantity) as total_sale'),
+            DB::raw('SUM((sale_items.rate - COALESCE(product_batches.purchase_price, 0)) * sale_items.quantity) as total_profit')
+        )
+        ->groupBy('products.id', 'products.model_name', 'products.item_code');
+
+        $paginated = $query->paginate($perPage);
+
+        // Map over items to ensure name is populated correctly if model_name is null
+        $paginated->getCollection()->transform(function ($item) {
+            if (empty($item->name)) {
+                $item->name = $item->item_code ?? 'Unnamed Product';
+            }
+            return $item;
+        });
+
+        // Calculate summary across ALL items in this date range (ignoring search filter for the top level analytics)
+        $summaryQuery = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->leftJoin('product_batches', 'sale_items.product_batch_id', '=', 'product_batches.id')
+            ->where('sales.business_id', $businessId)
+            ->where('sales.user_id', $staffId)
+            ->where('sales.status', 'completed')
+            ->whereBetween('sales.date', [$fromDate, $toDate]);
+
+        $summary = $summaryQuery->select(
+            DB::raw('SUM(sale_items.quantity) as total_quantity'),
+            DB::raw('SUM(sale_items.rate * sale_items.quantity) as total_sale'),
+            DB::raw('SUM((sale_items.rate - COALESCE(product_batches.purchase_price, 0)) * sale_items.quantity) as total_profit')
+        )->first();
+
+        return [
+            'staff' => [
+                'id' => $staffId,
+                'name' => $staffName
+            ],
+            'summary' => [
+                'total_quantity' => $summary->total_quantity ?? 0,
+                'total_sale' => $summary->total_sale ?? 0,
+                'total_profit' => $summary->total_profit ?? 0,
+            ],
+            'products' => $paginated
+        ];
+    }
 }

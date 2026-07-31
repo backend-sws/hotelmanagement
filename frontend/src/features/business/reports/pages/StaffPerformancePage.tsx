@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 
+import { useNavigate } from 'react-router-dom';
+
 export default function StaffPerformancePage() {
   const [dateRange, setDateRange] = useState('this_month');
-  const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const navigate = useNavigate();
 
   const getDates = () => {
     const today = new Date();
@@ -80,7 +82,7 @@ export default function StaffPerformancePage() {
     {
       header: 'Details',
       cell: (row: any) => (
-        <Button variant="ghost" size="sm" onClick={() => setSelectedStaff(row)}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(`/reports/staff-performance/${row.user_id}/products`)}>
           <Eye className="w-4 h-4 mr-2" /> View Products
         </Button>
       ),
@@ -165,45 +167,6 @@ export default function StaffPerformancePage() {
         </div>
       </div>
 
-      <Modal 
-        isOpen={!!selectedStaff} 
-        onClose={() => setSelectedStaff(null)} 
-        title={`Products Sold by ${selectedStaff?.name}`}
-        maxWidth="lg"
-      >
-        {selectedStaff && (
-          <div className="p-5">
-             {selectedStaff.products_sold?.length > 0 ? (
-                <div className="border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
-                    <table className="w-full text-left text-sm border-collapse">
-                        <thead className="bg-slate-50 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 border-b border-slate-200 dark:border-white/10">
-                            <tr>
-                                <th className="px-5 py-3 font-semibold uppercase text-xs tracking-wider">Product Name</th>
-                                <th className="px-5 py-3 font-semibold uppercase text-xs tracking-wider">Qty Sold</th>
-                                <th className="px-5 py-3 font-semibold uppercase text-xs tracking-wider">Total Sale</th>
-                                <th className="px-5 py-3 font-semibold uppercase text-xs tracking-wider">Total Profit</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-150 dark:divide-white/5 bg-white dark:bg-transparent text-slate-700 dark:text-slate-300">
-                            {selectedStaff.products_sold.map((product: any, idx: number) => (
-                                <tr key={idx} className="hover:bg-slate-50/55 dark:hover:bg-white/[0.02] transition-colors duration-150">
-                                    <td className="px-5 py-3.5 font-medium">{product.name}</td>
-                                    <td className="px-5 py-3.5 font-bold">{product.quantity}</td>
-                                    <td className="px-5 py-3.5 font-semibold text-slate-900 dark:text-white">₹{product.total_sale.toLocaleString('en-IN')}</td>
-                                    <td className="px-5 py-3.5 font-semibold text-emerald-600 dark:text-emerald-400">₹{product.total_profit.toLocaleString('en-IN')}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-             ) : (
-                <div className="text-center py-10 text-slate-500 font-medium">
-                    No products sold by this staff member in the selected period.
-                </div>
-             )}
-          </div>
-        )}
-      </Modal>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useIntersectionObserver } from './useIntersectionObserver';
 
 export default function HeroSection() {
     const { ref, isVisible } = useIntersectionObserver({ threshold: 0.1 });
+    const frontendUrl = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
 
     return (
         <main
@@ -24,12 +25,12 @@ export default function HeroSection() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-6">
-                <Link
-                    href={route('register')}
+                <a
+                    href={`${frontendUrl}/login`}
                     className="w-full sm:w-auto px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-700 hover:to-amber-600 rounded-xl transition-all shadow-lg shadow-orange-200/50 transform hover:-translate-y-1 text-center"
                 >
                     Start Free Trial
-                </Link>
+                </a>
                 <a
                     href="#features"
                     className="w-full sm:w-auto px-8 py-4 text-base font-bold text-stone-700 bg-white/80 backdrop-blur-sm hover:bg-white rounded-xl transition-all border border-[#D4CBB3] shadow-sm text-center uppercase tracking-wider text-xs"

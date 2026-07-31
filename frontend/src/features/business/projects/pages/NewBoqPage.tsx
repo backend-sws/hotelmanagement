@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   PieChart, ArrowLeft, Plus, Trash2, Layers, DollarSign, 
@@ -30,27 +30,21 @@ export default function NewBoqPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
+  const { id: editId } = useParams<{ id: string }>();
   const defaultProjectId = searchParams.get('project_id');
 
-  const [name, setName] = useState('Standard Interior & Electrical BOQ');
+  const [name, setName] = useState('');
   const [clientName, setClientName] = useState('');
   const [projectId, setProjectId] = useState<number | undefined>(defaultProjectId ? Number(defaultProjectId) : undefined);
   const [validityDate, setValidityDate] = useState(new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]);
-  const [notes, setNotes] = useState('All rates are inclusive of basic material and professional labour installation.');
+  const [notes, setNotes] = useState('');
   const [status, setStatus] = useState('draft');
 
   const [sections, setSections] = useState<BoqFormSection[]>([
     {
-      section_name: 'Living Room & Dining Area',
+      section_name: 'Section 1',
       items: [
-        { item_name: 'False Ceiling Work (Gypsum)', description: 'Heavy duty gypsum board with cove lighting setup', unit: 'Sq.ft', quantity: 250, rate: 110 },
-        { item_name: 'Vitrified Flooring Installation', description: '800x800mm premium tile laying with epoxy grouting', unit: 'Sq.ft', quantity: 300, rate: 140 },
-      ]
-    },
-    {
-      section_name: 'Master Bedroom & Washroom',
-      items: [
-        { item_name: 'Modular Wardrobe (Laminate Finish)', description: '8ft x 7ft full height wardrobe with Hettich hardware', unit: 'Sq.ft', quantity: 56, rate: 1850 },
+        { item_name: '', description: '', unit: 'Sq.ft', quantity: 1, rate: 0 },
       ]
     }
   ]);
@@ -60,10 +54,40 @@ export default function NewBoqPage() {
     queryFn: () => projectService.getProjects({ status: 'active' }),
   });
 
+  useQuery({
+    queryKey: ['boq', editId],
+    queryFn: async () => {
+      if (!editId) return null;
+      const data = await boqService.getBoq(editId);
+      setName(data.name);
+      setClientName(data.client_name || '');
+      setProjectId(data.project_id || undefined);
+      if (data.validity_date) setValidityDate(data.validity_date.split('T')[0]);
+      setNotes(data.notes || '');
+      setStatus(data.status);
+      
+      if (data.sections && data.sections.length > 0) {
+        setSections(data.sections.map((s: any) => ({
+          section_name: s.section_name,
+          items: s.items.map((i: any) => ({
+            item_name: i.item_name,
+            description: i.description || '',
+            unit: i.unit,
+            quantity: i.quantity,
+            rate: i.rate,
+            product_id: i.product_id
+          }))
+        })));
+      }
+      return data;
+    },
+    enabled: !!editId,
+  });
+
   const createMutation = useMutation({
-    mutationFn: (data: CreateBoqPayload) => boqService.createBoq(data),
+    mutationFn: (data: CreateBoqPayload) => editId ? boqService.updateBoq(editId, data) : boqService.createBoq(data),
     onSuccess: (newBoq) => {
-      toast.success(`BOQ "${newBoq.name}" saved successfully!`);
+      toast.success(editId ? `BOQ "${newBoq.name}" updated successfully!` : `BOQ "${newBoq.name}" saved successfully!`);
       queryClient.invalidateQueries({ queryKey: ['boqs'] });
       navigate('/boq');
     },
@@ -75,7 +99,7 @@ export default function NewBoqPage() {
   const handleAddSection = () => {
     setSections(prev => [
       ...prev,
-      { section_name: `New Section / Room ${prev.length + 1}`, items: [{ item_name: 'New Item Specification', description: '', unit: 'Sq.ft', quantity: 10, rate: 100 }] }
+      { section_name: `Section ${prev.length + 1}`, items: [{ item_name: '', description: '', unit: 'Sq.ft', quantity: 1, rate: 0 }] }
     ]);
   };
 
@@ -489,7 +513,7 @@ export default function NewBoqPage() {
                 disabled={createMutation.isPending}
                 className="bg-white text-purple-900 hover:bg-purple-50 font-black px-8 rounded-xl h-12 shadow-lg w-full sm:w-auto text-sm"
               >
-                {createMutation.isPending ? 'Saving BOQ...' : 'Submit & Save BOQ'}
+                {createMutation.isPending ? 'Saving BOQ...' : (editId ? 'Update BOQ Estimate' : 'Submit & Save BOQ')}
               </Button>
             </div>
           </div>

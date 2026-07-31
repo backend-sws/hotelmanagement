@@ -104,6 +104,7 @@ Route::prefix('v1')->group(function () {
 
             // Staff Management (basic free)
             Route::get('staff/performance', [\App\Http\Controllers\Api\Business\StaffPerformanceController::class, 'index']);
+            Route::get('staff/performance/{staff}/products', [\App\Http\Controllers\Api\Business\StaffPerformanceController::class, 'productsSold']);
             Route::get('staff/{id}/sales', [\App\Http\Controllers\Api\Business\StaffController::class, 'salesReport']);
             Route::get('staff/{id}/permissions', [\App\Http\Controllers\Api\Business\StaffController::class, 'getPermissions']);
             Route::put('staff/{id}/permissions', [\App\Http\Controllers\Api\Business\StaffController::class, 'updatePermissions']);

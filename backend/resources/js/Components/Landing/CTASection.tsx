@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 
 export default function CTASection() {
+    const frontendUrl = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
     return (
         <section className="relative overflow-hidden bg-stone-950 py-16 md:py-48 flex items-center justify-center min-h-[70vh]">
             {/* Immersive Ambient Glow */}
@@ -24,12 +25,12 @@ export default function CTASection() {
                     Join the thousands of retail leaders who have transformed their operations with MobileCRM. Setup takes less than 5 minutes.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                    <Link
-                        href={route('register')}
+                    <a
+                        href={`${frontendUrl}/login`}
                         className="px-10 py-5 bg-orange-500 hover:bg-emerald-500 text-white font-black rounded-full shadow-[0_0_40px_rgba(249,115,22,0.4)] hover:shadow-[0_0_60px_rgba(16,185,129,0.6)] transition-all duration-500 hover:scale-105 uppercase tracking-widest text-sm"
                     >
                         Get Started Free
-                    </Link>
+                    </a>
                 </div>
             </div>
         </section>

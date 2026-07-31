@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BoqController extends Controller
 {
@@ -377,6 +378,12 @@ class BoqController extends Controller
                 }
             }
 
+            // Fetch or create a default category for BOQ items
+            $boqCategory = \App\Models\Category::firstOrCreate([
+                'business_id' => $business->id,
+                'name' => 'BOQ Services'
+            ]);
+
             // Flatten all items across all room sections into invoice items
             $invoiceItems = [];
             foreach ($boq->sections as $section) {
@@ -385,16 +392,16 @@ class BoqController extends Controller
                     $productId = $item->product_id;
                     if (!$productId) {
                         // Look for a service/product named same as item or create a default service product
-                        $prod = Product::where('business_id', $business->id)->where('name', trim($item->item_name))->first();
+                        $prod = Product::where('business_id', $business->id)->where('model_name', trim($item->item_name))->first();
                         if ($prod) {
                             $productId = $prod->id;
                         } else {
                             // Create a generic service product for this BOQ item
                             $prod = Product::create([
                                 'business_id' => $business->id,
-                                'name' => $item->item_name . ' (' . $section->section_name . ')',
+                                'model_name' => $item->item_name . ' (' . $section->section_name . ')',
                                 'item_code' => 'BOQ-' . strtoupper(substr(md5(uniqid()), 0, 6)),
-                                'category_id' => null,
+                                'category_id' => $boqCategory->id,
                                 'selling_price' => $item->rate,
                                 'purchase_rate' => $item->rate * 0.7,
                                 'quantity' => 1000,
@@ -451,50 +458,22 @@ class BoqController extends Controller
         }
     }
 
-    public function generatePdf(Request $request, $id): JsonResponse
+    public function generatePdf(Request $request, $id)
     {
         try {
             $business = $request->attributes->get('business') ?? auth()->user()->businesses()->first();
             $boq = BoqTemplate::with(['project', 'sections.items', 'business'])->where('business_id', $business->id)->findOrFail($id);
 
-            // Return full structured data for room-wise BOQ PDF / Print template
-            return response()->json([
-                'status' => 'success',
-                'data' => [
-                    'boq_number' => 'BOQ-' . str_pad($boq->id, 4, '0', STR_PAD_LEFT),
-                    'name' => $boq->name,
-                    'client_name' => $boq->client_name,
-                    'project_name' => $boq->project_name ?? ($boq->project->name ?? 'N/A'),
-                    'date' => $boq->created_at->format('d/m/Y'),
-                    'valid_upto' => $boq->validity_date ? $boq->validity_date->format('d/m/Y') : 'N/A',
-                    'status' => strtoupper($boq->status),
-                    'business' => [
-                        'name' => $boq->business->name,
-                        'address' => $boq->business->address,
-                        'phone' => $boq->business->phone,
-                    ],
-                    'sections' => $boq->sections->map(function ($sec) {
-                        return [
-                            'section_name' => strtoupper($sec->section_name),
-                            'items' => $sec->items->map(function ($item, $idx) {
-                                return [
-                                    'serial_no' => $idx + 1,
-                                    'description' => $item->item_name . ($item->description ? " - {$item->description}" : ''),
-                                    'unit' => $item->unit,
-                                    'quantity' => $item->quantity,
-                                    'rate' => $item->rate,
-                                    'amount' => $item->amount,
-                                ];
-                            }),
-                            'section_total' => $sec->items->sum('amount'),
-                        ];
-                    }),
-                    'total_amount' => round($boq->total_amount, 2),
-                    'notes' => $boq->notes,
-                ]
+            $pdf = Pdf::loadView('pdfs.boq', compact('boq'))->setOptions([
+                'defaultFont' => 'sans-serif',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true
             ]);
+
+            return $pdf->download("BOQ-{$boq->id}.pdf");
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to generate BOQ PDF data', 'error' => $e->getMessage()], 500);
+            Log::error('Error generating BOQ PDF: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to generate PDF', 'error' => $e->getMessage()], 500);
         }
     }
 }

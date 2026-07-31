@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   PieChart, Plus, Search, FileText, CheckCircle2, AlertCircle, 
-  Copy, ArrowRight, Printer, Trash2, RefreshCw, X, Building2, User
+  Copy, ArrowRight, Printer, Trash2, RefreshCw, X, Building2, User, Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
@@ -66,13 +66,41 @@ export default function BoqListPage() {
     onError: () => toast.error('Failed to delete BOQ'),
   });
 
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: string }) => boqService.updateStatus(id, status),
+    onSuccess: () => {
+      toast.success('BOQ status updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['boqs'] });
+    },
+    onError: () => toast.error('Failed to update BOQ status'),
+  });
+
+  // Download PDF handler
+  const handleDownloadPdf = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    try {
+      toast.info('Generating BOQ PDF...');
+      const blob = await boqService.generatePdfData(id);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `BOQ-${id.toString().padStart(4, '0')}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('BOQ PDF downloaded successfully!');
+    } catch (err) {
+      toast.error('Failed to download PDF');
+    }
+  };
+
   const stats = useMemo(() => {
     let totalValue = 0;
     let approvedCount = 0;
     let draftCount = 0;
 
     boqs.forEach(b => {
-      totalValue += (b.total_amount || 0);
+      totalValue += parseFloat(b.total_amount?.toString() || '0');
       if (b.status === 'approved') approvedCount++;
       if (b.status === 'draft') draftCount++;
     });
@@ -255,17 +283,34 @@ export default function BoqListPage() {
                         {formatCurrency(boq.total_amount || 0)}
                       </td>
                       <td className="p-4 text-center">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          boq.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                          boq.status === 'rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                          boq.status === 'sent' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-                          'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}>
-                          {boq.status.toUpperCase()}
-                        </span>
+                        <select
+                          value={boq.status}
+                          onChange={(e) => statusMutation.mutate({ id: boq.id, status: e.target.value })}
+                          disabled={statusMutation.isPending}
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/50 cursor-pointer appearance-none text-center ${
+                            boq.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                            boq.status === 'rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                            boq.status === 'sent' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                            'bg-amber-50 text-amber-700 border border-amber-200'
+                          }`}
+                        >
+                          <option value="draft">DRAFT</option>
+                          <option value="sent">SENT</option>
+                          <option value="approved">APPROVED</option>
+                          <option value="rejected">REJECTED</option>
+                        </select>
                       </td>
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/boq/${boq.id}/edit`)}
+                            title="Edit BOQ"
+                            className="h-8 w-8 p-0 text-slate-500 hover:text-amber-600"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -280,7 +325,7 @@ export default function BoqListPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => window.open(`/api/v1/business/boq/${boq.id}/pdf`, '_blank')}
+                            onClick={(e) => handleDownloadPdf(e, boq.id)}
                             title="Print / View PDF Data"
                             className="h-8 w-8 p-0 text-slate-500 hover:text-blue-600"
                           >

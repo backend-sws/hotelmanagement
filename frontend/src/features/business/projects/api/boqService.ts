@@ -106,7 +106,7 @@ export const boqService = {
   },
 
   generatePdfData: async (id: number | string): Promise<any> => {
-    const response = await api.get(`/business/boq/${id}/pdf`);
-    return response.data.data;
+    const response = await api.get(`/business/boq/${id}/pdf`, { responseType: 'blob' });
+    return response.data;
   },
 };

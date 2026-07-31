@@ -22,4 +22,24 @@ class StaffPerformanceController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
+
+    public function productsSold(Request $request, $staffId)
+    {
+        $fromDate = $request->query('from_date', now()->startOfMonth()->toDateString());
+        $toDate = $request->query('to_date', now()->endOfMonth()->toDateString());
+        $search = $request->query('search', '');
+        $perPage = $request->query('per_page', 15);
+
+        try {
+            $data = $this->staffService->getStaffProductsSoldPaginated($staffId, [
+                'from_date' => $fromDate,
+                'to_date' => $toDate,
+                'search' => $search,
+                'per_page' => $perPage,
+            ]);
+            return response()->json($data);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
 }

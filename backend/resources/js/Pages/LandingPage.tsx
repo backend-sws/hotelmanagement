@@ -9,6 +9,8 @@ import CTASection from '@/Components/Landing/CTASection';
 import FooterSection from '@/Components/Landing/FooterSection';
 import StatsSection from '@/Components/Landing/StatsSection';
 import FAQSection from '@/Components/Landing/FAQSection';
+import FeatureShowcase from '@/Components/Landing/FeatureShowcase';
+import ContactSection from '@/Components/Landing/ContactSection';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import { useRef, useEffect } from 'react';
 
@@ -70,7 +72,11 @@ export default function LandingPage({ auth }: PageProps) {
 
     return (
         <>
-            <Head title="Welcome to Mobile CRM" />
+            <Head>
+                <title>MobileCRM - The Ultimate Retail Management Ecosystem</title>
+                <meta name="description" content="Manage leads, payroll, multi-godown stock, GST billing, and real-time unified ledgers all in one place with MobileCRM." />
+                <meta name="keywords" content="Retail CRM, GST Billing Software, Payroll Management, Unified Ledger, Inventory Control, Partner Affiliate Program" />
+            </Head>
 
             {/* Global Container */}
             {/* Added arbitrary Tailwind classes to hide the physical scrollbar while allowing scrolling */}
@@ -116,11 +122,13 @@ export default function LandingPage({ auth }: PageProps) {
                 </div>
 
                 <div className="relative z-20">
-                    <FeaturesSection />
                     <StatsSection />
+                    <FeaturesSection />
+                    <FeatureShowcase />
                     <TestimonialsSection />
                     <PricingSection />
                     <FAQSection />
+                    <ContactSection />
                     <CTASection />
                 </div>
 

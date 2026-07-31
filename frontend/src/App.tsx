@@ -72,6 +72,7 @@ const LeaveRequestsPage = lazy(() => import('@/features/business/hr/pages/LeaveR
 const SalaryAdvancesPage = lazy(() => import('@/features/business/hr/pages/SalaryAdvancesPage'));
 const AuditLogsPage = lazy(() => import('@/features/business/reports/pages/AuditLogsPage'));
 const StaffPerformancePage = lazy(() => import('@/features/business/reports/pages/StaffPerformancePage'));
+const StaffProductsSoldPage = lazy(() => import('@/features/business/reports/pages/StaffProductsSoldPage'));
 
 // Phase 8 — GST Reports & Core Financial Accounting Suite
 const GstReportsPage = lazy(() => import('@/features/business/gst-reports/pages/GstReportsPage'));
@@ -320,6 +321,7 @@ function App() {
             <Route path="/projects/:id" element={<Navigate to="/business/projects/:id" replace />} />
             <Route path="/boq" element={<BusinessRoute><BoqListPage /></BusinessRoute>} />
             <Route path="/boq/new" element={<BusinessRoute><NewBoqPage /></BusinessRoute>} />
+            <Route path="/boq/:id/edit" element={<BusinessRoute><NewBoqPage /></BusinessRoute>} />
             <Route path="/business/labour/summary" element={<BusinessRoute><LabourSummaryPage /></BusinessRoute>} />
 
             {/* Staff & HR Routes */}
@@ -334,6 +336,7 @@ function App() {
 
             <Route path="/reports/audit-logs" element={<BusinessRoute><AuditLogsPage /></BusinessRoute>} />
             <Route path="/reports/staff-performance" element={<BusinessRoute><StaffPerformancePage /></BusinessRoute>} />
+            <Route path="/reports/staff-performance/:id/products" element={<BusinessRoute><StaffProductsSoldPage /></BusinessRoute>} />
 
             {/* Phase 8 — GST Reports & Core Financial Accounting Suite */}
             <Route path="/business/reports/gst" element={<BusinessRoute><GstReportsPage /></BusinessRoute>} />

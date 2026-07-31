@@ -48,6 +48,7 @@ export default function Navbar({ auth }: { auth: { user: User } }) {
                 </Link>
 
                 <div className="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-widest">
+                    <Link href="/" className={`${linkTextColor} ${!isDarkTextNeeded ? '' : 'hover:text-orange-600'} active:scale-95 transition-all`}>Home</Link>
                     <Link href="/about" className={`${linkTextColor} ${!isDarkTextNeeded ? '' : 'hover:text-orange-600'} active:scale-95 transition-all`}>About</Link>
                     <Link href="/blog" className={`${linkTextColor} ${!isDarkTextNeeded ? '' : 'hover:text-orange-600'} active:scale-95 transition-all`}>Blog</Link>
                     <Link href="/contact" className={`${linkTextColor} ${!isDarkTextNeeded ? '' : 'hover:text-orange-600'} active:scale-95 transition-all`}>Contact</Link>
