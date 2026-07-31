@@ -6,12 +6,14 @@ export interface InvoiceSettings {
   header_image: string | null;
   footer_image: string | null;
   signature_image: string | null;
+  background_image?: string | null;
   signature_label: string;
   default_terms: string;
   default_bank_details: string;
   custom_fields: Array<{ key: string; value: string }>;
   fields: {
     show_logo: boolean;
+    logo_size?: number;
     show_hsn: boolean;
     show_bank_details: boolean;
     show_terms: boolean;
@@ -33,6 +35,7 @@ export interface InvoiceSettings {
     show_qr_code: boolean;
     watermark_text?: string;
     watermark_size?: number;
+    watermark_use_document_type?: boolean;
   };
   styles: {
     primary_color: string;
@@ -78,7 +81,7 @@ export const useUploadInvoiceImage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ type, file }: { type: 'header' | 'footer' | 'signature'; file: File }) => {
+    mutationFn: async ({ type, file }: { type: 'header' | 'footer' | 'signature' | 'background'; file: File }) => {
       const formData = new FormData();
       formData.append('image', file);
 
@@ -99,7 +102,7 @@ export const useDeleteInvoiceImage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (type: 'header' | 'footer' | 'signature') => {
+    mutationFn: async (type: 'header' | 'footer' | 'signature' | 'background') => {
       const response = await api.delete(`/business/settings/invoice/image/${type}`);
       return response.data;
     },

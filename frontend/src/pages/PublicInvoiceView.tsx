@@ -14,9 +14,20 @@ const PublicInvoiceView = () => {
   const componentRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({
     contentRef: componentRef,
-    documentTitle: `Invoice_${data?.sale?.invoice_number || 'Download'}`,
+    documentTitle: `${data?.sale?.invoice_type || 'Invoice'}_${data?.sale?.invoice_number || 'Download'}`,
     pageStyle: `@page { size: A4; margin: 10mm; } @media print { body { -webkit-print-color-adjust: exact; margin: 0; padding: 0; } }`
   });
+
+  useEffect(() => {
+    if (!loading && data && !error) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('print') === 'true') {
+        setTimeout(() => {
+          handlePrint();
+        }, 500);
+      }
+    }
+  }, [loading, data, error, handlePrint]);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -102,7 +113,7 @@ const PublicInvoiceView = () => {
       
       <div className="max-w-4xl mx-auto mb-6 print:hidden flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-200">
         <div>
-          <h1 className="text-lg font-bold text-slate-800">Invoice {sale.invoice_number}</h1>
+          <h1 className="text-lg font-bold text-slate-800">{formattedInvoice.type || 'Invoice'} {sale.invoice_number}</h1>
           <p className="text-sm text-slate-500">From {business.name}</p>
         </div>
         <button

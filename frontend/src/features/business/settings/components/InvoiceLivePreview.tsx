@@ -4,14 +4,47 @@ import { useTenantStore } from '@/store/tenantStore';
 import QRCode from 'react-qr-code';
 
 interface InvoiceLivePreviewProps {
-  settings: InvoiceSettings;
+  settings?: InvoiceSettings;
   business?: any;
   invoice?: any;
   isPrintView?: boolean;
 }
 
-export default function InvoiceLivePreview({ settings, business: propBusiness, invoice: propInvoice, isPrintView = false }: InvoiceLivePreviewProps) {
+export default function InvoiceLivePreview({ settings: propSettings, business: propBusiness, invoice: propInvoice, isPrintView = false }: InvoiceLivePreviewProps) {
   const { activeBusiness } = useTenantStore();
+
+  const defaultSettings: InvoiceSettings = {
+    template: 'default',
+    header_image: null,
+    footer_image: null,
+    signature_image: null,
+    signature_label: 'Authorized Signatory',
+    default_terms: '1. Goods once sold will not be taken back.\n2. Subject to local jurisdiction.',
+    default_bank_details: '',
+    custom_fields: [],
+    fields: {
+      show_logo: true, show_hsn: true, show_bank_details: true, show_terms: true,
+      show_discount: true, show_vehicle_info: true, show_amount_in_words: true,
+      show_gstin: true, show_place_of_supply: true, show_due_date: true,
+      show_signature: true, show_customer_phone: true, show_tax_breakdown: true,
+      show_rate: true, show_qty: true, show_reference_number: true,
+      show_watermark: false, show_receiver_signature: false, show_qr_code: true,
+      watermark_use_document_type: false,
+    },
+    styles: {
+      primary_color: '#333333', secondary_color: '#64748b', border_color: '#e2e8f0',
+      font_size: 14, font_family: 'Inter', line_spacing: 1.5,
+      margin_top: 20, margin_bottom: 20, margin_left: 20, margin_right: 20,
+      border_radius: 8, frame_style: 'none',
+    }
+  };
+
+  const settings = {
+    ...defaultSettings,
+    ...(propSettings || {}),
+    fields: { ...defaultSettings.fields, ...(propSettings?.fields || {}) },
+    styles: { ...defaultSettings.styles, ...(propSettings?.styles || {}) },
+  };
   
   // Dummy data for preview
   const business = propBusiness || {
@@ -123,7 +156,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
   const renderDefaultTemplate = () => (
     <div style={{ maxWidth: isPrintView ? 'none' : '800px', margin: 'auto', width: '100%', fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif", fontSize: '14px' }}>
       {!settings.header_image && (
-        <h2 style={{ textAlign: 'center', textTransform: 'uppercase', color: primaryColor, fontSize: '24px', margin: '0 0 15px 0' }}>Tax Invoice</h2>
+        <h2 style={{ textAlign: 'center', textTransform: 'uppercase', color: primaryColor, fontSize: '24px', margin: '0 0 15px 0' }}>{invoice.type || 'Tax Invoice'}</h2>
       )}
       
       <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginBottom: '10px' }}>
@@ -131,7 +164,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
           <tr>
             <td style={{ width: '50%', verticalAlign: 'top', padding: '5px' }}>
               {settings.fields.show_logo !== false && business.logo && (
-                <img src={business.logo} style={{ maxHeight: '50px', marginBottom: '5px' }} alt="Logo" />
+                <img src={business.logo} style={{ maxHeight: settings.fields.logo_size ? `${settings.fields.logo_size}px` : '50px', marginBottom: '5px' }} alt="Logo" />
               )}
               <h3 style={{ margin: 0, color: primaryColor }}>{business.name}</h3>
               <p style={{ margin: 0 }}>{business.address}</p>
@@ -313,7 +346,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
       <table style={{ width: '100%', borderCollapse: 'collapse', border: `2px solid ${primaryColor}` }}>
         <tbody>
           <tr>
-            <td colSpan={totalColumns} style={{ textAlign: 'center', fontWeight: 'bold', backgroundColor: primaryColor, color: '#fff', border: `1px solid ${primaryColor}`, padding: '8px', fontSize: '16px', letterSpacing: '1px' }}>TAX INVOICE</td>
+            <td colSpan={totalColumns} style={{ textAlign: 'center', fontWeight: 'bold', backgroundColor: primaryColor, color: '#fff', border: `1px solid ${primaryColor}`, padding: '8px', fontSize: '16px', letterSpacing: '1px' }}>{invoice.type || 'TAX INVOICE'}</td>
           </tr>
           <tr>
             <td colSpan={leftColSpan} style={{ width: '50%', border: `1px solid ${primaryColor}`, padding: '8px', verticalAlign: 'top', fontSize: '13px' }}>
@@ -448,7 +481,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
       <div style={{ display: 'flex', marginBottom: '30px' }}>
         <div style={{ width: '50%' }}>
           {settings.fields.show_logo !== false && business.logo && (
-            <img src={business.logo} style={{ maxHeight: '60px', marginBottom: '10px' }} alt="Logo" />
+            <img src={business.logo} style={{ maxHeight: settings.fields.logo_size ? `${settings.fields.logo_size}px` : '60px', marginBottom: '10px', objectFit: 'contain' }} alt="Logo" />
           )}
           <h2 style={{ color: primaryColor, margin: '0 0 5px 0', fontSize: '24px' }}>{business.name}</h2>
           <p style={{ margin: 0, lineHeight: 1.5, fontSize: '0.85em', color: secondaryColor }}>
@@ -459,7 +492,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
           {renderCustomFields(secondaryColor)}
         </div>
         <div style={{ width: '50%', textAlign: 'right' }}>
-          <h1 style={{ margin: '0 0 10px 0', fontSize: '32px', letterSpacing: '2px', color: borderColor }}>INVOICE</h1>
+          <h1 style={{ margin: '0 0 10px 0', fontSize: '32px', letterSpacing: '2px', color: borderColor }}>{invoice.type || 'INVOICE'}</h1>
           <div style={{ display: 'inline-block', textAlign: 'left', minWidth: '200px', padding: '15px', borderRadius: `${borderRadius}px`, border: frameStyle !== 'none' ? `1px ${frameStyle} ${borderColor}` : 'none', backgroundColor: '#f8fafc' }}>
             <p style={{ margin: '0 0 5px 0' }}><span style={{ fontSize: '0.85em', color: secondaryColor }}>Invoice No:</span><br /> <span style={{ fontWeight: 'bold' }}>{invoice.invoice_number}</span></p>
             {settings.fields.show_reference_number !== false && (
@@ -619,7 +652,7 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
             </div>
           </div>
           {settings.fields.show_logo !== false && business.logo && (
-            <img src={business.logo} alt="Logo" style={{ maxHeight: '70px', maxWidth: '200px', objectFit: 'contain' }} />
+            <img src={business.logo} alt="Logo" style={{ maxHeight: settings.fields.logo_size ? `${settings.fields.logo_size}px` : '70px', maxWidth: '250px', objectFit: 'contain' }} />
           )}
         </div>
 
@@ -792,29 +825,45 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
   );
 
   const renderWatermark = () => {
-    if (!settings.fields.show_watermark) return null;
-    
-    const wmText = settings.fields.watermark_text || business.name;
-    const wmSize = settings.fields.watermark_size || 80;
-
     return (
-      <div style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%) rotate(-45deg)',
-        fontSize: `${wmSize}px`,
-        color: 'rgba(0, 0, 0, 0.04)',
-        zIndex: 1,
-        pointerEvents: 'none',
-        whiteSpace: 'nowrap',
-        textAlign: 'center',
-        fontWeight: 'bold',
-        textTransform: 'uppercase',
-        width: '100%',
-      }}>
-        {wmText}
-      </div>
+      <>
+        {settings.background_image && (
+          <div className="print:!fixed" style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1,
+            pointerEvents: 'none',
+            opacity: 0.1
+          }}>
+            <img src={settings.background_image} style={{ width: `${settings.fields.watermark_size || 80}%`, height: `${settings.fields.watermark_size || 80}%`, objectFit: 'contain' }} alt="Background Logo" />
+          </div>
+        )}
+        
+        {settings.fields.show_watermark && (
+          <div className="print:!fixed" style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%) rotate(-45deg)',
+            fontSize: `${settings.fields.watermark_size || 80}px`,
+            color: 'rgba(0, 0, 0, 0.04)',
+            zIndex: 1,
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            textAlign: 'center',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+            width: '100%',
+          }}>
+            {settings.fields.watermark_use_document_type 
+              ? (invoice.type || 'INVOICE') 
+              : (settings.fields.watermark_text || business.name)}
+          </div>
+        )}
+      </>
     );
   };
 
@@ -859,8 +908,10 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
   ) : null;
 
   const content = isPrintView ? (
-    <table style={{ 
-      width: '100%', 
+    <>
+      {renderWatermark()}
+      <table style={{ 
+        width: '100%', 
       borderCollapse: 'collapse', 
       fontFamily: previewStyle.fontFamily,
       fontSize: previewStyle.fontSize,
@@ -886,7 +937,6 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
       <tbody>
         <tr>
           <td style={{ padding: `0 ${framePadding}`, margin: 0, border: 'none', position: 'relative', height: '100%' }}>
-            {renderWatermark()}
             {renderInnerContent()}
           </td>
         </tr>
@@ -898,7 +948,8 @@ export default function InvoiceLivePreview({ settings, business: propBusiness, i
           </td>
         </tr>
       </tfoot>
-    </table>
+      </table>
+    </>
   ) : (
     <div 
       className="bg-white shadow-xl origin-top"

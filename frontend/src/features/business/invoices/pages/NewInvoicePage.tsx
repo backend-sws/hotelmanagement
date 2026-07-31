@@ -147,19 +147,29 @@ export default function NewInvoicePage() {
       }
 
       if (action === 'pdf') {
+        const docUuid = res?.data?.uuid || res?.uuid;
         const docId = res?.data?.id || res?.id || Number(editId);
-        if (docId) {
-          const blob = await invoiceService.getPdf(docId);
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.setAttribute('download', `invoice-${docId}.pdf`);
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
+        
+        if (docUuid) {
+          window.open(`/invoice/${docUuid}?print=true`, '_blank');
+        } else if (docId) {
+          window.open(`/invoices/${docId}`, '_blank');
         }
       } else if (action === 'whatsapp') {
         toast.info('Opening WhatsApp share...');
+        const docId = res?.data?.id || res?.id || Number(editId);
+        if (docId) {
+          try {
+            const url = await invoiceService.getWhatsappUrl(docId);
+            if (url && url.whatsapp_url) {
+              window.open(url.whatsapp_url, '_blank');
+            } else {
+              toast.error('Could not generate WhatsApp link');
+            }
+          } catch (e) {
+            toast.error('Failed to prepare WhatsApp link');
+          }
+        }
       }
 
       navigate('/invoices');

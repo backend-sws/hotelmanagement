@@ -74,7 +74,7 @@ class InvoiceSettingController extends Controller
      */
     public function uploadImage(Request $request, $type)
     {
-        if (!in_array($type, ['header', 'footer', 'signature'])) {
+        if (!in_array($type, ['header', 'footer', 'signature', 'background'])) {
             return response()->json(['status' => 'error', 'message' => 'Invalid image type.'], 400);
         }
 
@@ -133,7 +133,7 @@ class InvoiceSettingController extends Controller
      */
     public function deleteImage(Request $request, $type)
     {
-        if (!in_array($type, ['header', 'footer', 'signature'])) {
+        if (!in_array($type, ['header', 'footer', 'signature', 'background'])) {
             return response()->json(['status' => 'error', 'message' => 'Invalid image type.'], 400);
         }
 
@@ -170,6 +170,7 @@ class InvoiceSettingController extends Controller
             'header_image' => null,
             'footer_image' => null,
             'signature_image' => null,
+            'background_image' => null,
             'signature_label' => 'Authorized Signatory',
             'default_terms' => '',
             'default_bank_details' => '',

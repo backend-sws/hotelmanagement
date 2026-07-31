@@ -72,6 +72,7 @@ class BusinessController extends BaseController
         ]);
 
         $business = $this->businessService->createBusiness($request->user(), $validated);
+        $business->load('plan');
 
         return $this->created([
             'business' => $business
@@ -146,6 +147,7 @@ class BusinessController extends BaseController
         ]);
 
         $business = $this->businessService->updateBusiness($business, $validated);
+        $business->load('plan');
 
         return $this->success([
             'business' => $business

@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { GST_STATES } from '@/features/business/customers/constants/gstStates';
+import { useInvoiceSettings } from '@/features/business/settings/api/useInvoiceSettings';
+import InvoiceLivePreview from '@/features/business/settings/components/InvoiceLivePreview';
 
 export default function InvoiceDetailPage() {
   const { id } = useParams();
@@ -17,6 +19,8 @@ export default function InvoiceDetailPage() {
     queryKey: ['invoice', id],
     queryFn: () => invoiceService.get(Number(id))
   });
+
+  const { data: settings, isLoading: isSettingsLoading } = useInvoiceSettings();
 
   const handlePdf = async () => {
     if (!invoice.uuid) {
@@ -45,13 +49,61 @@ export default function InvoiceDetailPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isSettingsLoading) {
     return <div className="p-8"><Skeleton className="h-[400px] w-full" /></div>;
   }
 
   if (!invoice) return <div>Not found</div>;
 
   const formatType = (t: string) => t.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+  const getImageUrl = (path: any) => {
+    if (!path) return null;
+    if (typeof path === 'string' && path.startsWith('http')) return path;
+    const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api/v1', '') : 'http://localhost:8000';
+    return `${baseUrl}/storage/${path}`;
+  };
+
+  const formattedBusiness = invoice.business ? {
+    name: invoice.business.name,
+    address: invoice.business.address,
+    phone: invoice.business.phone,
+    email: invoice.business.email,
+    gstin: invoice.business?.gst_settings?.gstin,
+    logo: getImageUrl(invoice.business.logo_path) || getImageUrl(invoice.business?.settings?.whitelabel_logo) || null
+  } : undefined;
+
+  const formattedInvoice = {
+    invoice_number: invoice.invoice_number,
+    date: new Date(invoice.created_at || invoice.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+    due_date: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
+    customer_name: invoice.customer ? invoice.customer.name : 'Walk-in Customer',
+    customer_address: invoice.customer ? invoice.customer.address : '',
+    customer_phone: invoice.customer ? invoice.customer.phone : '',
+    customer_gstin: invoice.customer ? invoice.customer.gstin : '',
+    type: invoice.invoice_type.replace('_', ' ').toUpperCase(),
+    place_of_supply: invoice.place_of_supply,
+    vehicle_number: invoice.vehicle_number,
+    driver_name: invoice.driver_name,
+    reference_number: invoice.reference_number || '',
+    items: invoice.items.map((item: any) => ({
+      name: item.product ? (item.product.name || item.product.model_name || item.product.item_code || 'Item') : 'Item',
+      hsn: item.product ? (item.product.hsn_code || item.hsn_code) : item.hsn_code,
+      qty: item.quantity,
+      unit: item.unit || (item.product ? item.product.unit : 'PCS') || 'PCS',
+      rate: parseFloat(item.rate || item.unit_price || 0).toFixed(2),
+      tax: parseFloat((item.cgst_amount || 0) + (item.sgst_amount || 0) + (item.igst_amount || 0)).toFixed(2),
+      amount: parseFloat(item.amount || item.subtotal || 0).toFixed(2)
+    })),
+    subtotal: parseFloat(invoice.taxable_amount).toFixed(2),
+    tax: parseFloat(invoice.total_tax_amount || (Number(invoice.cgst_amount || 0) + Number(invoice.sgst_amount || 0) + Number(invoice.igst_amount || 0))).toFixed(2),
+    discount: parseFloat(invoice.discount || 0).toFixed(2),
+    total: parseFloat(invoice.final_amount).toFixed(2),
+    amount_in_words: invoice.amount_in_words || '',
+    terms: invoice.terms_conditions || settings?.default_terms || '1. Goods once sold will not be taken back.\n2. Subject to local jurisdiction.',
+    bank_details: invoice.bank_details || settings?.default_bank_details || (invoice.business?.bank_settings ? `Bank Name: ${invoice.business.bank_settings.bank_name}\nAcct No: ${invoice.business.bank_settings.account_number}\nIFSC: ${invoice.business.bank_settings.ifsc_code}` : ''),
+    uuid: invoice.uuid
+  };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-14">
@@ -78,160 +130,22 @@ export default function InvoiceDetailPage() {
         </div>
       </div>
 
-      <Card className="p-8 relative">
+      <div className="relative">
         {invoice.converted_at && (
-          <div className="absolute top-4 right-4 bg-indigo-100 text-indigo-800 text-xs px-3 py-1 rounded-full font-medium">
+          <div className="absolute top-4 right-4 z-50 bg-indigo-100 text-indigo-800 text-xs px-3 py-1 rounded-full font-medium shadow-sm">
             Converted to Invoice
           </div>
         )}
         
-        {/* Invoice Web View matching the PDF style */}
-        <div className="flex justify-between border-b pb-6">
-          <div>
-            <h2 className="text-xl font-bold uppercase">{invoice.business?.name || 'Company Name'}</h2>
-            <p className="text-muted-foreground whitespace-pre-wrap">{invoice.business?.address}</p>
-            <p className="text-muted-foreground">GSTIN: {invoice.business?.gst_settings?.gstin || 'N/A'}</p>
-          </div>
-          <div className="text-right">
-            <h1 className="text-3xl font-bold text-gray-200 dark:text-gray-800 uppercase">{formatType(invoice.invoice_type)}</h1>
-            <p className="font-medium mt-2">No: {invoice.invoice_number}</p>
-            <p className="text-muted-foreground">Date: {invoice.date}</p>
-            {invoice.due_date && <p className="text-muted-foreground">Due Date: {invoice.due_date}</p>}
-          </div>
+        <div className="w-full mx-auto bg-white overflow-hidden shadow-xl border border-slate-200">
+          <InvoiceLivePreview
+            settings={settings}
+            business={formattedBusiness}
+            invoice={formattedInvoice}
+            isPrintView={false}
+          />
         </div>
-
-        <div className="py-6 border-b flex justify-between">
-          <div>
-            <p className="text-sm font-semibold text-muted-foreground uppercase mb-2">Billed To</p>
-            <p className="font-bold">{invoice.customer?.name || 'Cash Customer'}</p>
-            {invoice.customer && (
-              <>
-                <p className="text-muted-foreground whitespace-pre-wrap">{invoice.customer.address}</p>
-                <p className="text-muted-foreground">Phone: {invoice.customer.phone}</p>
-                <p className="text-muted-foreground">GSTIN: {invoice.customer.gstin || 'URD'}</p>
-                <p className="text-muted-foreground">State: {(() => {
-                  if (!invoice.place_of_supply) return 'N/A';
-                  const codeStr = String(invoice.place_of_supply).padStart(2, '0');
-                  const found = GST_STATES.find(s => s.code === codeStr);
-                  return found ? `${found.code} - ${found.name}` : invoice.place_of_supply;
-                })()}</p>
-              </>
-            )}
-          </div>
-          <div className="text-right">
-            {invoice.vehicle_number && (
-              <p><span className="text-muted-foreground">Vehicle No:</span> {invoice.vehicle_number}</p>
-            )}
-            {invoice.driver_name && (
-              <p><span className="text-muted-foreground">Driver Name:</span> {invoice.driver_name}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="py-6">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 border-y">
-              <tr>
-                <th className="py-3 px-2 text-left font-medium">Item Description</th>
-                <th className="py-3 px-2 text-left font-medium">HSN</th>
-                <th className="py-3 px-2 text-right font-medium">Qty</th>
-                <th className="py-3 px-2 text-right font-medium">Rate</th>
-                <th className="py-3 px-2 text-right font-medium">Taxable</th>
-                {invoice.tax_type === 'gst' ? (
-                  <>
-                    <th className="py-3 px-2 text-right font-medium">CGST</th>
-                    <th className="py-3 px-2 text-right font-medium">SGST</th>
-                  </>
-                ) : (
-                  <th className="py-3 px-2 text-right font-medium">IGST</th>
-                )}
-                <th className="py-3 px-2 text-right font-medium">Total</th>
-              </tr>
-            </thead>
-            <tbody className="border-b">
-              {invoice.items.map((item: any, i: number) => (
-                <tr key={i} className="border-b border-muted/20">
-                  <td className="py-3 px-2">{item.product?.name || 'Item'}</td>
-                  <td className="py-3 px-2">{item.hsn_code || '-'}</td>
-                  <td className="py-3 px-2 text-right">{Number(item.quantity)} {item.unit}</td>
-                  <td className="py-3 px-2 text-right">₹{Number(item.rate).toFixed(2)}</td>
-                  <td className="py-3 px-2 text-right">₹{Number(item.taxable_amount).toFixed(2)}</td>
-                  
-                  {invoice.tax_type === 'gst' ? (
-                    <>
-                      <td className="py-3 px-2 text-right">₹{Number(item.cgst_amount).toFixed(2)}<br/><span className="text-[10px] text-muted-foreground">({item.gst_rate/2}%)</span></td>
-                      <td className="py-3 px-2 text-right">₹{Number(item.sgst_amount).toFixed(2)}<br/><span className="text-[10px] text-muted-foreground">({item.gst_rate/2}%)</span></td>
-                    </>
-                  ) : (
-                    <td className="py-3 px-2 text-right">₹{Number(item.igst_amount).toFixed(2)}<br/><span className="text-[10px] text-muted-foreground">({item.gst_rate}%)</span></td>
-                  )}
-                  
-                  <td className="py-3 px-2 text-right font-medium">₹{Number(item.amount).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex justify-between py-4">
-          <div className="w-1/2 pr-8 text-sm">
-            <div className="mb-4">
-              <p className="font-semibold text-muted-foreground mb-1">Notes / Narration</p>
-              <p>{invoice.notes || '-'}</p>
-            </div>
-            <div className="mb-4">
-              <p className="font-semibold text-muted-foreground mb-1">Terms & Conditions</p>
-              <p className="whitespace-pre-wrap text-xs text-muted-foreground">{invoice.terms_conditions || '-'}</p>
-            </div>
-          </div>
-          
-          <div className="w-[300px]">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Taxable Amount</span>
-                <span>₹{Number(invoice.taxable_amount).toFixed(2)}</span>
-              </div>
-              {invoice.tax_type === 'gst' ? (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total CGST</span>
-                    <span>₹{Number(invoice.cgst_amount).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total SGST</span>
-                    <span>₹{Number(invoice.sgst_amount).toFixed(2)}</span>
-                  </div>
-                </>
-              ) : (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total IGST</span>
-                  <span>₹{Number(invoice.igst_amount).toFixed(2)}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Discount</span>
-                <span>- ₹{Number(invoice.discount).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Round Off</span>
-                <span>₹{Number(invoice.round_off).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg pt-4 border-t mt-4">
-                <span>Grand Total</span>
-                <span>₹{Number(invoice.final_amount).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between pt-2">
-                <span className="text-muted-foreground">Amount Paid</span>
-                <span>₹{Number(invoice.paid_amount).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between font-semibold text-red-600 bg-red-50 dark:bg-red-950/20 p-2 rounded mt-2">
-                <span>Balance Due</span>
-                <span>₹{(Number(invoice.final_amount) - Number(invoice.paid_amount)).toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
+      </div>
     </div>
   );
 }

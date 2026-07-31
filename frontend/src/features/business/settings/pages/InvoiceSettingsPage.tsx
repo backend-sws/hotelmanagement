@@ -60,7 +60,7 @@ export const InvoiceSettingsTab = () => {
     });
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'header' | 'footer' | 'signature') => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'header' | 'footer' | 'signature' | 'background') => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
@@ -82,7 +82,7 @@ export const InvoiceSettingsTab = () => {
     }
   };
 
-  const handleDeleteImage = (type: 'header' | 'footer' | 'signature') => {
+  const handleDeleteImage = (type: 'header' | 'footer' | 'signature' | 'background') => {
     deleteImage.mutate(type, {
       onSuccess: () => {
         toast.success(`${type} image removed`);
@@ -423,6 +423,52 @@ export const InvoiceSettingsTab = () => {
                 </div>
               )}
             </div>
+
+            {/* Background Watermark Image */}
+            <div className="bg-slate-50 p-3 rounded border border-slate-200 mt-3">
+              <Label className="mb-1 block text-xs">Background Watermark Image</Label>
+              {settings.background_image ? (
+                <div className="space-y-3">
+                  <div className="relative rounded overflow-hidden border border-slate-200 group flex justify-center p-2 bg-white">
+                    <img src={settings.background_image} alt="Background Watermark" className="max-h-16 object-contain" />
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => handleDeleteImage('background')}>
+                        <Trash2 className="w-3 h-3 mr-1" /> Remove
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-500 mb-1 block">Watermark Scale (%)</Label>
+                    <div className="flex items-center gap-3 bg-white p-2 rounded border border-slate-200">
+                      <input 
+                        type="range" 
+                        min="10" 
+                        max="100" 
+                        value={settings.fields.watermark_size || 80} 
+                        onChange={(e) => setSettings({...settings, fields: {...settings.fields, watermark_size: Number(e.target.value)}})} 
+                        className="w-full accent-indigo-600"
+                      />
+                      <span className="text-xs font-semibold text-slate-600 w-10 text-right">{settings.fields.watermark_size || 80}%</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-16 border border-slate-300 border-dashed rounded cursor-pointer bg-white hover:bg-slate-50 relative">
+                    <div className="flex flex-col items-center justify-center">
+                      <UploadCloud className="w-4 h-4 text-slate-400 mb-1" />
+                      <p className="text-[10px] text-slate-500">Upload Background</p>
+                    </div>
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e as any, 'background')} />
+                    {uploadImage.isPending && uploadImage.variables?.type === 'background' && (
+                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                      </div>
+                    )}
+                  </label>
+                </div>
+              )}
+            </div>
           </Accordion>
 
           <Accordion title="Custom Header Fields">
@@ -463,7 +509,27 @@ export const InvoiceSettingsTab = () => {
 
           <Accordion title="Invoice Details">
             <div className="space-y-3">
-              <Toggle label="Show Logo" checked={settings.fields.show_logo} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_logo: v}})} />
+              <div className="space-y-2">
+                <Toggle label="Show Logo" checked={settings.fields.show_logo} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_logo: v}})} />
+                {settings.fields.show_logo && (
+                  <div className="pl-6 flex flex-col gap-3 py-1">
+                    <div>
+                      <Label className="text-xs text-slate-500 mb-1 block">Logo Size (Height in pixels)</Label>
+                      <div className="flex items-center gap-3 bg-white p-2 rounded border border-slate-200">
+                        <input 
+                          type="range" 
+                          min="30" 
+                          max="150" 
+                          value={settings.fields.logo_size || 60} 
+                          onChange={(e) => setSettings({...settings, fields: {...settings.fields, logo_size: Number(e.target.value)}})} 
+                          className="w-full accent-indigo-600"
+                        />
+                        <span className="text-xs font-semibold text-slate-600 w-12 text-right">{settings.fields.logo_size || 60}px</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
               <Toggle label="Show Amount in Words" checked={settings.fields.show_amount_in_words} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_amount_in_words: v}})} />
               <Toggle label="Show Bank Details" checked={settings.fields.show_bank_details} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_bank_details: v}})} />
               <div className="space-y-2">
@@ -479,15 +545,23 @@ export const InvoiceSettingsTab = () => {
                 <Toggle label="Show Watermark" checked={settings.fields.show_watermark} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_watermark: v}})} />
                 {settings.fields.show_watermark && (
                   <div className="pl-6 flex flex-col gap-3 py-1">
-                    <div>
-                      <Label className="text-xs text-slate-500 mb-1 block">Watermark Text (Leave blank for Company Name)</Label>
-                      <Input 
-                        placeholder="e.g. DRAFT or CONFIDENTIAL" 
-                        value={settings.fields.watermark_text || ''} 
-                        onChange={(e) => setSettings({...settings, fields: {...settings.fields, watermark_text: e.target.value}})} 
-                        className="h-7 text-xs bg-white" 
-                      />
-                    </div>
+                    <Toggle 
+                      label="Use Document Type as Watermark (e.g., INVOICE, QUOTATION)" 
+                      checked={!!settings.fields.watermark_use_document_type} 
+                      onChange={(v) => setSettings({...settings, fields: {...settings.fields, watermark_use_document_type: v}})} 
+                    />
+                    
+                    {!settings.fields.watermark_use_document_type && (
+                      <div>
+                        <Label className="text-xs text-slate-500 mb-1 block">Watermark Text (Leave blank for Company Name)</Label>
+                        <Input 
+                          placeholder="e.g. DRAFT or CONFIDENTIAL" 
+                          value={settings.fields.watermark_text || ''} 
+                          onChange={(e) => setSettings({...settings, fields: {...settings.fields, watermark_text: e.target.value}})} 
+                          className="h-7 text-xs bg-white" 
+                        />
+                      </div>
+                    )}
                     <div>
                       <Label className="text-xs text-slate-500 mb-1 block">Watermark Size</Label>
                       <div className="flex items-center gap-3 bg-white p-2 rounded border border-slate-200">

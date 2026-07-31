@@ -496,11 +496,27 @@ class InvoiceController extends Controller
     {
         $businessId = app('current_business_id');
         $invoice = Sale::with('customer')->where('business_id', $businessId)->findOrFail($id);
+        $business = \App\Models\Business::find($businessId);
         
+        $settings = $business->settings ?? [];
+        $template = $settings['whatsapp_invoice_template'] ?? "Hello *[Customer Name]*,\n\nThank you for shopping with us! Your invoice *[Invoice Number]* for Rs.*[Amount]* has been generated.\n\nView or download your invoice here:\n[Invoice Link]\n\nRegards,\n*[Business Name]*";
+
         $phone = $invoice->customer->phone ?? '';
         $frontendUrl = env('FRONTEND_URL', 'http://localhost:8000');
         $publicUrl = $frontendUrl . '/invoice/' . $invoice->uuid;
-        $text = "Hello, here is your invoice {$invoice->invoice_number}. Link: " . $publicUrl;
+
+        $text = str_replace(
+            ['[Customer Name]', '[Invoice Number]', '[Amount]', '[Invoice Link]', '[Business Name]'],
+            [
+                $invoice->customer->name ?? 'Customer',
+                $invoice->invoice_number,
+                $invoice->final_amount,
+                $publicUrl,
+                $business->name ?? 'Our Business'
+            ],
+            $template
+        );
+
         $url = "https://api.whatsapp.com/send?phone=91{$phone}&text=" . urlencode($text);
 
         return response()->json(['data' => ['whatsapp_url' => $url]]);
