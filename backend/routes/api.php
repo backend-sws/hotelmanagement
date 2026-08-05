@@ -50,6 +50,7 @@ Route::prefix('v1')->group(function () {
 
             Route::apiResource('categories', \App\Http\Controllers\Api\Business\CategoryController::class);
             Route::apiResource('brands', \App\Http\Controllers\Api\Business\BrandController::class);
+            Route::apiResource('units', \App\Http\Controllers\UnitController::class)->only(['index', 'store']);
             
             Route::post('inventory/direct-inward', [\App\Http\Controllers\Api\Business\InventoryController::class, 'directInward']);
             Route::get('inventory/low-stock', [\App\Http\Controllers\Api\Business\InventoryController::class, 'lowStockAlert']);

@@ -38,14 +38,6 @@ export function PlanSubscriptionTab() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [plansRes, historyRes] = await Promise.all([
-        api.get('/settings/public'), // Public settings usually includes plans
-        api.get('/business/subscriptions/history')
-      ]);
-      // Let's assume plans are available or we fetch them from another endpoint.
-      // Actually, let's just create an endpoint to fetch plans publicly if needed.
-      // Wait, `/settings/public` already exists in `PublicSettingController`. Let's check it later.
-      // For now, let's fetch `/superadmin/plans` and if it fails, fallback to hardcoded or we will fix it.
       
       try {
           const p = await api.get('/plans/public');
@@ -54,7 +46,13 @@ export function PlanSubscriptionTab() {
           console.error('Failed to fetch plans', e);
       }
       
-      setPayments(historyRes.data.data);
+      try {
+          const historyRes = await api.get('/business/subscriptions/history');
+          setPayments(historyRes.data.data);
+      } catch (e) {
+          console.error('Failed to fetch history', e);
+      }
+      
     } catch (error) {
       console.error(error);
     } finally {

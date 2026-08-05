@@ -10,7 +10,7 @@ const PublicInvoiceView = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   const componentRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({
     contentRef: componentRef,
@@ -110,7 +110,7 @@ const PublicInvoiceView = () => {
 
   return (
     <div className="min-h-screen bg-slate-100 py-8 px-4 font-sans print:bg-white print:p-0 print:py-0 print:m-0">
-      
+
       <div className="max-w-4xl mx-auto mb-6 print:hidden flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-200">
         <div>
           <h1 className="text-lg font-bold text-slate-800">{formattedInvoice.type || 'Invoice'} {sale.invoice_number}</h1>

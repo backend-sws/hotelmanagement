@@ -13,6 +13,32 @@ class Business extends Model
 {
     use HasFactory, Filterable, SoftDeletes;
 
+    protected static function booted()
+    {
+        static::created(function ($business) {
+            $defaultUnits = [
+                'Pcs', 'Nos', 'Set', 'Pairs', 'Dozen', 'Pack', 'Bundle',
+                'Kgs', 'Gms', 'MT', 'Tonnes', 'Mg',
+                'Ltrs', 'Ml', 'Gallons',
+                'Mtrs', 'Cms', 'Mm', 'Inch', 'Ft', 'Yard',
+                'SqFt', 'SqMtr', 'SqYard',
+                'CuFt', 'CuMtr',
+                'Box', 'Pkts', 'Carton', 'Bags', 'Bottles', 'Can', 'Drum', 'Rolls', 'Tube', 'Tin', 'Jar',
+                'Hours', 'Days', 'Months', 'Years', 'Lumpsum'
+            ];
+            $insertData = [];
+            foreach ($defaultUnits as $unit) {
+                $insertData[] = [
+                    'business_id' => $business->id,
+                    'name' => $unit,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+            \Illuminate\Support\Facades\DB::table('units')->insertOrIgnore($insertData);
+        });
+    }
+
     protected $fillable = [
         'name',
         'email',

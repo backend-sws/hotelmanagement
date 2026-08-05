@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import { boqService, type CreateBoqPayload } from '../api/boqService';
 import { projectService } from '../api/projectService';
 import { useInventory } from '@/features/business/inventory/api/useInventory';
+import { useCategories } from '@/features/business/inventory/api/useCategories';
+import { useUnits, useCreateUnit } from '@/features/business/inventory/api/useUnits';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { formatCurrency } from '@/lib/formatters';
 import { toast } from 'sonner';
 
@@ -27,6 +30,11 @@ interface BoqFormSection {
 }
 
 export default function NewBoqPage() {
+  const { data: categoriesData } = useCategories();
+  const { data: unitsData } = useUnits();
+  const createUnitMutation = useCreateUnit();
+  const categories = categoriesData?.data || [];
+  const units = unitsData || [];
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -416,19 +424,24 @@ export default function NewBoqPage() {
                                 />
                               </td>
                               <td className="py-3 px-1">
-                                <select
+                                <SearchableSelect
                                   value={item.unit}
-                                  onChange={e => handleItemChange(sIdx, iIdx, 'unit', e.target.value)}
-                                  className="w-full px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-center font-semibold"
-                                >
-                                  <option value="Sq.ft">Sq.ft</option>
-                                  <option value="Rft">Rft</option>
-                                  <option value="Pcs">Pcs</option>
-                                  <option value="Lumpsum">Lumpsum</option>
-                                  <option value="Bags">Bags</option>
-                                  <option value="Nos">Nos</option>
-                                  <option value="Kg">Kg</option>
-                                </select>
+                                  onChange={val => handleItemChange(sIdx, iIdx, 'unit', String(val))}
+                                  options={units.map(u => ({ value: u.name, label: u.name }))}
+                                  creatable={true}
+                                  onCreate={async (val) => {
+                                    try {
+                                      await createUnitMutation.mutateAsync({ name: val });
+                                      handleItemChange(sIdx, iIdx, 'unit', val);
+                                    } catch (e) {
+                                      toast.error('Failed to create unit');
+                                    }
+                                  }}
+                                  controlSize="sm"
+                                  dropdownPlacement="top"
+                                  menuPosition="fixed"
+                                  className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                                />
                               </td>
                               <td className="py-3 px-1">
                                 <input

@@ -63,6 +63,19 @@ export default function GstReportsPage() {
       hsnData.items.forEach(item => {
         csvContent += `${item.hsn_code},"${item.description}",${item.uom},${item.gst_rate},${item.total_quantity},${item.taxable_value},${item.total_tax},${item.total_value}\n`;
       });
+    } else if (activeTab === 'gstr3b' && gstr3bData) {
+      csvContent += `GSTR-3B Summary Return\nPeriod: ${fromDate} to ${toDate}\n\n`;
+      csvContent += "3.1 Outward Supplies (Output Tax)\n";
+      csvContent += "Taxable Turnover,CGST,SGST,IGST,Total Tax\n";
+      csvContent += `${gstr3bData.outward_supplies.taxable_amount},${gstr3bData.outward_supplies.cgst_amount},${gstr3bData.outward_supplies.sgst_amount},${gstr3bData.outward_supplies.igst_amount},${gstr3bData.outward_supplies.total_tax}\n\n`;
+      
+      csvContent += "4. Eligible Input Tax Credit (ITC)\n";
+      csvContent += "Eligible Purchase Value,CGST,SGST,IGST,Total ITC\n";
+      csvContent += `${gstr3bData.eligible_itc.taxable_amount},${gstr3bData.eligible_itc.cgst_amount},${gstr3bData.eligible_itc.sgst_amount},${gstr3bData.eligible_itc.igst_amount},${gstr3bData.eligible_itc.total_tax}\n\n`;
+
+      csvContent += "GSTR-3B Net Settlement Summary\n";
+      csvContent += "Net GST Payable (In Cash),ITC Carry-Forward\n";
+      csvContent += `${gstr3bData.net_payable.total_tax},${gstr3bData.itc_carry_forward.total_tax}\n`;
     }
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");

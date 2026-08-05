@@ -92,7 +92,6 @@ export function EditCustomerModal({ isOpen, onClose, customer }: EditCustomerMod
         </div>
       }
       maxWidth="lg"
-      overflowVisible={true}
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose} type="button" disabled={isSubmitting}>

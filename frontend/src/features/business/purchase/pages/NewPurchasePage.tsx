@@ -8,10 +8,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useSuppliers } from '@/features/business/suppliers/api/useSuppliers';
 import { useInventory } from '@/features/business/inventory/api/useInventory';
 import { useLocations } from '@/features/business/profile/api/useLocations';
 import { purchaseService, type PurchaseItemPayload } from '../api/purchaseService';
+import { useUnits, useCreateUnit } from '@/features/business/inventory/api/useUnits';
 import { toast } from 'sonner';
 
 interface FormItem {
@@ -35,6 +37,9 @@ export default function NewPurchasePage() {
 
   const suppliers = suppliersData?.data || [];
   const products = inventoryData?.data || [];
+  const { data: unitsData } = useUnits();
+  const createUnitMutation = useCreateUnit();
+  const units = unitsData || [];
 
   // Basic Details State
   const [supplierId, setSupplierId] = useState<number>(0);
@@ -371,14 +376,29 @@ export default function NewPurchasePage() {
                           value={it.hsn_code}
                           onChange={(e) => updateItemField(index, 'hsn_code', e.target.value)}
                           placeholder="HSN"
-                          className="h-9 text-xs w-2/3 bg-transparent"
+                          className="h-9 text-xs w-[45%] bg-transparent"
                         />
-                        <Input
-                          value={it.unit}
-                          onChange={(e) => updateItemField(index, 'unit', e.target.value)}
-                          placeholder="Unit"
-                          className="h-9 text-xs w-1/3 bg-transparent text-center font-bold"
-                        />
+                        <div className="w-[55%]">
+                          <SearchableSelect
+                            value={it.unit}
+                            onChange={(val) => updateItemField(index, 'unit', String(val))}
+                            options={units.map(u => ({ value: u.name, label: u.name }))}
+                            creatable={true}
+                            onCreate={async (val) => {
+                              try {
+                                await createUnitMutation.mutateAsync({ name: val });
+                                updateItemField(index, 'unit', val);
+                              } catch (e) {
+                                toast.error('Failed to create unit');
+                              }
+                            }}
+                            dropdownPlacement="top"
+                            menuPosition="fixed"
+                            controlSize="sm"
+                            placeholder="Unit"
+                            className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                          />
+                        </div>
                       </td>
                       <td className="p-3">
                         <Input

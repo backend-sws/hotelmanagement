@@ -229,7 +229,7 @@ export function AttendanceMonthlyGrid({
         onClose={() => setSelectedCell(null)} 
         title={`Attendance: ${visibleStaff.find(s => s.id === selectedCell?.userId)?.name} - ${selectedCell?.date}`}
       >
-        <div className="p-4 space-y-5">
+        <div className="p-4 pb-32 space-y-5">
           {selectedRecord ? (
             <div className="grid grid-cols-2 gap-4 mb-5">
               {/* Check In Card */}

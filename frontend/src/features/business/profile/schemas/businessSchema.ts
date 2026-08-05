@@ -33,8 +33,6 @@ export const businessSchema = z.object({
     whitelabel_name: z.string().nullable().optional(),
     whitelabel_logo: z.string().nullable().optional(),
     whitelabel_favicon: z.string().nullable().optional(),
-    invoice_header_image: z.string().nullable().optional(),
-    invoice_footer_image: z.string().nullable().optional(),
   }).default({
     commission_calculation_base: 'sales',
     sale_invoice_prefix: 'INV-',

@@ -11,6 +11,7 @@ import { useCreateProduct, useUpdateProduct } from '../api/useInventory';
 import type { Product, ProductFormValues } from '../schemas/productSchema';
 import type { Brand } from '../schemas/brandSchema';
 import { useBrands, useCreateBrand } from '../api/useBrands';
+import { useUnits, useCreateUnit } from '../api/useUnits';
 import { DynamicForm } from '@/components/ui/dynamic-form';
 import { getInventoryFormConfig } from '../constants/inventoryForm';
 import { useCategories, useCreateCategory } from '../api/useCategories';
@@ -25,9 +26,13 @@ interface InventoryFormModalProps {
 
 export function InventoryFormModal({ isOpen, onClose, productToEdit, onSuccess }: InventoryFormModalProps) {
   const { data: categoriesData } = useCategories();
-  const categories = categoriesData?.data || [];
   const { data: brandsData } = useBrands();
+  const { data: unitsData } = useUnits();
+  const createUnitMutation = useCreateUnit();
+
+  const categories = categoriesData?.data || [];
   const brands: Brand[] = brandsData || [];
+  const units = unitsData || [];
   const createBrandMutation = useCreateBrand();
   const createCategoryMutation = useCreateCategory();
   const { data: gstSettings } = useGstSettings();
@@ -173,6 +178,22 @@ export function InventoryFormModal({ isOpen, onClose, productToEdit, onSuccess }
                     form.setValue('category_id', newCategory.id);
                   } catch (error) {
                     toast.error('Failed to create category');
+                  }
+                }
+              };
+            }
+            if (field.name === 'unit') {
+              return {
+                ...field,
+                options: units.map(u => ({ value: u.name, label: u.name })),
+                searchable: true,
+                creatable: true,
+                onCreate: async (inputValue: string) => {
+                  try {
+                    await createUnitMutation.mutateAsync({ name: inputValue });
+                    form.setValue('unit', inputValue);
+                  } catch (error) {
+                    toast.error('Failed to create unit');
                   }
                 }
               };

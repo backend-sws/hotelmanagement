@@ -35,17 +35,19 @@ export function Modal({ isOpen, onClose, title, description, children, footer, m
   };
 
   return createPortal(
-    <div 
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity"
-      onClick={handleOverlayClick}
-    >
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/50 backdrop-blur-sm transition-opacity">
       <div 
-        className={cn(
-          "relative bg-white dark:bg-[#09090b] w-full rounded-2xl shadow-2xl border border-slate-200/80 dark:border-white/10 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200",
-          maxWidthClasses[maxWidth],
-          overflowVisible ? "overflow-visible" : "overflow-hidden"
-        )}
+        className="flex min-h-full items-center justify-center p-4"
+        onClick={handleOverlayClick}
       >
+        <div 
+          className={cn(
+            "relative bg-white dark:bg-[#09090b] w-full rounded-2xl shadow-2xl border border-slate-200/80 dark:border-white/10 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200",
+            maxWidthClasses[maxWidth],
+            overflowVisible ? "overflow-visible" : "overflow-hidden"
+          )}
+          onClick={e => e.stopPropagation()}
+        >
         {/* Floating Close Button when no header */}
         {title === "" && (
           <button 
@@ -89,6 +91,7 @@ export function Modal({ isOpen, onClose, title, description, children, footer, m
             {footer}
           </div>
         )}
+      </div>
       </div>
     </div>,
     document.body

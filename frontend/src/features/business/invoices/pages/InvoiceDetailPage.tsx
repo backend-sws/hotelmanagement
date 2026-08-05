@@ -113,7 +113,7 @@ export default function InvoiceDetailPage() {
         {invoice.status === 'completed' && <Badge className="bg-green-500">Completed</Badge>}
         {invoice.status === 'pending' && <Badge className="bg-red-500">Pending</Badge>}
         {invoice.status === 'draft' && <Badge variant="outline">Draft</Badge>}
-        
+
         <div className="ml-auto flex gap-2">
           {['proforma', 'quotation', 'delivery_challan'].includes(invoice.invoice_type) && !invoice.converted_at && (
             <Button onClick={handleConvert} className="bg-indigo-600 hover:bg-indigo-700 text-white">
@@ -136,7 +136,7 @@ export default function InvoiceDetailPage() {
             Converted to Invoice
           </div>
         )}
-        
+
         <div className="w-full mx-auto bg-white overflow-hidden shadow-xl border border-slate-200">
           <InvoiceLivePreview
             settings={settings}

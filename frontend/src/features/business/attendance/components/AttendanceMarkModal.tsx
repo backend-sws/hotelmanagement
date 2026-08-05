@@ -60,7 +60,7 @@ export const AttendanceMarkModal = ({ isOpen, onClose, staffList }: AttendanceMa
       title="Mark Attendance (Manual)"
       maxWidth="md"
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pb-32">
         <div>
           <label className="block text-sm font-medium mb-1">Staff Member</label>
           <Controller
