@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
   Plus, Trash2, ArrowLeft, ShoppingBag, ShieldCheck, 
@@ -42,7 +42,10 @@ export default function NewPurchasePage() {
   const units = unitsData || [];
 
   // Basic Details State
-  const [supplierId, setSupplierId] = useState<number>(0);
+  const { id } = useParams<{ id?: string }>();
+  const [searchParams] = useSearchParams();
+  const initialSupplierId = id || searchParams.get('supplier_id');
+  const [supplierId, setSupplierId] = useState<number>(initialSupplierId ? parseInt(initialSupplierId, 10) : 0);
   const [billNumber, setBillNumber] = useState('');
   const [billDate, setBillDate] = useState(new Date().toISOString().split('T')[0]);
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
@@ -66,9 +69,12 @@ export default function NewPurchasePage() {
   ]);
 
   // Payment Settlement State
-  const [paidAmount, setPaidAmount] = useState<number>(0);
-  const [paymentMode, setPaymentMode] = useState<string>('Bank Transfer');
+  const [payments, setPayments] = useState<{ amount: number; mode: string }[]>([
+    { amount: 0, mode: 'Bank Transfer' }
+  ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const paidAmount = useMemo(() => payments.reduce((sum, p) => sum + (parseFloat(p.amount.toString()) || 0), 0), [payments]);
 
   // Calculation logic
   const totals = useMemo(() => {
@@ -172,8 +178,10 @@ export default function NewPurchasePage() {
         location_id: locationId ? Number(locationId) : undefined,
         notes: notes || undefined,
         is_itc_eligible: isItcEligible,
-        paid_amount: paidAmount > 0 ? paidAmount : 0,
-        payment_mode: paymentMode,
+        payments: payments.filter(p => p.amount > 0).map(p => ({
+          amount: parseFloat(p.amount.toString()) || 0,
+          mode: p.mode
+        })),
         items: validItems.map((it): PurchaseItemPayload => ({
           product_id: it.product_id,
           hsn_code: it.hsn_code,
@@ -459,38 +467,49 @@ export default function NewPurchasePage() {
               3. Payment Settlement & Notes
             </CardHeader>
             <CardContent className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Upfront Paid Amount (₹)
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max={totals.finalAmount}
-                    value={paidAmount}
-                    onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
-                    placeholder="0.00"
-                    className="h-10 text-base font-extrabold text-emerald-700 dark:text-emerald-400"
-                  />
+              <div className="space-y-4">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Upfront Split Payments (Optional)</label>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setPayments([...payments, { amount: 0, mode: 'Bank Transfer' }])} className="h-7 text-xs px-2">
+                    <Plus className="w-3 h-3 mr-1" /> Add Split
+                  </Button>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Payment Mode
-                  </label>
-                  <select
-                    value={paymentMode}
-                    onChange={(e) => setPaymentMode(e.target.value)}
-                    disabled={paidAmount <= 0}
-                    className="w-full h-10 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white font-medium"
-                  >
-                    <option value="Bank Transfer">Bank Transfer (NEFT / IMPS)</option>
-                    <option value="UPI">UPI Payment</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Cheque">Cheque</option>
-                  </select>
-                </div>
+                {payments.map((p, index) => (
+                  <div key={index} className="flex gap-2 items-center">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={p.amount || ''}
+                      onChange={(e) => {
+                        const newP = [...payments];
+                        newP[index].amount = parseFloat(e.target.value) || 0;
+                        setPayments(newP);
+                      }}
+                      placeholder="0.00"
+                      className="h-10 w-1/2 text-sm font-bold text-emerald-700 dark:text-emerald-400"
+                    />
+                    <select
+                      value={p.mode}
+                      onChange={(e) => {
+                        const newP = [...payments];
+                        newP[index].mode = e.target.value;
+                        setPayments(newP);
+                      }}
+                      className="w-1/2 h-10 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white font-medium"
+                    >
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="UPI">UPI Payment</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Cheque">Cheque</option>
+                    </select>
+                    {payments.length > 1 && (
+                      <button type="button" onClick={() => setPayments(payments.filter((_, i) => i !== index))} className="text-rose-500 hover:bg-rose-50 p-2 rounded shrink-0">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
 
               <div>

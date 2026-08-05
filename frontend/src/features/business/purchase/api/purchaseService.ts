@@ -18,8 +18,7 @@ export interface CreatePurchasePayload {
   location_id?: number;
   notes?: string;
   is_itc_eligible?: boolean;
-  paid_amount?: number;
-  payment_mode?: string;
+  payments?: { amount: number; mode: string }[];
   items: PurchaseItemPayload[];
 }
 

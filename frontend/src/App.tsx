@@ -23,7 +23,7 @@ const InventoryPage = lazy(() => import('@/features/business/inventory/pages/Inv
 const PriceListsPage = lazy(() => import('@/features/business/inventory/pages/PriceListsPage'));
 const SuppliersPage = lazy(() => import('@/features/business/suppliers/pages/SuppliersPage'));
 const SupplierDetailsPage = lazy(() => import('@/features/business/suppliers/pages/SupplierDetailsPage'));
-const AddPurchasePage = lazy(() => import('@/features/business/suppliers/pages/AddPurchasePage'));
+
 
 const CustomersPage = lazy(() => import('@/features/business/customers/pages/CustomersPage'));
 const CustomerDetailsPage = lazy(() => import('@/features/business/customers/pages/CustomerDetailsPage'));
@@ -266,7 +266,7 @@ function App() {
             <Route path="/price-lists" element={<BusinessRoute><PriceListsPage /></BusinessRoute>} />
             <Route path="/suppliers" element={<BusinessRoute><SuppliersPage /></BusinessRoute>} />
             <Route path="/suppliers/:id" element={<BusinessRoute><SupplierDetailsPage /></BusinessRoute>} />
-            <Route path="/suppliers/:id/purchases/new" element={<BusinessRoute><AddPurchasePage /></BusinessRoute>} />
+            <Route path="/suppliers/:id/purchases/new" element={<BusinessRoute><NewPurchasePage /></BusinessRoute>} />
             <Route path="/customers" element={<BusinessRoute><CustomersPage /></BusinessRoute>} />
             <Route path="/customers/:id" element={<BusinessRoute><CustomerDetailsPage /></BusinessRoute>} />
             <Route path="/invoices/new" element={<BusinessRoute><InvoiceNewPage /></BusinessRoute>} />

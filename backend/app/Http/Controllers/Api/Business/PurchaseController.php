@@ -107,8 +107,9 @@ class PurchaseController extends Controller
             'location_id' => 'nullable|exists:business_locations,id',
             'notes' => 'nullable|string',
             'is_itc_eligible' => 'nullable|boolean',
-            'paid_amount' => 'nullable|numeric|min:0',
-            'payment_mode' => 'nullable|string|max:50',
+            'payments' => 'nullable|array',
+            'payments.*.amount' => 'required|numeric|min:0',
+            'payments.*.mode' => 'required|string|max:50',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.hsn_code' => 'nullable|string|max:20',
@@ -159,7 +160,11 @@ class PurchaseController extends Controller
 
             $totalTax = $cgstTotal + $sgstTotal + $igstTotal;
             $billAmount = round($taxableTotal + $totalTax, 2);
-            $paidAmount = (float) ($validated['paid_amount'] ?? 0);
+            $payments = $validated['payments'] ?? [];
+            $paidAmount = 0;
+            foreach ($payments as $p) {
+                $paidAmount += (float) ($p['amount'] ?? 0);
+            }
             $balanceAmount = max(0, $billAmount - $paidAmount);
 
             $status = 'confirmed';
@@ -270,28 +275,32 @@ class PurchaseController extends Controller
             ]);
 
             // 5. If upfront payment was made, record supplier payment & debit ledger entry
-            if ($paidAmount > 0) {
-                SupplierPayment::create([
-                    'supplier_id' => $validated['supplier_id'],
-                    'supplier_purchase_id' => $supplierPurchase->id,
-                    'amount' => $paidAmount,
-                    'payment_mode' => $validated['payment_mode'] ?? 'Bank Transfer',
-                    'date' => $validated['purchase_date'],
-                    'notes' => 'Upfront payment against bill #' . $purchaseNumber,
-                ]);
+            // 5. If upfront payment was made, record supplier payment & debit ledger entry
+            foreach ($payments as $p) {
+                $amt = (float) ($p['amount'] ?? 0);
+                if ($amt > 0) {
+                    SupplierPayment::create([
+                        'supplier_id' => $validated['supplier_id'],
+                        'supplier_purchase_id' => $supplierPurchase->id,
+                        'amount' => $amt,
+                        'payment_mode' => $p['mode'] ?? 'Bank Transfer',
+                        'date' => $validated['purchase_date'],
+                        'notes' => 'Upfront split payment against bill #' . $purchaseNumber,
+                    ]);
 
-                $this->ledgerService->createEntry([
-                    'business_id' => $businessId,
-                    'party_type' => 'supplier',
-                    'party_id' => $validated['supplier_id'],
-                    'entry_type' => 'payment',
-                    'reference_type' => 'payment',
-                    'reference_id' => $supplierPurchase->id,
-                    'date' => $validated['purchase_date'],
-                    'debit' => $paidAmount,
-                    'credit' => 0,
-                    'narration' => "Payment against #{$purchaseNumber}" . (!empty($validated['payment_mode']) ? " via {$validated['payment_mode']}" : ""),
-                ]);
+                    $this->ledgerService->createEntry([
+                        'business_id' => $businessId,
+                        'party_type' => 'supplier',
+                        'party_id' => $validated['supplier_id'],
+                        'entry_type' => 'payment',
+                        'reference_type' => 'payment',
+                        'reference_id' => $supplierPurchase->id,
+                        'date' => $validated['purchase_date'],
+                        'debit' => $amt,
+                        'credit' => 0,
+                        'narration' => "Payment against #{$purchaseNumber} via " . ($p['mode'] ?? 'Bank Transfer'),
+                    ]);
+                }
             }
 
             return $supplierPurchase->load(['supplier', 'items.product', 'location', 'itc']);

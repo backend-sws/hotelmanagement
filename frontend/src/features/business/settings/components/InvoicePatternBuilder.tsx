@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Eye } from 'lucide-react';
+import { Settings, Eye, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
@@ -186,9 +186,15 @@ export function InvoicePatternBuilder({ value, onChange, label = "Invoice Number
             />
           </div>
           
-          <div className="space-y-2 md:col-span-2">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Counter Reset</label>
-            <Input value={resetText} disabled className="bg-slate-50 dark:bg-black/20 text-slate-500 w-full md:w-1/2" />
+          <div className="space-y-2 md:col-span-2 bg-slate-50/50 dark:bg-white/5 p-4 rounded-xl border border-slate-100 dark:border-white/5">
+            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Counter Reset (Auto-calculated)</label>
+            <Input value={resetText} disabled className="bg-white dark:bg-black/40 text-slate-500 w-full md:w-1/2 font-medium" />
+            <div className="flex items-start gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400 max-w-xl">
+              <Info className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
+              <p>
+                This determines when your invoice number goes back to 0001. It is <strong>automatically locked</strong> based on your chosen <strong>Date Format</strong> to ensure no duplicate invoice numbers are ever created.
+              </p>
+            </div>
           </div>
         </div>
       </div>
