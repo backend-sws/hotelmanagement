@@ -1,1 +1,0 @@
-import{r as e}from"./authStore-BhMeA7rZ.js";import{gt as t,ht as n,mt as r}from"./index-Dgtpdwg-.js";var i=()=>n({queryKey:[`units`],queryFn:async()=>(await e.get(`/business/units`)).data.data}),a=()=>{let n=t();return r({mutationFn:async t=>(await e.post(`/business/units`,t)).data,onSuccess:()=>{n.invalidateQueries({queryKey:[`units`]})}})};export{i as n,a as t};
