@@ -19,10 +19,11 @@ class GstCalculationService
     /**
      * Calculate tax on a single item
      */
-    public function calculateItemTax(float $rate, float $qty, float $gstRate, string $taxType): array
+    public function calculateItemTax(float $rate, float $qty, float $gstRate, string $taxType, float $cessRate = 0): array
     {
         $taxableAmount = $rate * $qty;
         $totalTax = $taxableAmount * ($gstRate / 100);
+        $cess = $taxableAmount * ($cessRate / 100);
 
         // FIX BUG-08: Let SGST absorb the rounding difference so CGST+SGST always equals totalTax exactly.
         // e.g. totalTax=1.01 → cgst=0.51, sgst=1.01-0.51=0.50 → sum=1.01 ✓ (old: 0.51+0.51=1.02 ✗)
@@ -35,8 +36,9 @@ class GstCalculationService
             'cgst_amount'    => $cgst,
             'sgst_amount'    => $sgst,
             'igst_amount'    => $igst,
-            'total_tax'      => round($totalTax, 2),
-            'total_amount'   => round($taxableAmount + $totalTax, 2),
+            'cess_amount'    => round($cess, 2),
+            'total_tax'      => round($totalTax + $cess, 2),
+            'total_amount'   => round($taxableAmount + $totalTax + $cess, 2),
         ];
     }
 
@@ -49,6 +51,7 @@ class GstCalculationService
         $cgstTotal = 0;
         $sgstTotal = 0;
         $igstTotal = 0;
+        $cessTotal = 0;
         $taxTotal = 0;
 
         foreach ($items as $item) {
@@ -56,7 +59,8 @@ class GstCalculationService
             $cgstTotal += $item['cgst_amount'] ?? 0;
             $sgstTotal += $item['sgst_amount'] ?? 0;
             $igstTotal += $item['igst_amount'] ?? 0;
-            $taxTotal += ($item['cgst_amount'] ?? 0) + ($item['sgst_amount'] ?? 0) + ($item['igst_amount'] ?? 0);
+            $cessTotal += $item['cess_amount'] ?? 0;
+            $taxTotal += ($item['cgst_amount'] ?? 0) + ($item['sgst_amount'] ?? 0) + ($item['igst_amount'] ?? 0) + ($item['cess_amount'] ?? 0);
         }
 
         // Apply global discount proportionally to taxable amount (if any)
@@ -68,6 +72,7 @@ class GstCalculationService
             'cgst_total'    => round($cgstTotal, 2),
             'sgst_total'    => round($sgstTotal, 2),
             'igst_total'    => round($igstTotal, 2),
+            'cess_total'    => round($cessTotal, 2),
             'tax_total'     => round($taxTotal, 2),
             'grand_total'   => round($grandTotal, 2),
         ];

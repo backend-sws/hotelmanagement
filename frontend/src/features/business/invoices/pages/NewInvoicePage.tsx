@@ -69,6 +69,7 @@ export default function NewInvoicePage() {
               quantity: Number(i.quantity),
               rate: Number(i.rate),
               gst_rate: Number(i.gst_rate || 0),
+              cess_rate: Number(i.cess_rate || 0),
               hsn_code: i.hsn_code || i.product?.hsn_code || '',
               unit: i.unit || i.product?.unit || 'pcs',
               amount: Number(i.amount || 0),
@@ -132,6 +133,7 @@ export default function NewInvoicePage() {
           quantity: Number(i.quantity),
           rate: Number(i.rate),
           gst_rate: Number(i.gst_rate || 0),
+          cess_rate: Number(i.cess_rate || 0),
           hsn_code: i.hsn_code,
           unit: i.unit,
         }))

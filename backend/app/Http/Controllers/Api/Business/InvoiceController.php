@@ -67,6 +67,7 @@ class InvoiceController extends Controller
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.rate' => 'required|numeric|min:0',
             'items.*.gst_rate' => 'required|numeric|min:0',
+            'items.*.cess_rate' => 'nullable|numeric|min:0',
             'items.*.hsn_code' => 'nullable|string',
             'items.*.unit' => 'nullable|string',
             'discount' => 'nullable|numeric|min:0',
@@ -98,8 +99,9 @@ class InvoiceController extends Controller
             // Prepare items and calculate taxes
             $itemsPayload = [];
             foreach ($validated['items'] as $itemData) {
-                $taxData = $this->gstService->calculateItemTax($itemData['rate'], $itemData['quantity'], $itemData['gst_rate'], $taxType);
-                $itemsPayload[] = array_merge($itemData, $taxData);
+                $cessRate = $itemData['cess_rate'] ?? 0;
+                $taxData = $this->gstService->calculateItemTax($itemData['rate'], $itemData['quantity'], $itemData['gst_rate'], $taxType, $cessRate);
+                $itemsPayload[] = array_merge($itemData, $taxData, ['cess_rate' => $cessRate]);
             }
 
             $invoiceTotals = $this->gstService->calculateInvoice($itemsPayload, $taxType, $validated['discount'] ?? 0);
@@ -134,6 +136,7 @@ class InvoiceController extends Controller
                 'cgst_amount' => $invoiceTotals['cgst_total'],
                 'sgst_amount' => $invoiceTotals['sgst_total'],
                 'igst_amount' => $invoiceTotals['igst_total'],
+                'cess_amount' => $invoiceTotals['cess_total'] ?? 0,
                 'total_tax_amount' => $invoiceTotals['tax_total'],
                 
                 'total_amount' => $invoiceTotals['taxable_total'] + $invoiceTotals['tax_total'],
@@ -164,6 +167,8 @@ class InvoiceController extends Controller
                     'cgst_amount' => $ip['cgst_amount'],
                     'sgst_amount' => $ip['sgst_amount'],
                     'igst_amount' => $ip['igst_amount'],
+                    'cess_rate' => $ip['cess_rate'] ?? 0,
+                    'cess_amount' => $ip['cess_amount'] ?? 0,
                     'amount' => $ip['total_amount'],
                 ]);
 
@@ -271,6 +276,7 @@ class InvoiceController extends Controller
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.rate' => 'required|numeric|min:0',
             'items.*.gst_rate' => 'required|numeric|min:0',
+            'items.*.cess_rate' => 'nullable|numeric|min:0',
             'items.*.hsn_code' => 'nullable|string',
             'items.*.unit' => 'nullable|string',
             'discount' => 'nullable|numeric|min:0',
@@ -329,8 +335,9 @@ class InvoiceController extends Controller
             // 3. Calculate new items & totals
             $itemsPayload = [];
             foreach ($validated['items'] as $itemData) {
-                $taxData = $this->gstService->calculateItemTax($itemData['rate'], $itemData['quantity'], $itemData['gst_rate'], $taxType);
-                $itemsPayload[] = array_merge($itemData, $taxData);
+                $cessRate = $itemData['cess_rate'] ?? 0;
+                $taxData = $this->gstService->calculateItemTax($itemData['rate'], $itemData['quantity'], $itemData['gst_rate'], $taxType, $cessRate);
+                $itemsPayload[] = array_merge($itemData, $taxData, ['cess_rate' => $cessRate]);
             }
 
             $invoiceTotals = $this->gstService->calculateInvoice($itemsPayload, $taxType, $validated['discount'] ?? 0);
@@ -361,6 +368,7 @@ class InvoiceController extends Controller
                 'cgst_amount' => $invoiceTotals['cgst_total'],
                 'sgst_amount' => $invoiceTotals['sgst_total'],
                 'igst_amount' => $invoiceTotals['igst_total'],
+                'cess_amount' => $invoiceTotals['cess_total'] ?? 0,
                 'total_tax_amount' => $invoiceTotals['tax_total'],
                 'total_amount' => $invoiceTotals['taxable_total'] + $invoiceTotals['tax_total'],
                 'discount' => $validated['discount'] ?? 0,
@@ -391,6 +399,8 @@ class InvoiceController extends Controller
                     'cgst_amount' => $ip['cgst_amount'],
                     'sgst_amount' => $ip['sgst_amount'],
                     'igst_amount' => $ip['igst_amount'],
+                    'cess_rate' => $ip['cess_rate'] ?? 0,
+                    'cess_amount' => $ip['cess_amount'] ?? 0,
                     'amount' => $ip['total_amount'],
                 ]);
 

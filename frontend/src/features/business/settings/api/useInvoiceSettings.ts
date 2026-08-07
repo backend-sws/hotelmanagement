@@ -27,6 +27,7 @@ export interface InvoiceSettings {
     show_signature: boolean;
     show_customer_phone: boolean;
     show_tax_breakdown: boolean;
+    show_payment_breakdown?: boolean;
     show_rate: boolean;
     show_qty: boolean;
     show_reference_number: boolean;

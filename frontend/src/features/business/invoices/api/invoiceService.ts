@@ -11,6 +11,8 @@ export interface InvoiceItem {
   cgst_amount?: number;
   sgst_amount?: number;
   igst_amount?: number;
+  cess_rate?: number;
+  cess_amount?: number;
   amount?: number;
 }
 

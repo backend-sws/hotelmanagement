@@ -7,10 +7,11 @@ interface InvoiceLivePreviewProps {
   settings?: InvoiceSettings;
   business?: any;
   invoice?: any;
+  rawInvoice?: any;
   isPrintView?: boolean;
 }
 
-export default function InvoiceLivePreview({ settings: propSettings, business: propBusiness, invoice: propInvoice, isPrintView = false }: InvoiceLivePreviewProps) {
+export default function InvoiceLivePreview({ settings: propSettings, business: propBusiness, invoice: propInvoice, rawInvoice, isPrintView = false }: InvoiceLivePreviewProps) {
   const { activeBusiness } = useTenantStore();
 
   const defaultSettings: InvoiceSettings = {
@@ -82,6 +83,45 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
     amount_in_words: 'Eight Thousand Two Hundred Sixty Rupees Only',
     uuid: 'sample-uuid-1234'
   };
+
+  const defaultRawInvoice = {
+    tax_type: 'gst',
+    payment_mode: 'Split',
+    paid_amount: 8260,
+    final_amount: 8260,
+    cgst_amount: 630,
+    sgst_amount: 630,
+    igst_amount: 0,
+    cess_amount: 100,
+    payments: [
+      { payment_mode: 'Cash', amount: 5000 },
+      { payment_mode: 'UPI', amount: 3260 },
+    ],
+    items: [
+      { gst_rate: 18, taxable_amount: 5000, cgst_amount: 450, sgst_amount: 450, igst_amount: 0, cess_amount: 100 },
+      { gst_rate: 18, taxable_amount: 2000, cgst_amount: 180, sgst_amount: 180, igst_amount: 0, cess_amount: 0 },
+    ]
+  };
+
+  const currentRawInvoice = rawInvoice || defaultRawInvoice;
+
+  const taxSummaryData = React.useMemo(() => {
+    if (!currentRawInvoice || !currentRawInvoice.items || currentRawInvoice.tax_type === 'exempt') return null;
+    const summary: Record<string, any> = {};
+    currentRawInvoice.items.forEach((item: any) => {
+      const rate = Number(item.gst_rate || 0);
+      if (!summary[rate]) {
+        summary[rate] = { taxable: 0, cgst: 0, sgst: 0, igst: 0, cess: 0, total: 0 };
+      }
+      summary[rate].taxable += Number(item.taxable_amount || 0);
+      summary[rate].cgst += Number(item.cgst_amount || 0);
+      summary[rate].sgst += Number(item.sgst_amount || 0);
+      summary[rate].igst += Number(item.igst_amount || 0);
+      summary[rate].cess += Number(item.cess_amount || 0);
+      summary[rate].total += Number(item.cgst_amount || 0) + Number(item.sgst_amount || 0) + Number(item.igst_amount || 0) + Number(item.cess_amount || 0);
+    });
+    return Object.entries(summary).map(([rate, vals]) => ({ rate, ...vals })).sort((a, b) => Number(a.rate) - Number(b.rate));
+  }, [currentRawInvoice]);
 
   // Convert mm/px to a scale so it fits nicely
   // We'll render a fixed 800px width container, and use CSS transform to scale it down to fit the parent.
@@ -235,6 +275,48 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
         </tbody>
       </table>
 
+      {settings.fields.show_tax_breakdown !== false && taxSummaryData && (
+        <div style={{ marginTop: '15px', pageBreakInside: 'avoid' }}>
+          <p style={{ fontWeight: 'bold', fontSize: '11px', margin: '0 0 5px 0', color: primaryColor }}>Tax Summary</p>
+          <table style={{ width: '70%', fontSize: '10px', borderCollapse: 'collapse', border: `1px solid ${settings.styles.border_color}` }}>
+            <thead style={{ background: '#f8fafc', color: '#475569' }}>
+              <tr>
+                <th style={{ padding: '4px', textAlign: 'left', border: `1px solid ${settings.styles.border_color}` }}>Tax Rate</th>
+                <th style={{ padding: '4px', textAlign: 'right', border: `1px solid ${settings.styles.border_color}` }}>Taxable Value</th>
+                {rawInvoice?.tax_type === 'gst' ? (
+                  <>
+                    <th style={{ padding: '4px', textAlign: 'right', border: `1px solid ${settings.styles.border_color}` }}>CGST</th>
+                    <th style={{ padding: '4px', textAlign: 'right', border: `1px solid ${settings.styles.border_color}` }}>SGST</th>
+                  </>
+                ) : (
+                  <th style={{ padding: '4px', textAlign: 'right', border: `1px solid ${settings.styles.border_color}` }}>IGST</th>
+                )}
+                <th style={{ padding: '4px', textAlign: 'right', border: `1px solid ${settings.styles.border_color}` }}>CESS</th>
+                <th style={{ padding: '4px', textAlign: 'right', border: `1px solid ${settings.styles.border_color}` }}>Total Tax</th>
+              </tr>
+            </thead>
+            <tbody>
+              {taxSummaryData.map((taxes, idx) => (
+                <tr key={idx}>
+                  <td style={{ padding: '4px', textAlign: 'left', border: `1px solid ${settings.styles.border_color}` }}>GST {taxes.rate}%</td>
+                  <td style={{ padding: '4px', textAlign: 'right', border: `1px solid ${settings.styles.border_color}` }}>₹ {Number(taxes.taxable).toFixed(2)}</td>
+                  {rawInvoice?.tax_type === 'gst' ? (
+                    <>
+                      <td style={{ padding: '4px', textAlign: 'right', border: `1px solid ${settings.styles.border_color}` }}>₹ {Number(taxes.cgst).toFixed(2)}</td>
+                      <td style={{ padding: '4px', textAlign: 'right', border: `1px solid ${settings.styles.border_color}` }}>₹ {Number(taxes.sgst).toFixed(2)}</td>
+                    </>
+                  ) : (
+                    <td style={{ padding: '4px', textAlign: 'right', border: `1px solid ${settings.styles.border_color}` }}>₹ {Number(taxes.igst).toFixed(2)}</td>
+                  )}
+                  <td style={{ padding: '4px', textAlign: 'right', border: `1px solid ${settings.styles.border_color}` }}>₹ {Number(taxes.cess).toFixed(2)}</td>
+                  <td style={{ padding: '4px', textAlign: 'right', border: `1px solid ${settings.styles.border_color}` }}>₹ {Number(taxes.total).toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <div style={{ display: 'flex', marginTop: '20px' }}>
         <div style={{ width: '60%', paddingRight: '20px' }}>
           {settings.fields.show_terms !== false && !settings.fields.terms_on_new_page && (
@@ -266,10 +348,38 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
                 <td style={{ padding: '6px 10px', color: '#475569' }}>Total Taxable Value</td>
                 <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: '500' }}>₹ {invoice.subtotal}</td>
               </tr>
-              <tr>
-                <td style={{ padding: '6px 10px', color: '#475569' }}>Total Tax</td>
-                <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: '500' }}>₹ {invoice.tax}</td>
-              </tr>
+              {settings.fields.show_tax_breakdown !== false && currentRawInvoice && currentRawInvoice.tax_type !== 'exempt' ? (
+                <>
+                  {currentRawInvoice.tax_type === 'gst' ? (
+                    <>
+                      <tr>
+                        <td style={{ padding: '6px 10px', color: '#475569' }}>Total CGST</td>
+                        <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: '500' }}>₹ {Number(currentRawInvoice.cgst_amount || 0).toFixed(2)}</td>
+                      </tr>
+                      <tr>
+                        <td style={{ padding: '6px 10px', color: '#475569' }}>Total SGST</td>
+                        <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: '500' }}>₹ {Number(currentRawInvoice.sgst_amount || 0).toFixed(2)}</td>
+                      </tr>
+                    </>
+                  ) : (
+                    <tr>
+                      <td style={{ padding: '6px 10px', color: '#475569' }}>Total IGST</td>
+                      <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: '500' }}>₹ {Number(currentRawInvoice.igst_amount || 0).toFixed(2)}</td>
+                    </tr>
+                  )}
+                  {Number(currentRawInvoice.cess_amount || 0) > 0 && (
+                    <tr>
+                      <td style={{ padding: '6px 10px', color: '#475569' }}>Total CESS</td>
+                      <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: '500' }}>₹ {Number(currentRawInvoice.cess_amount || 0).toFixed(2)}</td>
+                    </tr>
+                  )}
+                </>
+              ) : (
+                <tr>
+                  <td style={{ padding: '6px 10px', color: '#475569' }}>Total Tax</td>
+                  <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: '500' }}>₹ {invoice.tax}</td>
+                </tr>
+              )}
               {settings.fields.show_discount !== false && (
                 <tr>
                   <td style={{ padding: '6px 10px', color: '#475569' }}>Discount</td>
@@ -280,6 +390,34 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
                 <td style={{ padding: '10px', fontWeight: 'bold', color: primaryColor, fontSize: '15px' }}>Grand Total</td>
                 <td style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold', fontSize: '16px', color: primaryColor, whiteSpace: 'nowrap' }}>₹ {invoice.total}</td>
               </tr>
+              {settings.fields.show_payment_breakdown !== false && currentRawInvoice?.payment_mode === 'Split' && currentRawInvoice?.payments?.length > 0 ? (
+                <>
+                  <tr>
+                    <td colSpan={2} style={{ padding: '6px 10px', fontWeight: 'bold', borderTop: '1px dashed #ccc', fontSize: '12px', marginTop: '5px' }}>Payment Breakdown</td>
+                  </tr>
+                  {currentRawInvoice.payments.map((p: any, i: number) => (
+                    <tr key={i}>
+                      <td style={{ padding: '2px 10px', color: '#475569' }}>{p.payment_mode}</td>
+                      <td style={{ padding: '2px 10px', textAlign: 'right', fontWeight: '500' }}>₹ {Number(p.amount).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td style={{ padding: '6px 10px', fontWeight: 'bold' }}>Amount Paid</td>
+                    <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 'bold' }}>₹ {Number(currentRawInvoice.paid_amount || 0).toFixed(2)}</td>
+                  </tr>
+                </>
+              ) : settings.fields.show_payment_breakdown !== false && currentRawInvoice ? (
+                <tr>
+                  <td style={{ padding: '6px 10px', color: '#475569' }}>Amount Paid {currentRawInvoice.payment_mode ? `(${currentRawInvoice.payment_mode})` : ''}</td>
+                  <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: '500' }}>₹ {Number(currentRawInvoice.paid_amount || 0).toFixed(2)}</td>
+                </tr>
+              ) : null}
+              {settings.fields.show_payment_breakdown !== false && currentRawInvoice && (
+                <tr>
+                  <td style={{ padding: '6px 10px', fontWeight: 'bold', color: '#475569' }}>Balance Due</td>
+                  <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 'bold' }}>₹ {Number((currentRawInvoice.final_amount || 0) - (currentRawInvoice.paid_amount || 0)).toFixed(2)}</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -398,15 +536,56 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
             </tr>
           ))}
 
-          <tr style={{ fontSize: '14px' }}>
-            <td colSpan={totalColumns - 2} rowSpan={2} style={{ border: `1px solid ${primaryColor}`, padding: '8px', verticalAlign: 'top' }}></td>
-            <td style={{ fontWeight: 'bold', textAlign: 'center', border: `1px solid ${primaryColor}`, padding: '8px', color: primaryColor, whiteSpace: 'nowrap' }}>Total</td>
-            <td style={{ textAlign: 'right', fontWeight: 'bold', border: `1px solid ${primaryColor}`, padding: '8px', whiteSpace: 'nowrap' }}>₹ {invoice.subtotal}</td>
-          </tr>
-          <tr style={{ fontSize: '14px' }}>
-            <td style={{ fontWeight: 'bold', textAlign: 'center', border: `1px solid ${primaryColor}`, padding: '8px', color: primaryColor, whiteSpace: 'nowrap' }}>Tax Amount</td>
-            <td style={{ textAlign: 'right', border: `1px solid ${primaryColor}`, padding: '8px', whiteSpace: 'nowrap' }}>₹ {invoice.tax}</td>
-          </tr>
+          {settings.fields.show_tax_breakdown !== false && currentRawInvoice ? (
+            <>
+              <tr style={{ fontSize: '14px' }}>
+                <td colSpan={totalColumns - 2} rowSpan={(currentRawInvoice.tax_type === 'gst' ? 2 : 1) + (Number(currentRawInvoice.cess_amount || 0) > 0 ? 1 : 0) + (settings.fields.show_discount !== false ? 1 : 0) + 1} style={{ border: `1px solid ${primaryColor}`, padding: '8px', verticalAlign: 'top' }}></td>
+                <td style={{ fontWeight: 'bold', textAlign: 'center', border: `1px solid ${primaryColor}`, padding: '8px', color: primaryColor, whiteSpace: 'nowrap' }}>Total</td>
+                <td style={{ textAlign: 'right', fontWeight: 'bold', border: `1px solid ${primaryColor}`, padding: '8px', whiteSpace: 'nowrap' }}>₹ {invoice.subtotal}</td>
+              </tr>
+              {currentRawInvoice.tax_type === 'gst' ? (
+                <>
+                  <tr style={{ fontSize: '14px' }}>
+                    <td style={{ fontWeight: 'bold', textAlign: 'center', border: `1px solid ${primaryColor}`, padding: '8px', color: primaryColor, whiteSpace: 'nowrap' }}>CGST</td>
+                    <td style={{ textAlign: 'right', border: `1px solid ${primaryColor}`, padding: '8px', whiteSpace: 'nowrap' }}>₹ {Number(currentRawInvoice.cgst_amount || 0).toFixed(2)}</td>
+                  </tr>
+                  <tr style={{ fontSize: '14px' }}>
+                    <td style={{ fontWeight: 'bold', textAlign: 'center', border: `1px solid ${primaryColor}`, padding: '8px', color: primaryColor, whiteSpace: 'nowrap' }}>SGST</td>
+                    <td style={{ textAlign: 'right', border: `1px solid ${primaryColor}`, padding: '8px', whiteSpace: 'nowrap' }}>₹ {Number(currentRawInvoice.sgst_amount || 0).toFixed(2)}</td>
+                  </tr>
+                </>
+              ) : (
+                <tr style={{ fontSize: '14px' }}>
+                  <td style={{ fontWeight: 'bold', textAlign: 'center', border: `1px solid ${primaryColor}`, padding: '8px', color: primaryColor, whiteSpace: 'nowrap' }}>IGST</td>
+                  <td style={{ textAlign: 'right', border: `1px solid ${primaryColor}`, padding: '8px', whiteSpace: 'nowrap' }}>₹ {Number(currentRawInvoice.igst_amount || 0).toFixed(2)}</td>
+                </tr>
+              )}
+              {Number(currentRawInvoice.cess_amount || 0) > 0 && (
+                <tr style={{ fontSize: '14px' }}>
+                  <td style={{ fontWeight: 'bold', textAlign: 'center', border: `1px solid ${primaryColor}`, padding: '8px', color: primaryColor, whiteSpace: 'nowrap' }}>CESS</td>
+                  <td style={{ textAlign: 'right', border: `1px solid ${primaryColor}`, padding: '8px', whiteSpace: 'nowrap' }}>₹ {Number(currentRawInvoice.cess_amount || 0).toFixed(2)}</td>
+                </tr>
+              )}
+              {settings.fields.show_discount !== false && (
+                <tr style={{ fontSize: '14px' }}>
+                  <td style={{ fontWeight: 'bold', textAlign: 'center', border: `1px solid ${primaryColor}`, padding: '8px', color: primaryColor, whiteSpace: 'nowrap' }}>Discount</td>
+                  <td style={{ textAlign: 'right', border: `1px solid ${primaryColor}`, padding: '8px', whiteSpace: 'nowrap', color: '#ef4444' }}>- ₹ {invoice.discount}</td>
+                </tr>
+              )}
+            </>
+          ) : (
+            <>
+              <tr style={{ fontSize: '14px' }}>
+                <td colSpan={totalColumns - 2} rowSpan={2} style={{ border: `1px solid ${primaryColor}`, padding: '8px', verticalAlign: 'top' }}></td>
+                <td style={{ fontWeight: 'bold', textAlign: 'center', border: `1px solid ${primaryColor}`, padding: '8px', color: primaryColor, whiteSpace: 'nowrap' }}>Total</td>
+                <td style={{ textAlign: 'right', fontWeight: 'bold', border: `1px solid ${primaryColor}`, padding: '8px', whiteSpace: 'nowrap' }}>₹ {invoice.subtotal}</td>
+              </tr>
+              <tr style={{ fontSize: '14px' }}>
+                <td style={{ fontWeight: 'bold', textAlign: 'center', border: `1px solid ${primaryColor}`, padding: '8px', color: primaryColor, whiteSpace: 'nowrap' }}>Tax Amount</td>
+                <td style={{ textAlign: 'right', border: `1px solid ${primaryColor}`, padding: '8px', whiteSpace: 'nowrap' }}>₹ {invoice.tax}</td>
+              </tr>
+            </>
+          )}
           
           <tr>
             <td colSpan={totalColumns - 1} style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '16px', border: `1px solid ${primaryColor}`, padding: '10px', backgroundColor: `${primaryColor}10`, color: primaryColor, whiteSpace: 'nowrap' }}>GRAND TOTAL</td>
@@ -586,10 +765,38 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
               <div style={{ color: secondaryColor }}>Subtotal</div>
               <div style={{ fontWeight: 'bold' }}>₹ {invoice.subtotal}</div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-              <div style={{ color: secondaryColor }}>Tax Amount</div>
-              <div style={{ fontWeight: 'bold' }}>₹ {invoice.tax}</div>
-            </div>
+            {settings.fields.show_tax_breakdown !== false && currentRawInvoice && currentRawInvoice.tax_type !== 'exempt' ? (
+              <>
+                {currentRawInvoice.tax_type === 'gst' ? (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                      <div style={{ color: secondaryColor }}>CGST</div>
+                      <div style={{ fontWeight: 'bold' }}>₹ {Number(currentRawInvoice.cgst_amount || 0).toFixed(2)}</div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                      <div style={{ color: secondaryColor }}>SGST</div>
+                      <div style={{ fontWeight: 'bold' }}>₹ {Number(currentRawInvoice.sgst_amount || 0).toFixed(2)}</div>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                    <div style={{ color: secondaryColor }}>IGST</div>
+                    <div style={{ fontWeight: 'bold' }}>₹ {Number(currentRawInvoice.igst_amount || 0).toFixed(2)}</div>
+                  </div>
+                )}
+                {Number(currentRawInvoice.cess_amount || 0) > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                    <div style={{ color: secondaryColor }}>CESS</div>
+                    <div style={{ fontWeight: 'bold' }}>₹ {Number(currentRawInvoice.cess_amount || 0).toFixed(2)}</div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                <div style={{ color: secondaryColor }}>Tax Amount</div>
+                <div style={{ fontWeight: 'bold' }}>₹ {invoice.tax}</div>
+              </div>
+            )}
             {settings.fields.show_discount !== false && (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
                 <div style={{ color: secondaryColor }}>Discount</div>
@@ -600,6 +807,35 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
               <div style={{ fontWeight: 'bold' }}>Total Amount</div>
               <div style={{ fontWeight: 'bold' }}>₹ {invoice.total}</div>
             </div>
+            
+            {settings.fields.show_payment_breakdown !== false && currentRawInvoice?.payment_mode === 'Split' && currentRawInvoice?.payments?.length > 0 ? (
+              <>
+                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #ccc' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 'bold', color: secondaryColor, marginBottom: '5px' }}>Payment Breakdown</div>
+                  {currentRawInvoice.payments.map((p: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', fontSize: '12px' }}>
+                      <div style={{ color: secondaryColor }}>{p.payment_mode}</div>
+                      <div style={{ fontWeight: 'bold' }}>₹ {Number(p.amount).toFixed(2)}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', marginTop: '5px', fontSize: '13px' }}>
+                  <div style={{ fontWeight: 'bold' }}>Amount Paid</div>
+                  <div style={{ fontWeight: 'bold' }}>₹ {Number(currentRawInvoice.paid_amount || 0).toFixed(2)}</div>
+                </div>
+              </>
+            ) : settings.fields.show_payment_breakdown !== false && currentRawInvoice ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 5px 0', marginTop: '5px', borderTop: '1px dashed #ccc', fontSize: '13px' }}>
+                <div style={{ color: secondaryColor }}>Amount Paid {currentRawInvoice.payment_mode ? `(${currentRawInvoice.payment_mode})` : ''}</div>
+                <div style={{ fontWeight: 'bold' }}>₹ {Number(currentRawInvoice.paid_amount || 0).toFixed(2)}</div>
+              </div>
+            ) : null}
+            {settings.fields.show_payment_breakdown !== false && currentRawInvoice && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: '13px' }}>
+                <div style={{ fontWeight: 'bold', color: secondaryColor }}>Balance Due</div>
+                <div style={{ fontWeight: 'bold' }}>₹ {Number((currentRawInvoice.final_amount || 0) - (currentRawInvoice.paid_amount || 0)).toFixed(2)}</div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -761,10 +997,38 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
                   <td style={{ padding: '6px 0', color: '#64748b' }}>Taxable Amount</td>
                   <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '600', color: '#0f172a' }}>₹ {invoice.subtotal}</td>
                 </tr>
-                <tr>
-                  <td style={{ padding: '6px 0', color: '#64748b' }}>Total Tax</td>
-                  <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '600', color: '#0f172a' }}>₹ {invoice.tax}</td>
-                </tr>
+                {settings.fields.show_tax_breakdown !== false && currentRawInvoice && currentRawInvoice.tax_type !== 'exempt' ? (
+                  <>
+                    {currentRawInvoice.tax_type === 'gst' ? (
+                      <>
+                        <tr>
+                          <td style={{ padding: '6px 0', color: '#64748b' }}>CGST</td>
+                          <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '600', color: '#0f172a' }}>₹ {Number(currentRawInvoice.cgst_amount || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ padding: '6px 0', color: '#64748b' }}>SGST</td>
+                          <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '600', color: '#0f172a' }}>₹ {Number(currentRawInvoice.sgst_amount || 0).toFixed(2)}</td>
+                        </tr>
+                      </>
+                    ) : (
+                      <tr>
+                        <td style={{ padding: '6px 0', color: '#64748b' }}>IGST</td>
+                        <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '600', color: '#0f172a' }}>₹ {Number(currentRawInvoice.igst_amount || 0).toFixed(2)}</td>
+                      </tr>
+                    )}
+                    {Number(currentRawInvoice.cess_amount || 0) > 0 && (
+                      <tr>
+                        <td style={{ padding: '6px 0', color: '#64748b' }}>CESS</td>
+                        <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '600', color: '#0f172a' }}>₹ {Number(currentRawInvoice.cess_amount || 0).toFixed(2)}</td>
+                      </tr>
+                    )}
+                  </>
+                ) : (
+                  <tr>
+                    <td style={{ padding: '6px 0', color: '#64748b' }}>Total Tax</td>
+                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '600', color: '#0f172a' }}>₹ {invoice.tax}</td>
+                  </tr>
+                )}
                 {settings.fields.show_discount !== false && (
                   <tr>
                     <td style={{ padding: '6px 0', color: '#64748b' }}>Discount</td>
@@ -780,6 +1044,35 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
                   <td style={{ padding: '4px 0', fontWeight: '800', color: primaryColor, fontSize: '16px' }}>Grand Total</td>
                   <td style={{ padding: '4px 0', textAlign: 'right', fontWeight: '800', fontSize: '18px', color: primaryColor, whiteSpace: 'nowrap' }}>₹ {invoice.total}</td>
                 </tr>
+                
+                {settings.fields.show_payment_breakdown !== false && currentRawInvoice?.payment_mode === 'Split' && currentRawInvoice?.payments?.length > 0 ? (
+                  <>
+                    <tr>
+                      <td colSpan={2} style={{ padding: '6px 0', color: '#64748b', fontSize: '11px', fontWeight: 'bold', borderTop: '1px dashed #ccc', marginTop: '5px' }}>Payment Breakdown</td>
+                    </tr>
+                    {currentRawInvoice.payments.map((p: any, i: number) => (
+                      <tr key={i}>
+                        <td style={{ padding: '2px 0', color: '#64748b', fontSize: '12px' }}>{p.payment_mode}</td>
+                        <td style={{ padding: '2px 0', textAlign: 'right', fontWeight: '600', color: '#0f172a', fontSize: '12px' }}>₹ {Number(p.amount).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <td style={{ padding: '6px 0', color: '#64748b', fontWeight: 'bold', fontSize: '13px', borderTop: '1px dashed #ccc' }}>Amount Paid</td>
+                      <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: 'bold', color: '#0f172a', fontSize: '13px', borderTop: '1px dashed #ccc' }}>₹ {Number(currentRawInvoice.paid_amount || 0).toFixed(2)}</td>
+                    </tr>
+                  </>
+                ) : settings.fields.show_payment_breakdown !== false && currentRawInvoice ? (
+                  <tr>
+                    <td style={{ padding: '10px 0 5px 0', color: '#64748b', borderTop: '1px dashed #ccc', marginTop: '5px' }}>Amount Paid {currentRawInvoice.payment_mode ? `(${currentRawInvoice.payment_mode})` : ''}</td>
+                    <td style={{ padding: '10px 0 5px 0', textAlign: 'right', fontWeight: '600', color: '#0f172a', borderTop: '1px dashed #ccc', marginTop: '5px' }}>₹ {Number(currentRawInvoice.paid_amount || 0).toFixed(2)}</td>
+                  </tr>
+                ) : null}
+                {settings.fields.show_payment_breakdown !== false && currentRawInvoice && (
+                  <tr>
+                    <td style={{ padding: '5px 0', fontWeight: 'bold', color: '#64748b' }}>Balance Due</td>
+                    <td style={{ padding: '5px 0', textAlign: 'right', fontWeight: 'bold', color: '#0f172a' }}>₹ {Number((currentRawInvoice.final_amount || 0) - (currentRawInvoice.paid_amount || 0)).toFixed(2)}</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

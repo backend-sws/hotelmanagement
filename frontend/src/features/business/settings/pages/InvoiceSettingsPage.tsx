@@ -631,6 +631,7 @@ export const InvoiceSettingsTab = () => {
               <Toggle label="Show Quantity Column" checked={settings.fields.show_qty} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_qty: v}})} />
               <Toggle label="Show Rate Column" checked={settings.fields.show_rate} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_rate: v}})} />
               <Toggle label="Show Tax Breakdown" checked={settings.fields.show_tax_breakdown} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_tax_breakdown: v}})} />
+              <Toggle label="Show Payment Breakdown" checked={settings.fields.show_payment_breakdown ?? true} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_payment_breakdown: v}})} />
               <Toggle label="Show Discount (if any)" checked={settings.fields.show_discount} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_discount: v}})} />
             </div>
           </Accordion>

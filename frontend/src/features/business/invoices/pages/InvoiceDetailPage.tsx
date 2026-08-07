@@ -92,7 +92,7 @@ export default function InvoiceDetailPage() {
       qty: item.quantity,
       unit: item.unit || (item.product ? item.product.unit : 'PCS') || 'PCS',
       rate: parseFloat(item.rate || item.unit_price || 0).toFixed(2),
-      tax: parseFloat((item.cgst_amount || 0) + (item.sgst_amount || 0) + (item.igst_amount || 0)).toFixed(2),
+      tax: parseFloat((item.cgst_amount || 0) + (item.sgst_amount || 0) + (item.igst_amount || 0) + (item.cess_amount || 0)).toFixed(2),
       amount: parseFloat(item.amount || item.subtotal || 0).toFixed(2)
     })),
     subtotal: parseFloat(invoice.taxable_amount).toFixed(2),
@@ -142,6 +142,7 @@ export default function InvoiceDetailPage() {
             settings={settings}
             business={formattedBusiness}
             invoice={formattedInvoice}
+            rawInvoice={invoice}
             isPrintView={false}
           />
         </div>

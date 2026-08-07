@@ -211,8 +211,15 @@
             <tr>
                 <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
                 <td class="font-bold text-center">Tax Amount</td>
-                <td class="text-right">₹ {{ number_format(($invoice->tax_type === 'gst') ? ($invoice->cgst_amount + $invoice->sgst_amount) : $invoice->igst_amount, 2) }}</td>
+                <td class="text-right">₹ {{ number_format($invoice->total_tax_amount - ($invoice->cess_amount ?? 0), 2) }}</td>
             </tr>
+            @if(($invoice->cess_amount ?? 0) > 0)
+            <tr>
+                <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
+                <td class="font-bold text-center">CESS Amount</td>
+                <td class="text-right">₹ {{ number_format($invoice->cess_amount, 2) }}</td>
+            </tr>
+            @endif
             @if($settings['fields']['show_discount'] ?? true)
             <tr>
                 <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
@@ -231,6 +238,40 @@
                 <td colspan="{{ $colSpan }}" class="text-center font-bold" style="font-size: 14px;">GRAND TOTAL</td>
                 <td colspan="2" class="text-center font-bold" style="font-size: 16px;">₹ {{ number_format($invoice->final_amount, 2) }}</td>
             </tr>
+
+            @if(($settings['fields']['show_payment_breakdown'] ?? true))
+                @if($invoice->payment_mode === 'Split' && $invoice->payments && $invoice->payments->count() > 0)
+                <tr>
+                    <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
+                    <td class="font-bold text-center" style="font-size: 10px; border-bottom: 1px dashed #ccc; padding-top: 5px;">Payment Breakdown</td>
+                    <td style="border-bottom: 1px dashed #ccc;"></td>
+                </tr>
+                @foreach($invoice->payments as $payment)
+                <tr>
+                    <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
+                    <td class="text-center" style="font-size: 10px;">{{ $payment->payment_mode }}</td>
+                    <td class="text-right" style="font-size: 10px;">₹ {{ number_format($payment->amount, 2) }}</td>
+                </tr>
+                @endforeach
+                <tr>
+                    <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
+                    <td class="font-bold text-center">Total Received</td>
+                    <td class="text-right font-bold">₹ {{ number_format($invoice->paid_amount, 2) }}</td>
+                </tr>
+                @else
+                <tr>
+                    <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
+                    <td class="font-bold text-center">Amount Paid ({{ $invoice->payment_mode ?? 'None' }})</td>
+                    <td class="text-right font-bold">₹ {{ number_format($invoice->paid_amount, 2) }}</td>
+                </tr>
+                @endif
+                
+                <tr>
+                    <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
+                    <td class="font-bold text-center">Balance Due</td>
+                    <td class="text-right font-bold">₹ {{ number_format($invoice->final_amount - $invoice->paid_amount, 2) }}</td>
+                </tr>
+            @endif
             
             @if($settings['fields']['show_amount_in_words'] ?? true)
             <tr>
@@ -244,6 +285,68 @@
                     }
                 @endphp
                 <td colspan="{{ $colSpan + 2 }}" class="font-bold" style="font-size: 10px;">Rupees in Word: <span style="text-transform: capitalize; font-weight: normal;">{{ $amountInWords }} only.</span></td>
+            </tr>
+            @endif
+
+            @if($invoice->tax_type !== 'exempt' && ($settings['fields']['show_tax_breakdown'] ?? true))
+            <tr>
+                <td colspan="{{ $colSpan + 2 }}" style="padding: 10px;">
+                    @php
+                        $taxSummary = [];
+                        foreach($invoice->items as $item) {
+                            $rate = $item->gst_rate;
+                            if (!isset($taxSummary[$rate])) {
+                                $taxSummary[$rate] = [
+                                    'taxable' => 0, 'cgst' => 0, 'sgst' => 0, 'igst' => 0, 'cess' => 0, 'total' => 0
+                                ];
+                            }
+                            $taxSummary[$rate]['taxable'] += $item->taxable_amount;
+                            $taxSummary[$rate]['cgst'] += $item->cgst_amount;
+                            $taxSummary[$rate]['sgst'] += $item->sgst_amount;
+                            $taxSummary[$rate]['igst'] += $item->igst_amount;
+                            $taxSummary[$rate]['cess'] += $item->cess_amount ?? 0;
+                            $taxSummary[$rate]['total'] += ($item->cgst_amount + $item->sgst_amount + $item->igst_amount) + ($item->cess_amount ?? 0);
+                        }
+                        ksort($taxSummary);
+                    @endphp
+                    <p class="font-bold text-sm" style="margin: 0 0 5px 0;">Tax Summary</p>
+                    <table style="width: 70%; font-size: 10px; border-collapse: collapse; border: 1px solid #ccc;">
+                        <thead style="background: #f8fafc;">
+                            <tr>
+                                <th class="text-left" style="padding: 4px; border: 1px solid #ccc;">Tax Rate</th>
+                                <th class="text-right" style="padding: 4px; border: 1px solid #ccc;">Taxable Value</th>
+                                @if($invoice->tax_type === 'gst')
+                                <th class="text-right" style="padding: 4px; border: 1px solid #ccc;">CGST</th>
+                                <th class="text-right" style="padding: 4px; border: 1px solid #ccc;">SGST</th>
+                                @else
+                                <th class="text-right" style="padding: 4px; border: 1px solid #ccc;">IGST</th>
+                                @endif
+                                @if(($invoice->cess_amount ?? 0) > 0)
+                                <th class="text-right" style="padding: 4px; border: 1px solid #ccc;">CESS</th>
+                                @endif
+                                <th class="text-right" style="padding: 4px; border: 1px solid #ccc;">Total Tax</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($taxSummary as $rate => $taxes)
+                            <tr>
+                                <td class="text-left" style="padding: 4px; border: 1px solid #ccc;">GST {{ $rate }}%</td>
+                                <td class="text-right" style="padding: 4px; border: 1px solid #ccc;">₹ {{ number_format($taxes['taxable'], 2) }}</td>
+                                @if($invoice->tax_type === 'gst')
+                                <td class="text-right" style="padding: 4px; border: 1px solid #ccc;">₹ {{ number_format($taxes['cgst'], 2) }}</td>
+                                <td class="text-right" style="padding: 4px; border: 1px solid #ccc;">₹ {{ number_format($taxes['sgst'], 2) }}</td>
+                                @else
+                                <td class="text-right" style="padding: 4px; border: 1px solid #ccc;">₹ {{ number_format($taxes['igst'], 2) }}</td>
+                                @endif
+                                @if(($invoice->cess_amount ?? 0) > 0)
+                                <td class="text-right" style="padding: 4px; border: 1px solid #ccc;">₹ {{ number_format($taxes['cess'], 2) }}</td>
+                                @endif
+                                <td class="text-right" style="padding: 4px; border: 1px solid #ccc;">₹ {{ number_format($taxes['total'], 2) }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </td>
             </tr>
             @endif
             

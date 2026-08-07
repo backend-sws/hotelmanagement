@@ -355,6 +355,66 @@
             </tbody>
         </table>
 
+        @if($invoice->tax_type !== 'exempt' && ($settings['fields']['show_tax_breakdown'] ?? true))
+        @php
+            $taxSummary = [];
+            foreach($invoice->items as $item) {
+                $rate = $item->gst_rate;
+                if (!isset($taxSummary[$rate])) {
+                    $taxSummary[$rate] = [
+                        'taxable' => 0, 'cgst' => 0, 'sgst' => 0, 'igst' => 0, 'cess' => 0, 'total' => 0
+                    ];
+                }
+                $taxSummary[$rate]['taxable'] += $item->taxable_amount;
+                $taxSummary[$rate]['cgst'] += $item->cgst_amount;
+                $taxSummary[$rate]['sgst'] += $item->sgst_amount;
+                $taxSummary[$rate]['igst'] += $item->igst_amount;
+                $taxSummary[$rate]['cess'] += $item->cess_amount ?? 0;
+                $taxSummary[$rate]['total'] += ($item->cgst_amount + $item->sgst_amount + $item->igst_amount) + ($item->cess_amount ?? 0);
+            }
+            ksort($taxSummary);
+        @endphp
+        <div style="margin-top: 15px; page-break-inside: avoid;">
+            <p class="font-bold uppercase text-sm" style="margin: 0 0 5px 0;">TAX SUMMARY</p>
+            <table class="items-table" style="width: 70%; margin-top: 0; font-size: 10px;">
+                <thead>
+                    <tr>
+                        <th class="text-left" style="padding: 4px;">Tax Rate</th>
+                        <th class="text-right" style="padding: 4px;">Taxable Value</th>
+                        @if($invoice->tax_type === 'gst')
+                        <th class="text-right" style="padding: 4px;">CGST</th>
+                        <th class="text-right" style="padding: 4px;">SGST</th>
+                        @else
+                        <th class="text-right" style="padding: 4px;">IGST</th>
+                        @endif
+                        @if(($invoice->cess_amount ?? 0) > 0)
+                        <th class="text-right" style="padding: 4px;">CESS</th>
+                        @endif
+                        <th class="text-right" style="padding: 4px;">Total Tax</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($taxSummary as $rate => $taxes)
+                    <tr>
+                        <td class="text-left" style="padding: 4px;">GST {{ $rate }}%</td>
+                        <td class="text-right" style="padding: 4px;">&#8377; {{ number_format($taxes['taxable'], 2) }}</td>
+                        @if($invoice->tax_type === 'gst')
+                        <td class="text-right" style="padding: 4px;">&#8377; {{ number_format($taxes['cgst'], 2) }}</td>
+                        <td class="text-right" style="padding: 4px;">&#8377; {{ number_format($taxes['sgst'], 2) }}</td>
+                        @else
+                        <td class="text-right" style="padding: 4px;">&#8377; {{ number_format($taxes['igst'], 2) }}</td>
+                        @endif
+                        @if(($invoice->cess_amount ?? 0) > 0)
+                        <td class="text-right" style="padding: 4px;">&#8377; {{ number_format($taxes['cess'], 2) }}</td>
+                        @endif
+                        <td class="text-right" style="padding: 4px;">&#8377; {{ number_format($taxes['total'], 2) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+
         <!-- SUMMARY & NOTES -->
         <table style="width: 100%; margin-top: 10px;">
             <tr>
@@ -392,7 +452,7 @@
                             <td class="value">&#8377; {{ number_format($invoice->taxable_amount, 2) }}</td>
                         </tr>
                         
-                        @if($invoice->tax_type !== 'exempt')
+                        @if(($settings['fields']['show_tax_breakdown'] ?? true) && $invoice->tax_type !== 'exempt')
                             @if($invoice->tax_type === 'igst')
                                 <tr>
                                     <td class="label">IGST</td>
@@ -410,9 +470,20 @@
                             @else
                                 <tr>
                                     <td class="label">{{ $settings['custom_tax_label'] ?? 'VAT' }}</td>
-                                    <td class="value">&#8377; {{ number_format($invoice->total_tax_amount, 2) }}</td>
+                                    <td class="value">&#8377; {{ number_format($invoice->total_tax_amount - ($invoice->cess_amount ?? 0), 2) }}</td>
                                 </tr>
                             @endif
+                            @if(($invoice->cess_amount ?? 0) > 0)
+                                <tr>
+                                    <td class="label">CESS</td>
+                                    <td class="value">&#8377; {{ number_format($invoice->cess_amount, 2) }}</td>
+                                </tr>
+                            @endif
+                        @else
+                            <tr>
+                                <td class="label">Total Tax</td>
+                                <td class="value">&#8377; {{ number_format($invoice->total_tax_amount, 2) }}</td>
+                            </tr>
                         @endif
 
                         @if($invoice->discount > 0)
@@ -436,10 +507,28 @@
                         
                         <tr><td colspan="2" style="height: 10px;"></td></tr>
                         
-                        <tr>
-                            <td class="label">Received Amount</td>
-                            <td class="value">&#8377; {{ number_format($invoice->paid_amount, 2) }}</td>
-                        </tr>
+                        @if(($settings['fields']['show_payment_breakdown'] ?? true))
+                            @if($invoice->payment_mode === 'Split' && $invoice->payments && $invoice->payments->count() > 0)
+                                <tr><td colspan="2"><div style="border-bottom: 1px dashed #cbd5e1; margin: 5px 0;"></div></td></tr>
+                                <tr><td colspan="2" class="font-bold uppercase" style="font-size: 10px; padding-bottom: 3px;">Payment Breakdown</td></tr>
+                                @foreach($invoice->payments as $payment)
+                                <tr>
+                                    <td class="label" style="padding-left: 10px; color: #475569;">{{ $payment->payment_mode }}</td>
+                                    <td class="value">&#8377; {{ number_format($payment->amount, 2) }}</td>
+                                </tr>
+                                @endforeach
+                                <tr>
+                                    <td class="label font-bold" style="color: #000;">Total Received</td>
+                                    <td class="value font-bold" style="color: #000;">&#8377; {{ number_format($invoice->paid_amount, 2) }}</td>
+                                </tr>
+                                <tr><td colspan="2"><div style="border-bottom: 1px dashed #cbd5e1; margin: 5px 0;"></div></td></tr>
+                            @else
+                                <tr>
+                                    <td class="label">Received ({{ $invoice->payment_mode ?? 'None' }})</td>
+                                    <td class="value">&#8377; {{ number_format($invoice->paid_amount, 2) }}</td>
+                                </tr>
+                            @endif
+                        @endif
                         
                         @if($invoice->customer && $invoice->customer->closing_balance)
                             <tr>

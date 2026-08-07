@@ -22,6 +22,8 @@ class SaleItem extends Model
         'cgst_amount',
         'sgst_amount',
         'igst_amount',
+        'cess_rate',
+        'cess_amount',
         'amount',
         'imei_1',
         'imei_2',
