@@ -55,6 +55,8 @@ Route::prefix('v1')->group(function () {
             Route::post('inventory/direct-inward', [\App\Http\Controllers\Api\Business\InventoryController::class, 'directInward']);
             Route::get('inventory/low-stock', [\App\Http\Controllers\Api\Business\InventoryController::class, 'lowStockAlert']);
             Route::get('inventory/generate-barcode', [\App\Http\Controllers\Api\Business\InventoryController::class, 'generateBarcode']);
+            Route::get('inventory/template', [\App\Http\Controllers\Api\Business\InventoryController::class, 'downloadTemplate']);
+            Route::post('inventory/import', [\App\Http\Controllers\Api\Business\InventoryController::class, 'import']);
             Route::apiResource('inventory', \App\Http\Controllers\Api\Business\InventoryController::class);
             
             // Price Lists Routes

@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Api\Business;
 use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\Category;
+use App\Models\Brand;
 use App\Services\Business\InventoryService;
+use Illuminate\Support\Facades\Response;
 use OpenApi\Attributes as OA;
 
 class InventoryController extends BaseController
@@ -229,6 +232,128 @@ class InventoryController extends BaseController
         return $this->executeAction(function () use ($validated) {
             return $this->inventoryService->directInward($validated);
         }, 'Stock added successfully');
+    }
+
+    /**
+     * Download CSV Template for Bulk Import
+     */
+    public function downloadTemplate()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="products_import_template.csv"',
+        ];
+
+        $columns = ['Category Name', 'Brand Name', 'Model Name', 'Quantity', 'Purchase Price', 'MRP', 'Unit', 'HSN Code', 'GST Rate'];
+
+        $callback = function () use ($columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+            
+            // Add a sample row
+            fputcsv($file, ['Electronics', 'Samsung', 'Galaxy S23', '50', '50000', '65000', 'pcs', '8517', '18']);
+            
+            fclose($file);
+        };
+
+        return Response::stream($callback, 200, $headers);
+    }
+
+    /**
+     * Bulk Import Products from CSV
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt|max:5120', // 5MB max
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->getRealPath();
+
+        $data = array_map('str_getcsv', file($path));
+        $header = array_shift($data);
+
+        if (!$header) {
+            return $this->error("Invalid or empty CSV file", 422);
+        }
+
+        // Standardize header for easy mapping
+        $headerMap = [];
+        foreach ($header as $index => $colName) {
+            $headerMap[trim(strtolower($colName))] = $index;
+        }
+
+        $requiredCols = ['category name', 'model name', 'quantity', 'purchase price', 'mrp'];
+        foreach ($requiredCols as $req) {
+            if (!isset($headerMap[$req])) {
+                return $this->error("Missing required column: " . ucwords($req), 422);
+            }
+        }
+
+        $businessId = app('current_business_id');
+        $importedCount = 0;
+
+        return $this->executeAction(function () use ($data, $headerMap, $businessId, &$importedCount) {
+            foreach ($data as $row) {
+                if (empty(array_filter($row))) {
+                    continue; // Skip empty rows
+                }
+
+                // Safely get column value
+                $getVal = function($col) use ($row, $headerMap) {
+                    return isset($headerMap[$col]) && isset($row[$headerMap[$col]]) ? trim($row[$headerMap[$col]]) : null;
+                };
+
+                $catName = $getVal('category name');
+                $brandName = $getVal('brand name');
+                $modelName = $getVal('model name');
+                $quantity = floatval($getVal('quantity'));
+                $purchasePrice = floatval($getVal('purchase price'));
+                $mrp = floatval($getVal('mrp'));
+                $unit = $getVal('unit');
+                $hsnCode = $getVal('hsn code');
+                $gstRate = floatval($getVal('gst rate'));
+
+                if (!$catName || !$modelName) {
+                    continue; // Skip invalid rows
+                }
+
+                // Resolve Category
+                $category = Category::firstOrCreate([
+                    'business_id' => $businessId,
+                    'name' => $catName
+                ]);
+
+                // Resolve Brand (Optional)
+                $brandId = null;
+                if ($brandName) {
+                    $brand = Brand::firstOrCreate([
+                        'business_id' => $businessId,
+                        'name' => $brandName
+                    ]);
+                    $brandId = $brand->id;
+                }
+
+                $productData = [
+                    'category_id' => $category->id,
+                    'brand_id' => $brandId,
+                    'model_name' => $modelName,
+                    'quantity' => $quantity,
+                    'purchase_price' => $purchasePrice,
+                    'mrp' => $mrp,
+                    'unit' => $unit ?: 'pcs',
+                    'hsn_code' => $hsnCode,
+                    'gst_rate' => $gstRate,
+                    'status' => 'in_stock',
+                ];
+
+                $this->inventoryService->createProduct($productData);
+                $importedCount++;
+            }
+
+            return ['imported' => $importedCount];
+        }, 'Successfully imported products');
     }
 
     /**

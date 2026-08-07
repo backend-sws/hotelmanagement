@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Package, Plus, DollarSign, AlertTriangle, Search, RotateCcw, Layers, HelpCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Package, Plus, DollarSign, AlertTriangle, Search, RotateCcw, Layers, HelpCircle, Sparkles, ChevronDown, ChevronUp, FileSpreadsheet } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/formatters';
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 import { InventoryFormModal } from '../components/InventoryFormModal';
 import { DirectAddModal } from '../components/DirectAddModal';
+import { ImportInventoryModal } from '../components/ImportInventoryModal';
 import { DataTable } from '@/components/ui/data-table';
 import { TableSkeleton } from '@/components/ui/skeleton-loaders';
 import { getInventoryColumns } from '../constants/inventoryColumns';
@@ -53,6 +54,7 @@ export default function InventoryPage() {
 
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isDirectAddModalOpen, setIsDirectAddModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [productToAddStock, setProductToAddStock] = useState<Product | null>(null);
@@ -120,6 +122,14 @@ export default function InventoryPage() {
           </div>
           
           <div className="flex flex-wrap items-center gap-3 self-start sm:self-center">
+            <Button 
+              variant="outline"
+              onClick={() => setIsImportModalOpen(true)}
+              className="rounded-xl font-bold bg-white/80 dark:bg-slate-900/80 hover:bg-slate-50 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 shadow-sm h-10 px-4 text-xs"
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-1.5 text-emerald-600 dark:text-emerald-400" />
+              Import Items
+            </Button>
             <Button 
               onClick={handleCreate}
               className="rounded-xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white shadow-md shadow-primary-500/20 px-4 h-10 text-xs"
@@ -357,6 +367,11 @@ export default function InventoryPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         productToEdit={productToEdit}
+      />
+
+      <ImportInventoryModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
       />
 
       <DirectAddModal
