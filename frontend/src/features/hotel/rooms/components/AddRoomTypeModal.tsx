@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Loader2, X } from 'lucide-react';
@@ -8,27 +8,15 @@ import { Input } from '@/components/ui/input';
 import {
   useCreateHotelRoomType,
   useUpdateHotelRoomType,
-  type HotelRoomType,
-} from '../../api/useHotelRooms';
-
-const AMENITY_OPTIONS = ['AC', 'WiFi', 'TV', 'Mini-Bar', 'Bathtub', 'Hot Water', 'Room Service', 'Safe', 'Balcony', 'Sea View', 'Refrigerator', 'Microwave'];
+} from '../api/useHotelRooms';
+import type { HotelRoomType, HotelRoomTypeFormValues } from '../schemas/roomSchema';
+import { AMENITY_OPTIONS } from '../constants/roomConstants';
 
 interface AddRoomTypeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  editingRoomType?: HotelRoomType | null;
   editingType?: HotelRoomType | null;
-}
-
-interface FormValues {
-  name: string;
-  short_code: string;
-  base_price_weekday: number;
-  base_price_weekend: number;
-  base_price_peak: number;
-  extra_person_charge: number;
-  max_occupancy: number;
-  description: string;
-  is_active: boolean;
 }
 
 export function AddRoomTypeModal({ isOpen, onClose, editingType }: AddRoomTypeModalProps) {
@@ -38,19 +26,49 @@ export function AddRoomTypeModal({ isOpen, onClose, editingType }: AddRoomTypeMo
 
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>(editingType?.amenities || []);
 
-  const { register, handleSubmit, formState: { isSubmitting, errors }, reset } = useForm<FormValues>({
+  const { register, handleSubmit, formState: { isSubmitting, errors }, reset } = useForm<HotelRoomTypeFormValues>({
     defaultValues: {
       name: editingType?.name || '',
       short_code: editingType?.short_code || '',
-      base_price_weekday: editingType?.base_price_weekday || 0,
-      base_price_weekend: editingType?.base_price_weekend || 0,
-      base_price_peak: editingType?.base_price_peak || 0,
-      extra_person_charge: editingType?.extra_person_charge || 0,
-      max_occupancy: editingType?.max_occupancy || 2,
+      base_price_weekday: editingType?.base_price_weekday ?? ('' as any),
+      base_price_weekend: editingType?.base_price_weekend ?? ('' as any),
+      base_price_peak: editingType?.base_price_peak ?? ('' as any),
+      extra_person_charge: editingType?.extra_person_charge ?? ('' as any),
+      max_occupancy: editingType?.max_occupancy ?? ('' as any),
       description: editingType?.description || '',
       is_active: editingType?.is_active ?? true,
     },
   });
+
+  useEffect(() => {
+    if (editingType) {
+      reset({
+        name: editingType.name || '',
+        short_code: editingType.short_code || '',
+        base_price_weekday: editingType.base_price_weekday || 0,
+        base_price_weekend: editingType.base_price_weekend || 0,
+        base_price_peak: editingType.base_price_peak || 0,
+        extra_person_charge: editingType.extra_person_charge || 0,
+        max_occupancy: editingType.max_occupancy || 2,
+        description: editingType.description || '',
+        is_active: editingType.is_active ?? true,
+      });
+      setSelectedAmenities(editingType.amenities || []);
+    } else {
+      reset({
+        name: '',
+        short_code: '',
+        base_price_weekday: '' as any,
+        base_price_weekend: '' as any,
+        base_price_peak: '' as any,
+        extra_person_charge: '' as any,
+        max_occupancy: '' as any,
+        description: '',
+        is_active: true,
+      });
+      setSelectedAmenities([]);
+    }
+  }, [editingType, reset]);
 
   const toggleAmenity = (a: string) => {
     setSelectedAmenities(prev =>
@@ -58,9 +76,16 @@ export function AddRoomTypeModal({ isOpen, onClose, editingType }: AddRoomTypeMo
     );
   };
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: HotelRoomTypeFormValues) => {
     try {
-      const payload = { ...data, amenities: selectedAmenities };
+      const payload: any = { ...data, amenities: selectedAmenities };
+      
+      // Clean up empty numbers that get converted to NaN
+      if (isNaN(payload.base_price_weekend)) payload.base_price_weekend = null;
+      if (isNaN(payload.base_price_peak)) payload.base_price_peak = null;
+      if (isNaN(payload.extra_person_charge)) payload.extra_person_charge = null;
+      if (isNaN(payload.max_occupancy)) payload.max_occupancy = null;
+      
       if (isEdit && editingType) {
         await updateType.mutateAsync({ id: editingType.id, data: payload });
         toast.success('Room type updated');
@@ -94,8 +119,8 @@ export function AddRoomTypeModal({ isOpen, onClose, editingType }: AddRoomTypeMo
         </>
       }
     >
-      <form id="room-type-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        {/* Name + Short Code */}
+      <form id="room-type-form" onSubmit={handleSubmit(onSubmit as any)} className="space-y-4">
+        {/* Name & Code */}
         <div className="grid grid-cols-3 gap-3">
           <div className="col-span-2">
             <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Room Type Name *</label>

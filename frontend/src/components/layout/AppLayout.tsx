@@ -55,6 +55,7 @@ export function AppLayout() {
           });
         });
       } else {
+        setProfileLoading(false);
         setIsReady(true);
       }
     }

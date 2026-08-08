@@ -35,12 +35,14 @@ const businessSettingsSchema = z.object({
     whitelabel_favicon: z.string().nullable().optional(),
     whatsapp_message_format: z.string().nullable().optional(),
     hidden_sidebar_items: z.array(z.string()).default([]),
+    sidebar_group_order: z.array(z.string()).default([]),
     default_login_redirect: z.string().default('/dashboard'),
   }).default({
     commission_calculation_base: 'sales',
     sale_invoice_prefix: 'INV-{YYYY}-{MM}-{SEQ:4}',
     purchase_invoice_prefix: 'PUR-{YYYY}-{MM}-{SEQ:4}',
     hidden_sidebar_items: [],
+    sidebar_group_order: [],
     default_login_redirect: '/dashboard'
   })
 });
@@ -87,6 +89,7 @@ export default function BusinessSettingsPage() {
         ...activeBusiness.settings,
         whatsapp_message_format: activeBusiness.settings?.whatsapp_message_format || 'Hello {customer_name}! Here is your invoice {invoice_number} for Rs.{amount}.\n\nYou can view and download your original PDF receipt here:\n{link}',
         hidden_sidebar_items: activeBusiness.settings?.hidden_sidebar_items || [],
+        sidebar_group_order: activeBusiness.settings?.sidebar_group_order || [],
         default_login_redirect: activeBusiness.settings?.default_login_redirect || '/dashboard'
       }
     } : undefined
@@ -107,7 +110,8 @@ export default function BusinessSettingsPage() {
       reset({
         settings: {
           ...activeBusiness.settings,
-          whatsapp_message_format: activeBusiness.settings?.whatsapp_message_format || 'Hello {customer_name}! Here is your invoice {invoice_number} for Rs.{amount}.\n\nYou can view and download your original PDF receipt here:\n{link}'
+          whatsapp_message_format: activeBusiness.settings?.whatsapp_message_format || 'Hello {customer_name}! Here is your invoice {invoice_number} for Rs.{amount}.\n\nYou can view and download your original PDF receipt here:\n{link}',
+          sidebar_group_order: activeBusiness.settings?.sidebar_group_order || []
         }
       });
       setWlLogoUrl(activeBusiness.settings?.whitelabel_logo || null);

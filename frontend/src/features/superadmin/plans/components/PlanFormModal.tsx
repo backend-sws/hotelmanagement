@@ -12,6 +12,9 @@ import { DynamicForm } from '@/components/ui/dynamic-form';
 import { getPlanFormConfig } from '../constants/planForm';
 
 export const PREMIUM_FEATURES = [
+  { id: 'has_billing', label: 'Core Billing & Sales', description: 'Enable core invoicing, documents, and customer management.' },
+  { id: 'has_inventory', label: 'Inventory & Stock', description: 'Enable core items, categories, brands, and stock tracking.' },
+  { id: 'has_pos', label: 'Point of Sale (Retail)', description: 'Enable retail POS billing system.' },
   { id: 'has_expenses', label: 'Expenses', description: 'Track business expenses and analytics.' },
   { id: 'has_purchase_bills', label: 'Purchase Bills & ITC', description: 'Manage supplier purchase bills and GST Input Tax Credit.' },
   { id: 'has_khata_ledger', label: 'Khata / Ledger', description: 'Customer/Supplier Khata books and outstanding tracking.' },
@@ -88,7 +91,7 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
         has_hotel_gst_compliance: false,
         has_hotel_reports: false,
         has_hotel_corporate: false,
-      },
+      } as any,
       is_active: true
     }
   });
@@ -110,6 +113,9 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
           max_locations: planToEdit.features?.max_locations || 1,
           max_staff: planToEdit.features?.max_staff || 1,
           attendance_photo_retention_days: planToEdit.features?.attendance_photo_retention_days || 0,
+          has_billing: planToEdit.features?.has_billing ?? true,
+          has_inventory: planToEdit.features?.has_inventory ?? true,
+          has_pos: planToEdit.features?.has_pos ?? true,
           has_expenses: !!planToEdit.features?.has_expenses,
           has_purchase_bills: !!planToEdit.features?.has_purchase_bills,
           has_khata_ledger: !!planToEdit.features?.has_khata_ledger,
@@ -135,7 +141,7 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
           has_hotel_gst_compliance: !!planToEdit.features?.has_hotel_gst_compliance,
           has_hotel_reports: !!planToEdit.features?.has_hotel_reports,
           has_hotel_corporate: !!planToEdit.features?.has_hotel_corporate,
-        }
+        } as any
       });
     } else {
       reset({
@@ -147,6 +153,9 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
           max_locations: 1,
           max_staff: 1,
           attendance_photo_retention_days: 0,
+          has_billing: true,
+          has_inventory: true,
+          has_pos: true,
           has_expenses: false,
           has_purchase_bills: false,
           has_khata_ledger: false,

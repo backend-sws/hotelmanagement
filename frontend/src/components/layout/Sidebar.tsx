@@ -49,12 +49,12 @@ export const businessMenuGroups = [
   {
     title: "BILLING & SALES",
     items: [
-      { name: "NEW DOCUMENT", href: "/invoices/new", icon: FileText },
-      { name: "ALL DOCUMENTS", href: "/invoices", icon: ClipboardList },
-      { name: "CHALLANS", href: "/challans", icon: Package },
-      { name: "PROFORMA", href: "/proforma", icon: FileStack },
-      { name: "QUOTATIONS", href: "/quotations", icon: Receipt },
-      { name: "CREDIT NOTES", href: "/credit-notes", icon: Activity },
+      { name: "NEW DOCUMENT", href: "/invoices/new", icon: FileText, feature: 'has_billing' },
+      { name: "ALL DOCUMENTS", href: "/invoices", icon: ClipboardList, feature: 'has_billing' },
+      { name: "CHALLANS", href: "/challans", icon: Package, feature: 'has_billing' },
+      { name: "PROFORMA", href: "/proforma", icon: FileStack, feature: 'has_billing' },
+      { name: "QUOTATIONS", href: "/quotations", icon: Receipt, feature: 'has_billing' },
+      { name: "CREDIT NOTES", href: "/credit-notes", icon: Activity, feature: 'has_billing' },
       { name: "EXPENSES", href: "/expenses", icon: Receipt, feature: 'has_expenses' },
     ]
   },
@@ -78,25 +78,25 @@ export const businessMenuGroups = [
   {
     title: "RELATIONSHIPS",
     items: [
-      { name: "CUSTOMERS", href: "/customers", icon: Users },
-      { name: "SUPPLIERS", href: "/suppliers", icon: UserPlus },
+      { name: "CUSTOMERS", href: "/customers", icon: Users, feature: 'has_billing' },
+      { name: "SUPPLIERS", href: "/suppliers", icon: UserPlus, feature: 'has_billing' },
     ]
   },
   {
     title: "INVENTORY",
     items: [
-      { name: "ITEMS", href: "/items", icon: Package },
-      { name: "PRICE LISTS", href: "/price-lists", icon: List },
-      { name: "CATEGORIES", href: "/categories", icon: Building2 },
-      { name: "BRANDS", href: "/brands", icon: FileStack },
+      { name: "ITEMS", href: "/items", icon: Package, feature: 'has_inventory' },
+      { name: "PRICE LISTS", href: "/price-lists", icon: List, feature: 'has_inventory' },
+      { name: "CATEGORIES", href: "/categories", icon: Building2, feature: 'has_inventory' },
+      { name: "BRANDS", href: "/brands", icon: FileStack, feature: 'has_inventory' },
     ]
   },
   {
     title: "STOCK & GODOWNS",
     items: [
-      { name: "STOCK SUMMARY", href: "/stock/summary", icon: BarChart3 },
+      { name: "STOCK SUMMARY", href: "/stock/summary", icon: BarChart3, feature: 'has_inventory' },
       { name: "STOCK TRANSFERS", href: "/stock/transfer", icon: ArrowLeftRight, feature: 'has_stock_transfer' },
-      { name: "GODOWNS", href: "/stock/godowns", icon: Warehouse },
+      { name: "GODOWNS", href: "/stock/godowns", icon: Warehouse, feature: 'has_inventory' },
     ]
   },
   {
@@ -487,11 +487,30 @@ export function Sidebar({ className }: { className?: string }) {
     ...filteredHotelGroups,
   ];
 
-  const activeMenuGroups = isSuperadmin
+  const combinedStaffGroups = [
+    ...filteredStaffGroups,
+    ...filteredHotelGroups,
+  ];
+
+  let activeMenuGroups = isSuperadmin
     ? filteredSuperadminGroups
     : (isPartnerRoute || (!user?.businesses?.length && isPartner))
       ? filteredPartnerGroups
-      : isBusinessManager ? combinedBusinessGroups : filteredStaffGroups;
+      : isBusinessManager ? combinedBusinessGroups : combinedStaffGroups;
+      
+  // Apply sorting if a sidebar_group_order is defined in settings
+  if (!isSuperadmin && !isPartnerRoute && activeBusiness?.settings?.sidebar_group_order?.length) {
+    const orderMap = activeBusiness.settings.sidebar_group_order.reduce((acc: Record<string, number>, title: string, idx: number) => {
+      acc[title] = idx;
+      return acc;
+    }, {});
+    
+    activeMenuGroups.sort((a, b) => {
+      const orderA = orderMap[a.title] ?? 999;
+      const orderB = orderMap[b.title] ?? 999;
+      return orderA - orderB;
+    });
+  }
 
   return (
     <>
@@ -530,29 +549,36 @@ export function Sidebar({ className }: { className?: string }) {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar py-4 space-y-6">
-            {activeMenuGroups.map((group, idx) => (
-              <div key={idx} className="px-3">
-                {/* Group Header */}
-                {!isSidebarCollapsed ? (
-                  <div className="flex items-center gap-2 mb-2 px-2">
-                    <span className="text-[9px] font-black text-slate-600 dark:text-slate-400 tracking-[0.2em] uppercase whitespace-nowrap">
-                      {group.title}
-                    </span>
-                    <div className="flex-1 h-px bg-slate-200 dark:bg-white/5" />
-                  </div>
-                ) : (
-                  idx > 0 && <div className="w-6 h-px bg-slate-200 dark:bg-white/10 mx-auto mb-3" />
-                )}
+            {activeMenuGroups.map((group, idx) => {
+              const visibleItems = group.items.filter(item => {
+                if (item.feature && isFeatureHidden(item.feature)) {
+                  return false;
+                }
+                return true;
+              });
 
-                <div className="space-y-0.5">
-                  {group.items.map((item) => {
-                    const isActive = location.pathname === item.href
-                      || (item.href === '/superadmin/dashboard' && location.pathname === '/superadmin')
-                      || (item.href === '/dashboard' && location.pathname === '/');
-                    
-                    if (item.feature && isFeatureHidden(item.feature)) {
-                      return null;
-                    }
+              if (visibleItems.length === 0) return null;
+
+              return (
+                <div key={idx} className="px-3">
+                  {/* Group Header */}
+                  {!isSidebarCollapsed ? (
+                    <div className="flex items-center gap-2 mb-2 px-2">
+                      <span className="text-[9px] font-black text-slate-600 dark:text-slate-400 tracking-[0.2em] uppercase whitespace-nowrap">
+                        {group.title}
+                      </span>
+                      <div className="flex-1 h-px bg-slate-200 dark:bg-white/5" />
+                    </div>
+                  ) : (
+                    idx > 0 && <div className="w-6 h-px bg-slate-200 dark:bg-white/10 mx-auto mb-3" />
+                  )}
+
+                  <div className="space-y-0.5">
+                    {visibleItems.map((item) => {
+                      const isActive = location.pathname === item.href
+                        || (item.href === '/superadmin/dashboard' && location.pathname === '/superadmin')
+                        || (item.href === '/dashboard' && location.pathname === '/');
+                      
                     
                     const isLocked = item.feature && !hasFeature(item.feature);
 
@@ -651,7 +677,8 @@ export function Sidebar({ className }: { className?: string }) {
                   })}
                 </div>
               </div>
-            ))}
+            );
+          })}
         </nav>
 
         {/* Logout Button */}

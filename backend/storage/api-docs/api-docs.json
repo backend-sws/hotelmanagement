@@ -244,6 +244,176 @@
                 ]
             }
         },
+        "/businesses": {
+            "get": {
+                "tags": [
+                    "Businesses"
+                ],
+                "summary": "Get all businesses for user",
+                "operationId": "28485f962a42d0e4dece77ef79d7ae25",
+                "responses": {
+                    "200": {
+                        "description": "List of businesses"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Businesses"
+                ],
+                "summary": "Create a new business",
+                "operationId": "026c31bd66a55ac57dd5433b63183bd0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "logo_path": {
+                                        "type": "string"
+                                    },
+                                    "signature_path": {
+                                        "type": "string"
+                                    },
+                                    "card_preferences": {
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Business created"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/businesses/{business}": {
+            "get": {
+                "tags": [
+                    "Businesses"
+                ],
+                "summary": "Get a specific business",
+                "operationId": "e1428a8ca391f100ca10d97924a4a553",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Business details"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Businesses"
+                ],
+                "summary": "Update a business",
+                "operationId": "4a1596d91e3cfbddb5beb13c292f40b1",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "card_preferences": {
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Business updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Businesses"
+                ],
+                "summary": "Delete a business",
+                "operationId": "ca7721bd1965d68ce568d269318e2ae9",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Business deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/business/categories": {
             "get": {
                 "tags": [
@@ -392,6 +562,1252 @@
                 "responses": {
                     "200": {
                         "description": "Category updated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/expenses": {
+            "get": {
+                "tags": [
+                    "Business - Expenses"
+                ],
+                "summary": "List Expenses",
+                "description": "Get a paginated list of expenses for the current business.",
+                "operationId": "c1ff605cb574ce226d8e150fa3d55405",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Business - Expenses"
+                ],
+                "summary": "Create Expense",
+                "description": "Record a new business expense.",
+                "operationId": "a0d3237c6b6e6b137ebf608415f91f44",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "category",
+                                    "amount",
+                                    "expense_date"
+                                ],
+                                "properties": {
+                                    "category": {
+                                        "type": "string"
+                                    },
+                                    "amount": {
+                                        "type": "number"
+                                    },
+                                    "expense_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "receipt": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Expense created successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/expenses/categories": {
+            "get": {
+                "tags": [
+                    "Business - Expenses"
+                ],
+                "summary": "List Expense Categories",
+                "description": "Get a list of all expense categories for the current business.",
+                "operationId": "bdc121f473e986a16d81183846d90ca6",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/expenses/{id}": {
+            "get": {
+                "tags": [
+                    "Business - Expenses"
+                ],
+                "summary": "Get Expense",
+                "description": "Get details of a specific expense.",
+                "operationId": "70acf68c052a9b3df28cd972c06a2da7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Business - Expenses"
+                ],
+                "summary": "Update Expense",
+                "description": "Update an existing expense record.",
+                "operationId": "af41fb4a4c102f84b9382a97624449ee",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "category",
+                                    "amount",
+                                    "expense_date"
+                                ],
+                                "properties": {
+                                    "_method": {
+                                        "description": "Required for multipart/form-data PUT requests",
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
+                                    "category": {
+                                        "type": "string"
+                                    },
+                                    "amount": {
+                                        "type": "number"
+                                    },
+                                    "expense_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "receipt": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Expense updated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Business - Expenses"
+                ],
+                "summary": "Delete Expense",
+                "description": "Delete an existing expense record.",
+                "operationId": "e7767e332e45af868de5c8109912d9c9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Expense deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/expenses/analytics": {
+            "get": {
+                "tags": [
+                    "Business - Expenses"
+                ],
+                "summary": "Get Expenses Analytics",
+                "description": "Get analytical data for expenses including totals and category breakdowns.",
+                "operationId": "25ef945b8c017d412082929650571cb9",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/bookings": {
+            "get": {
+                "tags": [
+                    "Hotel - Bookings"
+                ],
+                "summary": "List Hotel Bookings",
+                "description": "Returns active or filtered bookings for the business",
+                "operationId": "77126e3e0a05f167a845668ad8252463",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bookings retrieved"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Hotel - Bookings"
+                ],
+                "summary": "Create Booking",
+                "operationId": "897e7948f6ce9ae2a5c03b307a9380f9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "room_id",
+                                    "check_in_date",
+                                    "check_out_date",
+                                    "room_rate_per_night"
+                                ],
+                                "properties": {
+                                    "room_id": {
+                                        "type": "integer"
+                                    },
+                                    "check_in_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "check_out_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "room_rate_per_night": {
+                                        "type": "number"
+                                    },
+                                    "advance_payment": {
+                                        "type": "number"
+                                    },
+                                    "payment_mode": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Booking created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/bookings/{id}": {
+            "get": {
+                "tags": [
+                    "Hotel - Bookings"
+                ],
+                "summary": "Get Booking Details",
+                "operationId": "19cd0d4eeba9295a63482787be20b095",
+                "responses": {
+                    "200": {
+                        "description": "Booking retrieved"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Hotel - Bookings"
+                ],
+                "summary": "Update Booking",
+                "operationId": "22f43dc4cbd62b2b0dfc2445801056e9",
+                "responses": {
+                    "200": {
+                        "description": "Booking updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Hotel - Bookings"
+                ],
+                "summary": "Cancel Booking",
+                "operationId": "6d90a0c2e4f692d5cb5aa6fa7a02b80b",
+                "responses": {
+                    "200": {
+                        "description": "Booking cancelled"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/bookings/{id}/payments": {
+            "post": {
+                "tags": [
+                    "Hotel - Bookings"
+                ],
+                "summary": "Record Payment for Booking",
+                "operationId": "05f53fe9b76005d56dbed8c76db2a066",
+                "responses": {
+                    "200": {
+                        "description": "Payment recorded"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/bookings/{id}/check-in": {
+            "post": {
+                "tags": [
+                    "Hotel - Bookings"
+                ],
+                "summary": "Check In Booking",
+                "operationId": "b10e01ec0831724ddc488173703e4950",
+                "responses": {
+                    "200": {
+                        "description": "Checked in successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/bookings/{id}/check-out": {
+            "post": {
+                "tags": [
+                    "Hotel - Bookings"
+                ],
+                "summary": "Check Out Booking",
+                "operationId": "0b33bd2368b81e9fe9c790050bc54c06",
+                "responses": {
+                    "200": {
+                        "description": "Checked out successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/guests": {
+            "get": {
+                "tags": [
+                    "Hotel - Guests"
+                ],
+                "summary": "List Hotel Guests",
+                "description": "Returns guest directory for active business",
+                "operationId": "543f17b81322d2fc6e86fde5092661c2",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Guests retrieved"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Hotel - Guests"
+                ],
+                "summary": "Create Hotel Guest",
+                "operationId": "d4eb9937477c624a7105bf20144cb4e3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "id_proof_type": {
+                                        "type": "string"
+                                    },
+                                    "id_proof_number": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Guest created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/guests/{id}": {
+            "get": {
+                "tags": [
+                    "Hotel - Guests"
+                ],
+                "summary": "Get Guest Details",
+                "operationId": "582d82db761acf9b6d5280e6bb9541c6",
+                "responses": {
+                    "200": {
+                        "description": "Guest retrieved"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Hotel - Guests"
+                ],
+                "summary": "Update Guest",
+                "operationId": "5d959d8fb737f6d0e6e18afce36c50dd",
+                "responses": {
+                    "200": {
+                        "description": "Guest updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Hotel - Guests"
+                ],
+                "summary": "Delete Guest",
+                "operationId": "21886fba3d2c9068ad6faf7e2b42e41c",
+                "responses": {
+                    "200": {
+                        "description": "Guest deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/property-settings": {
+            "get": {
+                "tags": [
+                    "Hotel - Property"
+                ],
+                "summary": "Get Hotel Property Settings",
+                "description": "Returns the property configuration for the active hotel business.",
+                "operationId": "4191486b33715eaf2201021637a4db64",
+                "responses": {
+                    "200": {
+                        "description": "Property settings retrieved"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Hotel - Property"
+                ],
+                "summary": "Update Hotel Property Settings",
+                "description": "Create or update the hotel property configuration (check-in/out times, GST, etc.).",
+                "operationId": "faf633621f309ff42852ad0e2f8e3118",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "property_type": {
+                                        "type": "string"
+                                    },
+                                    "check_in_time": {
+                                        "type": "string",
+                                        "example": "14:00"
+                                    },
+                                    "check_out_time": {
+                                        "type": "string",
+                                        "example": "11:00"
+                                    },
+                                    "gstin": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Property settings updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/rate-plans": {
+            "get": {
+                "tags": [
+                    "Hotel - Rate Plans"
+                ],
+                "summary": "List Rate Plans",
+                "operationId": "74d1a582e5816effc4215d4a789cee5a",
+                "responses": {
+                    "200": {
+                        "description": "Rate plans retrieved"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Hotel - Rate Plans"
+                ],
+                "summary": "Create Rate Plan",
+                "operationId": "7d3de70090e02ed4cbb995be5956f43c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "start_date",
+                                    "end_date",
+                                    "modifier_type",
+                                    "modifier_value"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "modifier_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percentage"
+                                        ]
+                                    },
+                                    "modifier_value": {
+                                        "type": "number"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Rate plan created"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/rate-plans/{id}": {
+            "get": {
+                "tags": [
+                    "Hotel - Rate Plans"
+                ],
+                "summary": "Get Rate Plan",
+                "operationId": "4825516263b163d652a82342f69601b9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rate plan retrieved"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Hotel - Rate Plans"
+                ],
+                "summary": "Update Rate Plan",
+                "operationId": "ed7128e699db7e5218bbe9672990b378",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rate plan updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Hotel - Rate Plans"
+                ],
+                "summary": "Delete Rate Plan",
+                "operationId": "c1b98e2c2cde724937f9fed6d3e91c6f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rate plan deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/rooms": {
+            "get": {
+                "tags": [
+                    "Hotel - Rooms"
+                ],
+                "summary": "List Hotel Rooms",
+                "description": "Returns all rooms for the active business, optionally filtered.",
+                "operationId": "38313836b7984412add95ac803baeca5",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "room_type_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "floor",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rooms retrieved"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Hotel - Rooms"
+                ],
+                "summary": "Create Room",
+                "operationId": "6e6201893ddf824a7d608a5fa3090378",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "room_number",
+                                    "room_type_id"
+                                ],
+                                "properties": {
+                                    "room_number": {
+                                        "type": "string"
+                                    },
+                                    "room_type_id": {
+                                        "type": "integer"
+                                    },
+                                    "floor": {
+                                        "type": "string"
+                                    },
+                                    "is_ac": {
+                                        "type": "boolean"
+                                    },
+                                    "current_tariff": {
+                                        "type": "number"
+                                    },
+                                    "status": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Room created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/rooms/{id}": {
+            "get": {
+                "tags": [
+                    "Hotel - Rooms"
+                ],
+                "summary": "Get Room Details",
+                "operationId": "3b98a9e0da40553c4d8b4881e5ad059a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room retrieved"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Hotel - Rooms"
+                ],
+                "summary": "Update Room",
+                "operationId": "90a2999a9abb9dc70370f30571b3be7c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Hotel - Rooms"
+                ],
+                "summary": "Delete Room",
+                "operationId": "8cd30b244e07c78af19eef128a184954",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/rooms/{id}/status": {
+            "patch": {
+                "tags": [
+                    "Hotel - Rooms"
+                ],
+                "summary": "Update Room Status",
+                "operationId": "11f6b4acea493389c50c5732c22ae327",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/room-types": {
+            "get": {
+                "tags": [
+                    "Hotel - Room Types"
+                ],
+                "summary": "List Hotel Room Types",
+                "description": "Returns all room categories (e.g. Deluxe AC, Suite) for the active business.",
+                "operationId": "6f3ea55dbe0109e88c7c733031680267",
+                "responses": {
+                    "200": {
+                        "description": "Room types retrieved"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Hotel - Room Types"
+                ],
+                "summary": "Create Room Type",
+                "description": "Creates a new room category with pricing and amenities.",
+                "operationId": "4b6a8d413ebbfbf1c649adb3eefb30b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "base_price_weekday",
+                                    "max_occupancy"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Deluxe AC"
+                                    },
+                                    "short_code": {
+                                        "type": "string",
+                                        "example": "DLX"
+                                    },
+                                    "base_price_weekday": {
+                                        "type": "number",
+                                        "example": 2000
+                                    },
+                                    "base_price_weekend": {
+                                        "type": "number",
+                                        "example": 2500
+                                    },
+                                    "base_price_peak": {
+                                        "type": "number",
+                                        "example": 3500
+                                    },
+                                    "max_occupancy": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "amenities": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Room type created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/hotel/room-types/{id}": {
+            "get": {
+                "tags": [
+                    "Hotel - Room Types"
+                ],
+                "summary": "Get Room Type",
+                "operationId": "5f168d3a74d1b66de8f5c4d4283bc498",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room type retrieved"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Hotel - Room Types"
+                ],
+                "summary": "Update Room Type",
+                "operationId": "2c7c142e2183e9b2f3aaa54370aba04a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room type updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Hotel - Room Types"
+                ],
+                "summary": "Delete Room Type",
+                "operationId": "1290d59698741759e439f9236884f064",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted"
+                    },
+                    "422": {
+                        "description": "Cannot delete — rooms exist"
                     }
                 },
                 "security": [
@@ -617,16 +2033,74 @@
                 ]
             }
         },
-        "/businesses": {
-            "get": {
+        "/business/inventory/direct-inward": {
+            "post": {
                 "tags": [
-                    "Businesses"
+                    "Business - Inventory"
                 ],
-                "summary": "Get all businesses for user",
-                "operationId": "28485f962a42d0e4dece77ef79d7ae25",
+                "summary": "Direct Add Stock",
+                "description": "Directly add stock to an existing product without a supplier bill.",
+                "operationId": "224f544e0a8f6048dd48507edd8196a5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "quantity"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer"
+                                    },
+                                    "quantity": {
+                                        "type": "integer"
+                                    },
+                                    "purchase_price": {
+                                        "type": "number",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
-                        "description": "List of businesses"
+                        "description": "Stock added successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/customers": {
+            "get": {
+                "tags": [
+                    "Business - Customers"
+                ],
+                "summary": "List Customers",
+                "description": "Get a paginated list of customers.",
+                "operationId": "17bcb1420c636846e4aab6308af54ef6",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
                     }
                 },
                 "security": [
@@ -637,36 +2111,30 @@
             },
             "post": {
                 "tags": [
-                    "Businesses"
+                    "Business - Customers"
                 ],
-                "summary": "Create a new business",
-                "operationId": "026c31bd66a55ac57dd5433b63183bd0",
+                "summary": "Create Customer",
+                "description": "Creates a new customer.",
+                "operationId": "27103ca193ff789567486c8bc3b27fa6",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "name"
+                                ],
                                 "properties": {
                                     "name": {
                                         "type": "string"
                                     },
-                                    "email": {
-                                        "type": "string"
-                                    },
                                     "phone": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "nullable": true
                                     },
                                     "address": {
-                                        "type": "string"
-                                    },
-                                    "logo_path": {
-                                        "type": "string"
-                                    },
-                                    "signature_path": {
-                                        "type": "string"
-                                    },
-                                    "card_preferences": {
-                                        "type": "object"
+                                        "type": "string",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -676,7 +2144,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Business created"
+                        "description": "Customer created successfully"
                     }
                 },
                 "security": [
@@ -686,16 +2154,17 @@
                 ]
             }
         },
-        "/businesses/{business}": {
+        "/business/customers/{id}": {
             "get": {
                 "tags": [
-                    "Businesses"
+                    "Business - Customers"
                 ],
-                "summary": "Get a specific business",
-                "operationId": "e1428a8ca391f100ca10d97924a4a553",
+                "summary": "Get Customer",
+                "description": "Get details of a specific customer.",
+                "operationId": "3cd66685fdd2a23502a45f53bfdc7a7f",
                 "parameters": [
                     {
-                        "name": "business",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -705,7 +2174,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Business details"
+                        "description": "Successful operation"
                     }
                 },
                 "security": [
@@ -716,13 +2185,160 @@
             },
             "put": {
                 "tags": [
-                    "Businesses"
+                    "Business - Customers"
                 ],
-                "summary": "Update a business",
-                "operationId": "4a1596d91e3cfbddb5beb13c292f40b1",
+                "summary": "Update Customer",
+                "description": "Updates a specific customer.",
+                "operationId": "618314317ba8d2542a2d527e0a60e78d",
                 "parameters": [
                     {
-                        "name": "business",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Customer updated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Business - Customers"
+                ],
+                "summary": "Delete Customer",
+                "description": "Deletes a customer.",
+                "operationId": "0ef7b30a70daad01a735e0ec39487c1c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Customer deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/finance/pending": {
+            "get": {
+                "tags": [
+                    "Business - Finance"
+                ],
+                "summary": "List Pending Payouts",
+                "description": "Get a paginated list of pending EMI payouts.",
+                "operationId": "5b3bbbba016ccdba3ee3cb153a3f038e",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/finance/completed": {
+            "get": {
+                "tags": [
+                    "Business - Finance"
+                ],
+                "summary": "List Completed Payouts",
+                "description": "Get a paginated list of completed EMI payouts.",
+                "operationId": "ceb63a70ab4241469f1d2f40073931bb",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/finance/{id}/mark-received": {
+            "post": {
+                "tags": [
+                    "Business - Finance"
+                ],
+                "summary": "Mark Payout as Received",
+                "description": "Mark a pending EMI payout as received.",
+                "operationId": "0940678dfaeb7024258e8903b9a976a6",
+                "parameters": [
+                    {
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -736,11 +2352,10 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "card_preferences": {
-                                        "type": "object"
+                                    "payout_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -750,34 +2365,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Business updated"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Businesses"
-                ],
-                "summary": "Delete a business",
-                "operationId": "ca7721bd1965d68ce568d269318e2ae9",
-                "parameters": [
-                    {
-                        "name": "business",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Business deleted"
+                        "description": "Payout marked as received"
                     }
                 },
                 "security": [
@@ -1470,6 +3058,235 @@
                     },
                     "422": {
                         "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/sales": {
+            "get": {
+                "tags": [
+                    "Business - Sales"
+                ],
+                "summary": "List Sales",
+                "description": "Get a paginated list of sales/invoices.",
+                "operationId": "92c6e1c550987f5a3ff3f35674dd808d",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Business - Sales"
+                ],
+                "summary": "Create Sale",
+                "description": "Record a new sale.",
+                "operationId": "3c3b8b7adaef63b79393d724c23c63ee",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "items"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "discount": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "round_off": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "payment_mode": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer"
+                                                },
+                                                "product_batch_id": {
+                                                    "type": "integer",
+                                                    "nullable": true
+                                                },
+                                                "quantity": {
+                                                    "type": "integer"
+                                                },
+                                                "unit_price": {
+                                                    "type": "number"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Sale created successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/sales/{id}": {
+            "get": {
+                "tags": [
+                    "Business - Sales"
+                ],
+                "summary": "Get Sale",
+                "description": "Get details of a specific sale including items and payments.",
+                "operationId": "56ae1e2313432f68e92edab8096edf0a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Business - Sales"
+                ],
+                "summary": "Update Sale",
+                "description": "Update an existing sale (items, payments, etc.)",
+                "operationId": "1ec7e5c3861cb4fd833d6098dd6e742e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "items"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "discount": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "round_off": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "payment_mode": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer"
+                                                },
+                                                "product_batch_id": {
+                                                    "type": "integer",
+                                                    "nullable": true
+                                                },
+                                                "quantity": {
+                                                    "type": "integer"
+                                                },
+                                                "unit_price": {
+                                                    "type": "number"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Sale updated successfully"
                     }
                 },
                 "security": [
@@ -3504,6 +5321,333 @@
                 ]
             }
         },
+        "/business/suppliers": {
+            "get": {
+                "tags": [
+                    "Business - Suppliers"
+                ],
+                "summary": "List Suppliers",
+                "description": "Get a paginated list of suppliers.",
+                "operationId": "2087b77af7f43da0f279cc2708065db5",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Business - Suppliers"
+                ],
+                "summary": "Create Supplier",
+                "description": "Creates a new supplier.",
+                "operationId": "196d1bd0572ad91f3473400e934421b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "items_supplied": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Supplier created successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/suppliers/{id}": {
+            "get": {
+                "tags": [
+                    "Business - Suppliers"
+                ],
+                "summary": "Get Supplier",
+                "description": "Get details of a specific supplier including purchases and payments.",
+                "operationId": "6f40fbfc3372c99be3f50ea3646df6b5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Business - Suppliers"
+                ],
+                "summary": "Update Supplier",
+                "description": "Updates a specific supplier.",
+                "operationId": "f424a246ab96ea8f2000a4a39afffa5c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "items_supplied": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Supplier updated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Business - Suppliers"
+                ],
+                "summary": "Delete Supplier",
+                "description": "Deletes a supplier.",
+                "operationId": "c6dcc60686bbabb16381cb034fffc549",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Supplier deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/suppliers/{id}/purchases": {
+            "post": {
+                "tags": [
+                    "Business - Suppliers"
+                ],
+                "summary": "Record Purchase",
+                "description": "Record a new purchase from the supplier.",
+                "operationId": "59724da9b33631b9c14bd0ea8856a85d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "bill_amount",
+                                    "purchase_date",
+                                    "items"
+                                ],
+                                "properties": {
+                                    "bill_amount": {
+                                        "type": "number"
+                                    },
+                                    "paid_amount": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "purchase_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "due_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "invoice_file": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Purchase recorded successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/business/suppliers/{id}/payments": {
+            "post": {
+                "tags": [
+                    "Business - Suppliers"
+                ],
+                "summary": "Record Payment",
+                "description": "Record a payment made to the supplier.",
+                "operationId": "df37352e9e73a0a9c113515ce150b97f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount",
+                                    "payment_mode",
+                                    "date"
+                                ],
+                                "properties": {
+                                    "supplier_purchase_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "amount": {
+                                        "type": "number"
+                                    },
+                                    "payment_mode": {
+                                        "type": "string"
+                                    },
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment recorded successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/upload/presigned-url": {
             "post": {
                 "tags": [
@@ -3593,20 +5737,64 @@
     },
     "tags": [
         {
+            "name": "Business - Expenses",
+            "description": "API Endpoints for Managing Business Expenses"
+        },
+        {
+            "name": "Business - Customers",
+            "description": "API Endpoints for Managing Customers"
+        },
+        {
+            "name": "Business - Finance",
+            "description": "API Endpoints for Managing EMI Finance Ledger"
+        },
+        {
+            "name": "Business - Sales",
+            "description": "API Endpoints for Managing Sales and Invoices"
+        },
+        {
+            "name": "Business - Suppliers",
+            "description": "API Endpoints for Managing Suppliers and Purchases"
+        },
+        {
             "name": "Authentication",
             "description": "Authentication"
+        },
+        {
+            "name": "Businesses",
+            "description": "Businesses"
         },
         {
             "name": "Business - Categories",
             "description": "Business - Categories"
         },
         {
-            "name": "Business - Inventory",
-            "description": "Business - Inventory"
+            "name": "Hotel - Bookings",
+            "description": "Hotel - Bookings"
         },
         {
-            "name": "Businesses",
-            "description": "Businesses"
+            "name": "Hotel - Guests",
+            "description": "Hotel - Guests"
+        },
+        {
+            "name": "Hotel - Property",
+            "description": "Hotel - Property"
+        },
+        {
+            "name": "Hotel - Rate Plans",
+            "description": "Hotel - Rate Plans"
+        },
+        {
+            "name": "Hotel - Rooms",
+            "description": "Hotel - Rooms"
+        },
+        {
+            "name": "Hotel - Room Types",
+            "description": "Hotel - Room Types"
+        },
+        {
+            "name": "Business - Inventory",
+            "description": "Business - Inventory"
         },
         {
             "name": "Partner Portal",

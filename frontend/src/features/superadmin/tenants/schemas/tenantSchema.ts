@@ -25,6 +25,8 @@ export const onboardSchema = z.object({
   plan_id: z.coerce.number().optional(),
   billing_cycle: z.enum(['monthly', 'yearly', 'lifetime']).optional().default('yearly'),
   partner_id: z.coerce.number().optional().nullable(),
+  modules: z.array(z.string()).optional().default([]),
+  feature_overrides: z.record(z.string(), z.union([z.boolean(), z.literal('hidden')])).optional().default({}),
 });
 
 export type OnboardFormValues = z.infer<typeof onboardSchema>;

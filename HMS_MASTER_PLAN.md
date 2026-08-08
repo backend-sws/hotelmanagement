@@ -34,9 +34,9 @@ Hotel Owner / Business Admin
 
 | Phase | Name | Status | Completion |
 |---|---|---|---|
-| Phase 0 | Superadmin Module Toggle System | ⬜ Pending | 0% |
-| Phase 1 | Hotel Core + Room Management | ⬜ Pending | 0% |
-| Phase 2 | Front Desk + Reservations + Guest | ⬜ Pending | 0% |
+| Phase 0 | Superadmin Module Toggle | ✅ Done | 100% |
+| Phase 1 | Hotel Rooms & Property Setup | ✅ Done | 100% |
+| Phase 2 | Front Desk + Reservations + Guest | 🔄 In Progress | 0% |
 | Phase 3 | Hotel POS + Room Service | ⬜ Pending | 0% |
 | Phase 4 | Housekeeping Management | ⬜ Pending | 0% |
 | Phase 5 | Staff Shift Roster + HR | ⬜ Pending | 0% |

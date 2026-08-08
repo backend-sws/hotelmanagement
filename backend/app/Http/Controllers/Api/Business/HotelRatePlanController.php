@@ -4,102 +4,128 @@ namespace App\Http\Controllers\Api\Business;
 
 use App\Http\Controllers\BaseController;
 use App\Models\HotelRatePlan;
-use App\Models\HotelRoomType;
+use App\Services\Business\HotelRoomService;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class HotelRatePlanController extends BaseController
 {
-    /**
-     * GET /api/v1/business/hotel/rate-plans
-     */
+    public function __construct(protected HotelRoomService $hotelRoomService) {}
+
+    #[OA\Get(
+        path: '/business/hotel/rate-plans',
+        summary: 'List Rate Plans',
+        tags: ['Hotel - Rate Plans'],
+        security: [['sanctum' => []]],
+        responses: [new OA\Response(response: 200, description: 'Rate plans retrieved')]
+    )]
     public function index(Request $request)
     {
         return $this->executeAction(function () use ($request) {
-            $businessId = $request->attributes->get('business')->id;
-            return HotelRatePlan::where('business_id', $businessId)
-                ->with('roomType:id,name,short_code')
-                ->orderBy('start_date')
-                ->get();
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
+            return $this->hotelRoomService->getRatePlans($businessId);
         }, 'Rate plans retrieved');
     }
 
-    /**
-     * POST /api/v1/business/hotel/rate-plans
-     */
+    #[OA\Post(
+        path: '/business/hotel/rate-plans',
+        summary: 'Create Rate Plan',
+        tags: ['Hotel - Rate Plans'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['name', 'start_date', 'end_date', 'modifier_type', 'modifier_value'],
+                properties: [
+                    new OA\Property(property: 'name', type: 'string'),
+                    new OA\Property(property: 'start_date', type: 'string', format: 'date'),
+                    new OA\Property(property: 'end_date', type: 'string', format: 'date'),
+                    new OA\Property(property: 'modifier_type', type: 'string', enum: ['fixed', 'percentage']),
+                    new OA\Property(property: 'modifier_value', type: 'number'),
+                ]
+            )
+        ),
+        responses: [new OA\Response(response: 201, description: 'Rate plan created')]
+    )]
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'             => 'required|string|max:100',
-            'start_date'       => 'required|date',
-            'end_date'         => 'required|date|after_or_equal:start_date',
-            'room_type_id'     => 'nullable|integer',
-            'modifier_type'    => 'required|in:fixed,percentage',
-            'modifier_value'   => 'required|numeric',
-            'min_stay_nights'  => 'nullable|integer|min:1',
-            'is_active'        => 'nullable|boolean',
-            'description'      => 'nullable|string',
+            'name'            => 'required|string|max:100',
+            'start_date'      => 'required|date',
+            'end_date'        => 'required|date|after_or_equal:start_date',
+            'room_type_id'    => 'nullable|integer',
+            'modifier_type'   => 'required|in:fixed,percentage',
+            'modifier_value'  => 'required|numeric',
+            'min_stay_nights' => 'integer|min:1',
+            'is_active'       => 'boolean',
+            'description'     => 'nullable|string',
         ]);
 
         return $this->executeAction(function () use ($request, $validated) {
-            $businessId = $request->attributes->get('business')->id;
-
-            // Verify room_type belongs to this business if provided
-            if (!empty($validated['room_type_id'])) {
-                HotelRoomType::where('business_id', $businessId)->findOrFail($validated['room_type_id']);
-            }
-
-            $plan = HotelRatePlan::create(array_merge($validated, ['business_id' => $businessId]));
-            return $plan->load('roomType:id,name,short_code');
-        }, 'Rate plan created');
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
+            return $this->hotelRoomService->createRatePlan($businessId, $validated);
+        }, 'Rate plan created', 201);
     }
 
-    /**
-     * GET /api/v1/business/hotel/rate-plans/{id}
-     */
-    public function show(Request $request, $id)
+    #[OA\Get(
+        path: '/business/hotel/rate-plans/{id}',
+        summary: 'Get Rate Plan',
+        tags: ['Hotel - Rate Plans'],
+        security: [['sanctum' => []]],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'Rate plan retrieved')]
+    )]
+    public function show(Request $request, int $id)
     {
         return $this->executeAction(function () use ($request, $id) {
-            $businessId = $request->attributes->get('business')->id;
-            return HotelRatePlan::where('business_id', $businessId)
-                ->with('roomType:id,name,short_code')
-                ->findOrFail($id);
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
+            return HotelRatePlan::where('business_id', $businessId)->with('roomType')->findOrFail($id);
         }, 'Rate plan retrieved');
     }
 
-    /**
-     * PUT /api/v1/business/hotel/rate-plans/{id}
-     */
-    public function update(Request $request, $id)
+    #[OA\Put(
+        path: '/business/hotel/rate-plans/{id}',
+        summary: 'Update Rate Plan',
+        tags: ['Hotel - Rate Plans'],
+        security: [['sanctum' => []]],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'Rate plan updated')]
+    )]
+    public function update(Request $request, int $id)
     {
         $validated = $request->validate([
-            'name'             => 'sometimes|string|max:100',
-            'start_date'       => 'sometimes|date',
-            'end_date'         => 'sometimes|date',
-            'room_type_id'     => 'nullable|integer',
-            'modifier_type'    => 'sometimes|in:fixed,percentage',
-            'modifier_value'   => 'sometimes|numeric',
-            'min_stay_nights'  => 'nullable|integer|min:1',
-            'is_active'        => 'nullable|boolean',
-            'description'      => 'nullable|string',
+            'name'            => 'sometimes|string|max:100',
+            'start_date'      => 'sometimes|date',
+            'end_date'        => 'sometimes|date|after_or_equal:start_date',
+            'room_type_id'    => 'nullable|integer',
+            'modifier_type'   => 'sometimes|in:fixed,percentage',
+            'modifier_value'  => 'sometimes|numeric',
+            'min_stay_nights' => 'integer|min:1',
+            'is_active'       => 'boolean',
+            'description'     => 'nullable|string',
         ]);
 
         return $this->executeAction(function () use ($request, $validated, $id) {
-            $businessId = $request->attributes->get('business')->id;
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
             $plan = HotelRatePlan::where('business_id', $businessId)->findOrFail($id);
-            $plan->update($validated);
-            return $plan->load('roomType:id,name,short_code');
+            return $this->hotelRoomService->updateRatePlan($plan, $validated);
         }, 'Rate plan updated');
     }
 
-    /**
-     * DELETE /api/v1/business/hotel/rate-plans/{id}
-     */
-    public function destroy(Request $request, $id)
+    #[OA\Delete(
+        path: '/business/hotel/rate-plans/{id}',
+        summary: 'Delete Rate Plan',
+        tags: ['Hotel - Rate Plans'],
+        security: [['sanctum' => []]],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'Rate plan deleted')]
+    )]
+    public function destroy(Request $request, int $id)
     {
         return $this->executeAction(function () use ($request, $id) {
-            $businessId = $request->attributes->get('business')->id;
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
             $plan = HotelRatePlan::where('business_id', $businessId)->findOrFail($id);
-            $plan->delete();
+            $this->hotelRoomService->deleteRatePlan($plan);
             return null;
         }, 'Rate plan deleted');
     }

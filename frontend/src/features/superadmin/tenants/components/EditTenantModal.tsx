@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { profileSchema, passwordSchema, type ProfileFormValues, type PasswordFormValues } from '../schemas/tenantSchema';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -13,7 +13,15 @@ import { usePlans } from '../../plans/api/usePlans';
 import { usePartners } from '../../partners/api/usePartners';
 import { useUpdateTenant, useResetTenantPassword } from '../api/useSuperadminTenants';
 import { PREMIUM_FEATURES, HOTEL_FEATURES } from '../../plans/components/PlanFormModal';
+import { businessMenuGroups, hotelMenuGroups } from '@/components/layout/Sidebar';
 import { DynamicForm } from '@/components/ui/dynamic-form';
+
+const allMenuGroups = [
+  ...businessMenuGroups,
+  ...hotelMenuGroups,
+  { title: "STAFF & HR (OPERATIONS)", items: [] },
+  { title: "STAFF & HR (MANAGEMENT)", items: [] }
+];
 import { getTenantProfileFormConfig } from '../constants/tenantProfileForm';
 import { tenantSecurityFormConfig } from '../constants/tenantSecurityForm';
 
@@ -26,7 +34,7 @@ interface EditTenantModalProps {
 }
 
 export function EditTenantModal({ isOpen, onClose, tenant }: EditTenantModalProps) {
-  const [activeTab, setActiveTab] = useState<'profile' | 'plan' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'plan' | 'navigation' | 'security'>('profile');
   const { data: plansData } = usePlans({ all: true });
   const plans = plansData?.data;
   const { data: partnersData } = usePartners({ all: true });
@@ -38,6 +46,7 @@ export function EditTenantModal({ isOpen, onClose, tenant }: EditTenantModalProp
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [selectedFeatures, setSelectedFeatures] = useState<Record<string, boolean | 'hidden'>>({});
   const [planExpiresAt, setPlanExpiresAt] = useState<string>('');
+  const [sidebarGroupOrder, setSidebarGroupOrder] = useState<string[]>([]);
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -60,6 +69,7 @@ export function EditTenantModal({ isOpen, onClose, tenant }: EditTenantModalProp
       passwordForm.reset({ new_password: '' });
       setSelectedPlanId(tenant.plan_id ? String(tenant.plan_id) : '');
       setSelectedFeatures(tenant.custom_features || {});
+      setSidebarGroupOrder(tenant.settings?.sidebar_group_order || []);
       
       // Handle Date formatting for input type="date"
       if (tenant.plan_expires_at) {
@@ -117,6 +127,36 @@ export function EditTenantModal({ isOpen, onClose, tenant }: EditTenantModalProp
     }));
   };
 
+  const saveNavigationChanges = async () => {
+    if (!tenant) return;
+    try {
+      const payload = {
+        settings: {
+          ...(tenant.settings || {}),
+          sidebar_group_order: sidebarGroupOrder
+        }
+      };
+      await updateTenant.mutateAsync({ id: tenant.id, data: payload });
+      toast.success('Navigation settings updated successfully');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update navigation settings');
+    }
+  };
+
+  const moveGroup = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === allMenuGroups.length - 1) return;
+
+    setSidebarGroupOrder(prev => {
+      // Initialize with default order if empty
+      let currentOrder = prev.length ? [...prev] : allMenuGroups.map(g => g.title);
+      
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      [currentOrder[index], currentOrder[targetIndex]] = [currentOrder[targetIndex], currentOrder[index]];
+      return currentOrder;
+    });
+  };
+
   if (!isOpen || !tenant) return null;
 
   const selectedPlan = plans?.find(p => p.id === Number(selectedPlanId));
@@ -141,6 +181,12 @@ export function EditTenantModal({ isOpen, onClose, tenant }: EditTenantModalProp
           onClick={() => setActiveTab('plan')}
         >
           Plan & Features
+        </button>
+        <button
+          className={`pb-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'navigation' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+          onClick={() => setActiveTab('navigation')}
+        >
+          Navigation
         </button>
         <button
           className={`pb-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'security' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
@@ -331,12 +377,66 @@ export function EditTenantModal({ isOpen, onClose, tenant }: EditTenantModalProp
             </div>
             
             <div className="pt-4 flex justify-end gap-3">
-              <Button size="sm" type="button" variant="outline" onClick={() => setActiveTab('security')} className="text-slate-600 dark:text-slate-300">
+              <Button size="sm" type="button" variant="outline" onClick={() => setActiveTab('navigation')} className="text-slate-600 dark:text-slate-300">
                 Next <span className="ml-1">→</span>
               </Button>
               <Button size="sm" type="button" onClick={savePlanChanges} disabled={updateTenant.isPending} className="bg-primary-500 hover:bg-primary-600 text-white">
                 {updateTenant.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Save Plan & Features
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation Tab */}
+        {activeTab === 'navigation' && (
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Sidebar Group Ordering</h3>
+              <p className="text-xs text-slate-500 mb-4">Set a custom order for the sidebar groups for this tenant. This will override the default order.</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(() => {
+                  const sortedGroups = [...allMenuGroups].sort((a, b) => {
+                    const orderA = sidebarGroupOrder.includes(a.title) ? sidebarGroupOrder.indexOf(a.title) : 999;
+                    const orderB = sidebarGroupOrder.includes(b.title) ? sidebarGroupOrder.indexOf(b.title) : 999;
+                    return orderA - orderB;
+                  });
+
+                  return sortedGroups.map((group, idx) => (
+                    <div key={group.title} className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{group.title}</span>
+                      <div className="flex gap-1">
+                        <button 
+                          type="button" 
+                          onClick={() => moveGroup(idx, 'up')}
+                          disabled={idx === 0}
+                          className="p-1.5 text-slate-400 hover:text-primary-500 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+                        >
+                          <ArrowUp className="w-4 h-4" />
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => moveGroup(idx, 'down')}
+                          disabled={idx === sortedGroups.length - 1}
+                          className="p-1.5 text-slate-400 hover:text-primary-500 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+                        >
+                          <ArrowDown className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+
+            <div className="pt-4 flex justify-end gap-3">
+              <Button size="sm" type="button" variant="outline" onClick={() => setActiveTab('security')} className="text-slate-600 dark:text-slate-300">
+                Next <span className="ml-1">→</span>
+              </Button>
+              <Button size="sm" type="button" onClick={saveNavigationChanges} disabled={updateTenant.isPending} className="bg-primary-500 hover:bg-primary-600 text-white">
+                {updateTenant.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Navigation Settings
               </Button>
             </div>
           </div>

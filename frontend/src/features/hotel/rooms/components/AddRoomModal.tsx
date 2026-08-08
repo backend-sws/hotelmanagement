@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Loader2, Trash2 } from 'lucide-react';
@@ -10,31 +11,15 @@ import {
   useCreateHotelRoom,
   useUpdateHotelRoom,
   useDeleteHotelRoom,
-  type HotelRoom,
-} from '../../api/useHotelRooms';
+} from '../api/useHotelRooms';
+import type { HotelRoom, HotelRoomFormValues } from '../schemas/roomSchema';
+import { VIEW_TYPES, BED_TYPES, ROOM_STATUSES } from '../constants/roomConstants';
 
 interface AddRoomModalProps {
   isOpen: boolean;
   onClose: () => void;
   editingRoom?: HotelRoom | null;
 }
-
-interface FormValues {
-  room_number: string;
-  floor: string;
-  room_type_id: number;
-  is_ac: boolean;
-  current_tariff: number;
-  status: string;
-  view_type: string;
-  bed_type: string;
-  max_occupancy: number | '';
-  notes: string;
-}
-
-const VIEW_TYPES = ['none', 'city', 'garden', 'pool', 'sea', 'mountain', 'courtyard'];
-const BED_TYPES = ['single', 'double', 'twin', 'king', 'queen'];
-const STATUSES = ['available', 'occupied', 'reserved', 'dirty', 'maintenance', 'blocked'];
 
 export function AddRoomModal({ isOpen, onClose, editingRoom }: AddRoomModalProps) {
   const { data: roomTypes = [] } = useHotelRoomTypes();
@@ -43,7 +28,7 @@ export function AddRoomModal({ isOpen, onClose, editingRoom }: AddRoomModalProps
   const deleteRoom = useDeleteHotelRoom();
   const isEdit = !!editingRoom;
 
-  const { register, handleSubmit, formState: { isSubmitting, errors }, reset } = useForm<FormValues>({
+  const { register, handleSubmit, formState: { isSubmitting, errors }, reset } = useForm<HotelRoomFormValues>({
     defaultValues: {
       room_number: editingRoom?.room_number || '',
       floor: editingRoom?.floor || '',
@@ -53,16 +38,46 @@ export function AddRoomModal({ isOpen, onClose, editingRoom }: AddRoomModalProps
       status: editingRoom?.status || 'available',
       view_type: editingRoom?.view_type || 'none',
       bed_type: editingRoom?.bed_type || 'double',
-      max_occupancy: editingRoom?.max_occupancy || '',
+      max_occupancy: (editingRoom?.max_occupancy || '') as any,
       notes: editingRoom?.notes || '',
     },
   });
 
-  const onSubmit = async (data: FormValues) => {
+  useEffect(() => {
+    if (editingRoom) {
+      reset({
+        room_number: editingRoom.room_number || '',
+        floor: editingRoom.floor || '',
+        room_type_id: editingRoom.room_type_id || (roomTypes[0]?.id ?? 0),
+        is_ac: editingRoom.is_ac ?? true,
+        current_tariff: editingRoom.current_tariff || 0,
+        status: editingRoom.status || 'available',
+        view_type: editingRoom.view_type || 'none',
+        bed_type: editingRoom.bed_type || 'double',
+        max_occupancy: (editingRoom.max_occupancy || '') as any,
+        notes: editingRoom.notes || '',
+      });
+    } else {
+      reset({
+        room_number: '',
+        floor: '',
+        room_type_id: roomTypes[0]?.id ?? 0,
+        is_ac: true,
+        current_tariff: 0,
+        status: 'available',
+        view_type: 'none',
+        bed_type: 'double',
+        max_occupancy: '' as any,
+        notes: '',
+      });
+    }
+  }, [editingRoom, reset, roomTypes]);
+
+  const onSubmit = async (data: HotelRoomFormValues) => {
     try {
-      const payload = {
+      const payload: any = {
         ...data,
-        max_occupancy: data.max_occupancy === '' ? null : Number(data.max_occupancy),
+        max_occupancy: (data.max_occupancy as any) === '' ? null : Number(data.max_occupancy),
         room_type_id: Number(data.room_type_id),
       };
       if (isEdit && editingRoom) {
@@ -118,7 +133,7 @@ export function AddRoomModal({ isOpen, onClose, editingRoom }: AddRoomModalProps
         </div>
       }
     >
-      <form id="room-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form id="room-form" onSubmit={handleSubmit(onSubmit as any)} className="space-y-4">
         {/* Room No + Floor */}
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -173,7 +188,7 @@ export function AddRoomModal({ isOpen, onClose, editingRoom }: AddRoomModalProps
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Status</label>
             <Select {...register('status')}>
-              {STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+              {ROOM_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
             </Select>
           </div>
         </div>

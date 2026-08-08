@@ -9,7 +9,7 @@ import api from '@/lib/api';
 import { Modal } from '@/components/ui/modal';
 import { usePlans } from '../../plans/api/usePlans';
 import { usePartners } from '../../partners/api/usePartners';
-import { PREMIUM_FEATURES } from '../../plans/components/PlanFormModal';
+import { PREMIUM_FEATURES, HOTEL_FEATURES } from '../../plans/components/PlanFormModal';
 import { onboardSchema, type OnboardFormValues } from '../schemas/tenantSchema';
 import { DynamicForm } from '@/components/ui/dynamic-form';
 import { getOnboardFormConfig } from '../constants/tenantOnboardForm';
@@ -45,6 +45,7 @@ export function OnboardTenantModal({ isOpen, onClose }: OnboardTenantModalProps)
   const { reset, watch } = form;
   const selectedPlanId = watch('plan_id');
   const selectedPlan = plans?.find(p => p.id === Number(selectedPlanId));
+  const ALL_FEATURES = [...PREMIUM_FEATURES, ...HOTEL_FEATURES];
 
   useEffect(() => {
     if (!isOpen) {
@@ -105,7 +106,7 @@ export function OnboardTenantModal({ isOpen, onClose }: OnboardTenantModalProps)
         onSubmit={onSubmit}
         sections={getOnboardFormConfig(plans, partners, () => (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-            {PREMIUM_FEATURES.map((feature: any) => {
+            {ALL_FEATURES.map((feature: any) => {
               const isPlanFeature = !!selectedPlan?.features?.[feature.id];
               const overrideVal = selectedFeatures[feature.id];
               

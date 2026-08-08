@@ -274,6 +274,22 @@ Route::prefix('v1')->group(function () {
                 Route::apiResource('rate-plans', \App\Http\Controllers\Api\Business\HotelRatePlanController::class);
             });
 
+            // 🔒 Hotel Reservations & Front Desk (feature: has_hotel_reservations)
+            Route::middleware(['feature:has_hotel_reservations'])->prefix('hotel')->group(function () {
+                // Guests
+                Route::apiResource('guests', \App\Http\Controllers\Api\Business\HotelGuestController::class);
+                
+                // Bookings & Front Desk
+                Route::post('bookings/{id}/check-in', [\App\Http\Controllers\Api\Business\HotelBookingController::class, 'checkIn']);
+                Route::post('bookings/{id}/check-out', [\App\Http\Controllers\Api\Business\HotelBookingController::class, 'checkOut']);
+                Route::post('bookings/{id}/payments', [\App\Http\Controllers\Api\Business\HotelBookingController::class, 'addPayment']);
+                Route::apiResource('bookings', \App\Http\Controllers\Api\Business\HotelBookingController::class);
+                
+                // Folio Charges
+                Route::post('bookings/{booking}/folio', [\App\Http\Controllers\Api\Business\HotelFolioController::class, 'store']);
+                Route::delete('bookings/{booking}/folio/{charge}', [\App\Http\Controllers\Api\Business\HotelFolioController::class, 'destroy']);
+            });
+
             // Subscription & Billing
             Route::get('subscriptions/history', [\App\Http\Controllers\Api\Business\SubscriptionController::class, 'history']);
             Route::post('subscriptions/create-order', [\App\Http\Controllers\Api\Business\SubscriptionController::class, 'createOrder']);

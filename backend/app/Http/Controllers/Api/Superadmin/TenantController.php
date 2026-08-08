@@ -180,6 +180,7 @@ class TenantController extends BaseController
             'partner_id' => 'nullable|exists:partners,id',
             'amount_paid' => 'nullable|numeric|min:0',
             'status' => 'sometimes|required|in:active,suspended',
+            'settings' => 'nullable|array',
         ]);
 
         try {

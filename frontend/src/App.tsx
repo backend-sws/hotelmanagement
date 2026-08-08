@@ -118,6 +118,11 @@ const SuperadminPayouts = lazy(() => import('@/features/superadmin/payouts/pages
 // 🏨 Hotel Management — Phase 1 (Rooms)
 const HotelRoomsPage    = lazy(() => import('@/features/hotel/rooms/pages/RoomsPage').then(m => ({ default: m.RoomsPage })));
 const HotelRoomTypesPage = lazy(() => import('@/features/hotel/rooms/pages/RoomTypesPage').then(m => ({ default: m.RoomTypesPage })));
+const HotelRatePlansPage = lazy(() => import('@/features/hotel/rooms/pages/RatePlansPage').then(m => ({ default: m.RatePlansPage })));
+const HotelGuestsPage = lazy(() => import('@/features/hotel/guests/pages/GuestsPage').then(m => ({ default: m.GuestsPage })));
+const FrontDeskPage = lazy(() => import('@/features/hotel/bookings/pages/FrontDeskPage').then(m => ({ default: m.FrontDeskPage })));
+const BookingDetailPage = lazy(() => import('@/features/hotel/bookings/pages/BookingDetailPage').then(m => ({ default: m.BookingDetailPage })));
+const BookingCalendarPage = lazy(() => import('@/features/hotel/bookings/pages/BookingCalendarPage').then(m => ({ default: m.BookingCalendarPage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -366,6 +371,41 @@ function App() {
               <BusinessRoute>
                 <FeatureGuard feature="has_hotel_rooms">
                   <HotelRoomTypesPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/rate-plans" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_rooms">
+                  <HotelRatePlansPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/guests" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_reservations">
+                  <HotelGuestsPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/front-desk" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_reservations">
+                  <FrontDeskPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/calendar" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_reservations">
+                  <BookingCalendarPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/bookings/:id" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_reservations">
+                  <BookingDetailPage />
                 </FeatureGuard>
               </BusinessRoute>
             } />
