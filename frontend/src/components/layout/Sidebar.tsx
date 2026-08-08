@@ -16,7 +16,17 @@ import {
   List,
   BarChart3,
   ArrowLeftRight,
-  Warehouse
+  Warehouse,
+  Hotel,
+  BedDouble,
+  ConciergeBell,
+  UtensilsCrossed,
+  Sparkles,
+  CalendarDays,
+  Moon,
+  Radio,
+  TrendingUp,
+  Building,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/store/layoutStore";
@@ -129,6 +139,54 @@ export const businessMenuGroups = [
       { name: "SETTINGS", href: "/setup/settings", icon: Settings },
     ]
   }
+];
+
+// Hotel Management menu groups — appended to businessMenuGroups when hotel features are active
+export const hotelMenuGroups = [
+  {
+    title: "🏨 HOTEL MANAGEMENT",
+    items: [
+      { name: "HOTEL DASHBOARD",     href: "/hotel/dashboard",    icon: Hotel,           feature: 'has_hotel_dashboard' },
+    ]
+  },
+  {
+    title: "🛎️ FRONT DESK",
+    items: [
+      { name: "RESERVATIONS",        href: "/hotel/front-desk",  icon: ConciergeBell,   feature: 'has_hotel_reservations' },
+      { name: "BOOKING CALENDAR",   href: "/hotel/calendar",    icon: CalendarDays,    feature: 'has_hotel_reservations' },
+      { name: "GUEST DIRECTORY",    href: "/hotel/guests",      icon: Users,           feature: 'has_hotel_reservations' },
+    ]
+  },
+  {
+    title: "🛏️ ROOMS",
+    items: [
+      { name: "ROOM STATUS BOARD",  href: "/hotel/rooms",       icon: BedDouble,       feature: 'has_hotel_rooms' },
+      { name: "ROOM TYPES",         href: "/hotel/room-types",  icon: Building,        feature: 'has_hotel_rooms' },
+      { name: "RATE PLANS",         href: "/hotel/rate-plans",  icon: TrendingUp,      feature: 'has_hotel_rooms' },
+    ]
+  },
+  {
+    title: "🍽️ HOTEL POS",
+    items: [
+      { name: "RESTAURANT POS",     href: "/hotel/pos/restaurant", icon: UtensilsCrossed, feature: 'has_hotel_pos' },
+      { name: "ROOM SERVICE",       href: "/hotel/pos/room-service", icon: ConciergeBell, feature: 'has_hotel_pos' },
+    ]
+  },
+  {
+    title: "👷 HOUSEKEEPING & STAFF",
+    items: [
+      { name: "HOUSEKEEPING BOARD", href: "/hotel/housekeeping", icon: Sparkles,        feature: 'has_hotel_housekeeping' },
+      { name: "SHIFT ROSTER",       href: "/hotel/roster",      icon: CalendarDays,    feature: 'has_hotel_shift_roster' },
+    ]
+  },
+  {
+    title: "📊 HOTEL ANALYTICS",
+    items: [
+      { name: "NIGHT AUDIT",        href: "/hotel/night-audit", icon: Moon,            feature: 'has_hotel_night_audit' },
+      { name: "OTA & CHANNELS",     href: "/hotel/ota",         icon: Radio,           feature: 'has_hotel_ota' },
+      { name: "REVENUE REPORTS",    href: "/hotel/reports",     icon: BarChart3,       feature: 'has_hotel_reports' },
+    ]
+  },
 ];
 
 
@@ -415,11 +473,25 @@ export function Sidebar({ className }: { className?: string }) {
     ].filter(Boolean) as any[]
   });
 
+  // Hotel: only show groups/items that the tenant has enabled via feature flags
+  const filteredHotelGroups = hotelMenuGroups
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => !item.feature || hasFeature(item.feature as string)),
+    }))
+    .filter(group => group.items.length > 0);
+
+  // Combined business + hotel menu (hotel appended at bottom if any hotel feature is on)
+  const combinedBusinessGroups = [
+    ...filteredBusinessGroups,
+    ...filteredHotelGroups,
+  ];
+
   const activeMenuGroups = isSuperadmin
     ? filteredSuperadminGroups
     : (isPartnerRoute || (!user?.businesses?.length && isPartner))
       ? filteredPartnerGroups
-      : isBusinessManager ? filteredBusinessGroups : filteredStaffGroups;
+      : isBusinessManager ? combinedBusinessGroups : filteredStaffGroups;
 
   return (
     <>

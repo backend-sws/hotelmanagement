@@ -27,6 +27,21 @@ export const PREMIUM_FEATURES = [
   { id: 'has_activity_logs', label: 'Activity Logs', description: 'Detailed audit logs for staff actions.' },
 ];
 
+export const HOTEL_FEATURES = [
+  { id: 'has_hotel_dashboard', label: '🏨 Hotel Dashboard', description: 'Live room grid, occupancy %, today\'s arrivals & departures.' },
+  { id: 'has_hotel_rooms', label: '🛏️ Room Management', description: 'Room types, pricing, rate plans, seasonal tariffs.' },
+  { id: 'has_hotel_reservations', label: '🛎️ Front Desk & Reservations', description: 'Guest check-in/out, booking calendar, guest folio & invoice.' },
+  { id: 'has_hotel_pos', label: '🍽️ Hotel POS & Restaurant', description: 'Restaurant billing, room service, KOT, post-to-room charges.' },
+  { id: 'has_hotel_housekeeping', label: '🧹 Housekeeping', description: 'Room cleaning status tracker, task assignment, issue reporting.' },
+  { id: 'has_hotel_shift_roster', label: '👷 Staff Shift Roster', description: 'Weekly/monthly drag-drop roster, shift swap workflow.' },
+  { id: 'has_hotel_night_audit', label: '🌙 Night Audit', description: 'Daily EOD process, auto room charge posting, day summary report.' },
+  { id: 'has_hotel_ota', label: '📡 OTA Integration', description: 'MakeMyTrip, Booking.com, Goibibo webhook booking sync & rate push.' },
+  { id: 'has_hotel_gst_compliance', label: '🧾 Hotel GST Compliance', description: 'Auto GST slab (0/12/18%), SAC codes, GSTR-1 for hotels.' },
+  { id: 'has_hotel_reports', label: '📊 Revenue Reports', description: 'Occupancy %, RevPAR, ARR/ADR, channel-wise revenue analytics.' },
+  { id: 'has_hotel_corporate', label: '🏢 Corporate & City Ledger', description: 'Corporate account billing, monthly consolidated invoices.' },
+];
+
+
 
 
 interface PlanFormModalProps {
@@ -61,6 +76,18 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
         has_finance: false,
         can_whitelabel_invoice: false,
         has_activity_logs: false,
+        // Hotel modules
+        has_hotel_dashboard: false,
+        has_hotel_rooms: false,
+        has_hotel_reservations: false,
+        has_hotel_pos: false,
+        has_hotel_housekeeping: false,
+        has_hotel_shift_roster: false,
+        has_hotel_night_audit: false,
+        has_hotel_ota: false,
+        has_hotel_gst_compliance: false,
+        has_hotel_reports: false,
+        has_hotel_corporate: false,
       },
       is_active: true
     }
@@ -96,6 +123,18 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
           has_finance: !!planToEdit.features?.has_finance,
           can_whitelabel_invoice: !!planToEdit.features?.can_whitelabel_invoice,
           has_activity_logs: !!planToEdit.features?.has_activity_logs,
+          // Hotel modules
+          has_hotel_dashboard: !!planToEdit.features?.has_hotel_dashboard,
+          has_hotel_rooms: !!planToEdit.features?.has_hotel_rooms,
+          has_hotel_reservations: !!planToEdit.features?.has_hotel_reservations,
+          has_hotel_pos: !!planToEdit.features?.has_hotel_pos,
+          has_hotel_housekeeping: !!planToEdit.features?.has_hotel_housekeeping,
+          has_hotel_shift_roster: !!planToEdit.features?.has_hotel_shift_roster,
+          has_hotel_night_audit: !!planToEdit.features?.has_hotel_night_audit,
+          has_hotel_ota: !!planToEdit.features?.has_hotel_ota,
+          has_hotel_gst_compliance: !!planToEdit.features?.has_hotel_gst_compliance,
+          has_hotel_reports: !!planToEdit.features?.has_hotel_reports,
+          has_hotel_corporate: !!planToEdit.features?.has_hotel_corporate,
         }
       });
     } else {
@@ -206,7 +245,7 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
               </div>
             </div>
 
-            <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2 border-b pb-2 mt-6">Premium Modules</h4>
+            <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2 border-b pb-2 mt-6">Premium Modules — Billing & CRM</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {PREMIUM_FEATURES.map(feature => {
                 const isSelected = form.watch(`features.${feature.id}` as any);
@@ -232,6 +271,44 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
                       </div>
                       <div className="flex-1">
                         <h4 className={`text-sm font-bold ${isSelected ? 'text-primary-700 dark:text-primary-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                          {feature.label}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                          {feature.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <h4 className="text-sm font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-2 border-b border-amber-200 dark:border-amber-800/50 pb-2 mt-8">🏨 Hotel Management Modules</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {HOTEL_FEATURES.map(feature => {
+                const isSelected = form.watch(`features.${feature.id}` as any);
+                return (
+                  <div 
+                    key={feature.id} 
+                    onClick={() => form.setValue(`features.${feature.id}` as any, !isSelected, { shouldDirty: true })}
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      isSelected 
+                        ? 'bg-amber-500/10 border-amber-500/50' 
+                        : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-amber-200 dark:hover:border-amber-800/40'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                        isSelected ? 'bg-amber-500 border-amber-500' : 'border-slate-400 dark:border-slate-500'
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                            <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className={`text-sm font-bold ${isSelected ? 'text-amber-700 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200'}`}>
                           {feature.label}
                         </h4>
                         <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">

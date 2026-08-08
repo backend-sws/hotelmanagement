@@ -115,6 +115,10 @@ const PartnerResourcesPage = lazy(() => import('@/features/partner/resources/pag
 // Superadmin Payouts
 const SuperadminPayouts = lazy(() => import('@/features/superadmin/payouts/pages/PayoutsPage'));
 
+// 🏨 Hotel Management — Phase 1 (Rooms)
+const HotelRoomsPage    = lazy(() => import('@/features/hotel/rooms/pages/RoomsPage').then(m => ({ default: m.RoomsPage })));
+const HotelRoomTypesPage = lazy(() => import('@/features/hotel/rooms/pages/RoomTypesPage').then(m => ({ default: m.RoomTypesPage })));
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -347,6 +351,24 @@ function App() {
             <Route path="/reports/profit-loss" element={<Navigate to="/business/reports/profit-loss" replace />} />
             <Route path="/reports/balance-sheet" element={<Navigate to="/business/reports/balance-sheet" replace />} />
             <Route path="/reports/sales" element={<Navigate to="/business/reports/sales" replace />} />
+
+            {/* ═══════════════════════════════════════════════════════════ */}
+            {/* 🏨 HOTEL MANAGEMENT ROUTES — Phase 1: Room Management       */}
+            {/* ═══════════════════════════════════════════════════════════ */}
+            <Route path="/hotel/rooms" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_rooms">
+                  <HotelRoomsPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/room-types" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_rooms">
+                  <HotelRoomTypesPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
 
             {/* Superadmin Routes */}
             <Route path="/superadmin/dashboard" element={<SuperadminRoute><PermissionGuard permission="view_dashboard"><SuperadminDashboard /></PermissionGuard></SuperadminRoute>} />

@@ -253,6 +253,27 @@ Route::prefix('v1')->group(function () {
                 Route::get('activity-logs', [\App\Http\Controllers\Api\Business\ActivityLogController::class, 'index']);
             });
 
+            // ═══════════════════════════════════════════════════════════════
+            // 🏨 HOTEL MANAGEMENT MODULE — Phase 1: Property + Rooms
+            // ═══════════════════════════════════════════════════════════════
+
+            // 🔒 Hotel Rooms & Property (feature: has_hotel_rooms)
+            Route::middleware(['feature:has_hotel_rooms'])->prefix('hotel')->group(function () {
+                // Property Settings
+                Route::get('property-settings', [\App\Http\Controllers\Api\Business\HotelPropertyController::class, 'show']);
+                Route::post('property-settings', [\App\Http\Controllers\Api\Business\HotelPropertyController::class, 'update']);
+
+                // Room Types
+                Route::apiResource('room-types', \App\Http\Controllers\Api\Business\HotelRoomTypeController::class);
+
+                // Rooms
+                Route::patch('rooms/{id}/status', [\App\Http\Controllers\Api\Business\HotelRoomController::class, 'updateStatus']);
+                Route::apiResource('rooms', \App\Http\Controllers\Api\Business\HotelRoomController::class);
+
+                // Rate Plans
+                Route::apiResource('rate-plans', \App\Http\Controllers\Api\Business\HotelRatePlanController::class);
+            });
+
             // Subscription & Billing
             Route::get('subscriptions/history', [\App\Http\Controllers\Api\Business\SubscriptionController::class, 'history']);
             Route::post('subscriptions/create-order', [\App\Http\Controllers\Api\Business\SubscriptionController::class, 'createOrder']);
