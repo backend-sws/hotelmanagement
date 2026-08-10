@@ -115,7 +115,8 @@ const PartnerResourcesPage = lazy(() => import('@/features/partner/resources/pag
 // Superadmin Payouts
 const SuperadminPayouts = lazy(() => import('@/features/superadmin/payouts/pages/PayoutsPage'));
 
-// 🏨 Hotel Management — Phase 1 (Rooms)
+// 🏨 Hotel Management — Phase 2 (Dashboard + Rooms + Front Desk)
+const HotelDashboardPage = lazy(() => import('@/features/hotel/dashboard/HotelDashboardPage').then(m => ({ default: m.HotelDashboardPage })));
 const HotelRoomsPage    = lazy(() => import('@/features/hotel/rooms/pages/RoomsPage').then(m => ({ default: m.RoomsPage })));
 const HotelRoomTypesPage = lazy(() => import('@/features/hotel/rooms/pages/RoomTypesPage').then(m => ({ default: m.RoomTypesPage })));
 const HotelRatePlansPage = lazy(() => import('@/features/hotel/rooms/pages/RatePlansPage').then(m => ({ default: m.RatePlansPage })));
@@ -123,6 +124,10 @@ const HotelGuestsPage = lazy(() => import('@/features/hotel/guests/pages/GuestsP
 const FrontDeskPage = lazy(() => import('@/features/hotel/bookings/pages/FrontDeskPage').then(m => ({ default: m.FrontDeskPage })));
 const BookingDetailPage = lazy(() => import('@/features/hotel/bookings/pages/BookingDetailPage').then(m => ({ default: m.BookingDetailPage })));
 const BookingCalendarPage = lazy(() => import('@/features/hotel/bookings/pages/BookingCalendarPage').then(m => ({ default: m.BookingCalendarPage })));
+// 🏨 Hotel Phase 3 — POS
+const RestaurantPosPage = lazy(() => import('@/features/hotel/pos/pages/RestaurantPosPage').then(m => ({ default: m.RestaurantPosPage })));
+const HotelOutletsPage  = lazy(() => import('@/features/hotel/pos/pages/OutletsPage').then(m => ({ default: m.OutletsPage })));
+const HotelServicesPage = lazy(() => import('@/features/hotel/pos/pages/ServicesPage').then(m => ({ default: m.ServicesPage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -358,8 +363,15 @@ function App() {
             <Route path="/reports/sales" element={<Navigate to="/business/reports/sales" replace />} />
 
             {/* ═══════════════════════════════════════════════════════════ */}
-            {/* 🏨 HOTEL MANAGEMENT ROUTES — Phase 1: Room Management       */}
+            {/* 🏨 HOTEL MANAGEMENT ROUTES — Phase 2: Dashboard + Rooms + FD */}
             {/* ═══════════════════════════════════════════════════════════ */}
+            <Route path="/hotel/dashboard" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_dashboard">
+                  <HotelDashboardPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
             <Route path="/hotel/rooms" element={
               <BusinessRoute>
                 <FeatureGuard feature="has_hotel_rooms">
@@ -406,6 +418,29 @@ function App() {
               <BusinessRoute>
                 <FeatureGuard feature="has_hotel_reservations">
                   <BookingDetailPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+
+            {/* 🏨 HOTEL POS ROUTES — Phase 3 */}
+            <Route path="/hotel/pos/restaurant" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_pos">
+                  <RestaurantPosPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/pos/outlets" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_pos">
+                  <HotelOutletsPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/pos/services" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_pos">
+                  <HotelServicesPage />
                 </FeatureGuard>
               </BusinessRoute>
             } />

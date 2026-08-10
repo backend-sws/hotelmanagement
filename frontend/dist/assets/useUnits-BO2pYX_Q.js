@@ -1,1 +1,0 @@
-import{r as e}from"./authStore-BhMeA7rZ.js";import{Ct as t,St as n,wt as r}from"./index-IGFhfCd8.js";var i=()=>t({queryKey:[`units`],queryFn:async()=>(await e.get(`/business/units`)).data.data}),a=()=>{let t=r();return n({mutationFn:async t=>(await e.post(`/business/units`,t)).data,onSuccess:()=>{t.invalidateQueries({queryKey:[`units`]})}})};export{i as n,a as t};

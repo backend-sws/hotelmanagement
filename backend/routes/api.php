@@ -257,6 +257,14 @@ Route::prefix('v1')->group(function () {
             // 🏨 HOTEL MANAGEMENT MODULE — Phase 1: Property + Rooms
             // ═══════════════════════════════════════════════════════════════
 
+            // 🔒 Hotel Dashboard (feature: has_hotel_dashboard)
+            Route::middleware(['feature:has_hotel_dashboard'])->prefix('hotel')->group(function () {
+                Route::get('dashboard', [\App\Http\Controllers\Api\Business\HotelDashboardController::class, 'index']);
+                Route::get('dashboard/room-grid', [\App\Http\Controllers\Api\Business\HotelDashboardController::class, 'roomGrid']);
+                Route::get('dashboard/today-arrivals', [\App\Http\Controllers\Api\Business\HotelDashboardController::class, 'todayArrivals']);
+                Route::get('dashboard/today-departures', [\App\Http\Controllers\Api\Business\HotelDashboardController::class, 'todayDepartures']);
+            });
+
             // 🔒 Hotel Rooms & Property (feature: has_hotel_rooms)
             Route::middleware(['feature:has_hotel_rooms'])->prefix('hotel')->group(function () {
                 // Property Settings
@@ -288,6 +296,30 @@ Route::prefix('v1')->group(function () {
                 // Folio Charges
                 Route::post('bookings/{booking}/folio', [\App\Http\Controllers\Api\Business\HotelFolioController::class, 'store']);
                 Route::delete('bookings/{booking}/folio/{charge}', [\App\Http\Controllers\Api\Business\HotelFolioController::class, 'destroy']);
+            });
+
+            // 🔒 Hotel POS (feature: has_hotel_pos)
+            Route::middleware(['feature:has_hotel_pos'])->prefix('hotel')->group(function () {
+                // Outlets (Restaurant, Bar, Spa, etc.)
+                Route::get('outlets', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'indexOutlets']);
+                Route::post('outlets', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'storeOutlet']);
+                Route::put('outlets/{id}', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'updateOutlet']);
+                Route::delete('outlets/{id}', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'destroyOutlet']);
+
+                // Services / Menu Catalog
+                Route::get('services', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'indexServices']);
+                Route::post('services', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'storeService']);
+                Route::put('services/{id}', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'updateService']);
+                Route::delete('services/{id}', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'destroyService']);
+
+                // POS Orders
+                Route::get('pos-orders', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'indexOrders']);
+                Route::get('pos-orders/{id}', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'showOrder']);
+                Route::post('pos-orders', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'storeOrder']);
+                Route::patch('pos-orders/{id}/status', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'updateStatus']);
+                Route::post('pos-orders/{id}/bill', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'bill']);
+                Route::post('pos-orders/{id}/post-to-room', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'postToRoom']);
+                Route::post('pos-orders/{id}/kot', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'kot']);
             });
 
             // Subscription & Billing

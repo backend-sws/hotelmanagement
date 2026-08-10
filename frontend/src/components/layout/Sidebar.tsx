@@ -170,6 +170,8 @@ export const hotelMenuGroups = [
     items: [
       { name: "RESTAURANT POS",     href: "/hotel/pos/restaurant", icon: UtensilsCrossed, feature: 'has_hotel_pos' },
       { name: "ROOM SERVICE",       href: "/hotel/pos/room-service", icon: ConciergeBell, feature: 'has_hotel_pos' },
+      { name: "OUTLETS",            href: "/hotel/pos/outlets",    icon: Building,        feature: 'has_hotel_pos' },
+      { name: "MENU & SERVICES",    href: "/hotel/pos/services",   icon: List,            feature: 'has_hotel_pos' },
     ]
   },
   {
