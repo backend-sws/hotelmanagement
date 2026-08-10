@@ -41,7 +41,7 @@ export function FilterBar({
     <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
       {onSearchChange && (
         <div className="relative flex-1 w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute z-10 pointer-events-none left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder={searchPlaceholder}
             value={searchQuery || ''}

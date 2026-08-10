@@ -290,7 +290,7 @@ export default function NewStockTransferPage() {
               {/* Product Search Box */}
               <div className="relative mb-6">
                 <div className="relative">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-zinc-500" />
+                  <Search className="absolute z-10 pointer-events-none left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-zinc-500" />
                   <input
                     placeholder={fromLocationId ? "Type at least 2 characters to search product name or item code…" : "Please select Source Godown first to search inventory…"}
                     value={productSearch}

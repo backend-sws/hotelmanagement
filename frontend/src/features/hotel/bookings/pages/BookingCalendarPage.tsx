@@ -3,12 +3,13 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageLoadingSkeleton } from '@/components/ui/PageLoadingSkeleton';
-import { useHotelBookings } from '../api/useBookings';
+import { useHotelBookings, useUpdateHotelBooking } from '../api/useBookings';
 import { useHotelRooms } from '../../rooms/api/useHotelRooms';
-import { format, addDays, subDays, isWithinInterval, parseISO, startOfDay } from 'date-fns';
+import { format, addDays, subDays, isWithinInterval, parseISO, startOfDay, differenceInDays } from 'date-fns';
 import type { HotelBooking } from '../schemas/bookingSchema';
 import type { HotelRoom } from '../../rooms/schemas/roomSchema';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export function BookingCalendarPage() {
   const navigate = useNavigate();
@@ -39,6 +40,46 @@ export function BookingCalendarPage() {
       }) &&
       date.getTime() !== startOfDay(parseISO(b.check_out_date)).getTime() // Checkout day is empty for next check-in
     );
+  };
+
+  const updateBooking = useUpdateHotelBooking();
+
+  const handleDragStart = (e: React.DragEvent, booking: HotelBooking) => {
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      bookingId: booking.id,
+      originalCheckIn: booking.check_in_date,
+      originalCheckOut: booking.check_out_date,
+    }));
+  };
+
+  const handleDrop = async (e: React.DragEvent, roomId: number, targetDate: Date) => {
+    e.preventDefault();
+    const dataStr = e.dataTransfer.getData('application/json');
+    if (!dataStr) return;
+    
+    try {
+      const data = JSON.parse(dataStr);
+      const booking = allBookings.find(b => b.id === data.bookingId);
+      if (!booking) return;
+
+      const originalCheckIn = parseISO(booking.check_in_date);
+      const daysDiff = differenceInDays(targetDate, originalCheckIn);
+      
+      const newCheckIn = addDays(parseISO(booking.check_in_date), daysDiff);
+      const newCheckOut = addDays(parseISO(booking.check_out_date), daysDiff);
+
+      await updateBooking.mutateAsync({
+        id: booking.id!,
+        data: {
+          room_id: roomId,
+          check_in_date: format(newCheckIn, 'yyyy-MM-dd'),
+          check_out_date: format(newCheckOut, 'yyyy-MM-dd')
+        }
+      });
+      toast.success('Booking updated successfully');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update booking');
+    }
   };
 
   const isLoading = isLoadingRooms || isLoadingBookings;
@@ -114,10 +155,17 @@ export function BookingCalendarPage() {
                         const booking = getBooking(room.id!, date);
                         
                         return (
-                          <td key={i} className="border-l border-slate-100 dark:border-white/5 p-1 min-w-[90px]">
+                          <td 
+                            key={i} 
+                            className="border-l border-slate-100 dark:border-white/5 p-1 min-w-[90px]"
+                            onDragOver={e => e.preventDefault()}
+                            onDrop={e => handleDrop(e, room.id!, date)}
+                          >
                             {booking ? (
                               <div 
                                 onClick={() => navigate(`/hotel/bookings/${booking.id}`)}
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, booking)}
                                 className={`h-11 rounded-lg flex items-center justify-center text-xs font-bold px-2 cursor-pointer truncate shadow-sm hover:scale-[1.02] transition-transform
                                   ${booking.status === 'checked_in' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200/50 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/20' :
                                     booking.status === 'reserved' ? 'bg-orange-100 text-orange-700 border border-orange-200/50 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/20' :

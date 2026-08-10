@@ -36,9 +36,9 @@ Hotel Owner / Business Admin
 |---|---|---|---|
 | Phase 0 | Superadmin Module Toggle | ✅ Done | 100% |
 | Phase 1 | Hotel Rooms & Property Setup | ✅ Done | 100% |
-| Phase 2 | Front Desk + Reservations + Guest | 🔄 In Progress | 0% |
-| Phase 3 | Hotel POS + Room Service | ⬜ Pending | 0% |
-| Phase 4 | Housekeeping Management | ⬜ Pending | 0% |
+| Phase 2 | Front Desk + Reservations + Guest | ✅ Done | 100% |
+| Phase 3 | Hotel POS + Room Service | ✅ Done | 100% |
+| Phase 4 | Housekeeping Management | ✅ Done | 100% |
 | Phase 5 | Staff Shift Roster + HR | ⬜ Pending | 0% |
 | Phase 6 | OTA + Channel Manager Integration | ⬜ Pending | 0% |
 | Phase 7 | Night Audit + GST Compliance | ⬜ Pending | 0% |

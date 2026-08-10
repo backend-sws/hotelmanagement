@@ -270,6 +270,17 @@ input[type="number"] {
 
 @media print {
   @page {
-    margin-bottom: 0;
+    margin: 0;
+  }
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background-color: white !important;
+  }
+  .no-print, .no-print * {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
   }
 }

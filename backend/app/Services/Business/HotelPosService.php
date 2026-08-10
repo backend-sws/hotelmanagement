@@ -8,7 +8,10 @@ use App\Models\HotelPosOrder;
 use App\Models\HotelPosOrderItem;
 use App\Models\HotelFolioCharge;
 use App\Models\HotelBooking;
+use App\Models\HotelPosTable;
+use App\Models\HotelTableReservation;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class HotelPosService
 {
@@ -48,7 +51,7 @@ class HotelPosService
             ->where('business_id', $businessId)
             ->when(!empty($filters['outlet_id']), fn($q) => $q->where('outlet_id', $filters['outlet_id']))
             ->when(!empty($filters['category']),  fn($q) => $q->where('category', $filters['category']))
-            ->when(isset($filters['is_available']), fn($q) => $q->where('is_available', $filters['is_available']))
+            ->when(isset($filters['is_available']), fn($q) => $q->where('is_available', filter_var($filters['is_available'], FILTER_VALIDATE_BOOLEAN)))
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
@@ -135,7 +138,24 @@ class HotelPosService
             }
 
             $discount = floatval($data['discount_amount'] ?? 0);
-            $total = round($subtotal + $taxTotal - $discount, 2);
+            
+            // Adjust for reservation deposit if applicable
+            $depositApplied = 0;
+            if (!empty($data['reservation_id'])) {
+                $reservation = HotelTableReservation::where('business_id', $businessId)->find($data['reservation_id']);
+                if ($reservation) {
+                    $depositApplied = floatval($reservation->deposit_amount);
+                    $reservation->update(['status' => 'seated']);
+                }
+            }
+            
+            $total = round($subtotal + $taxTotal - $discount - $depositApplied, 2);
+            $total = max(0, $total); // Prevent negative totals if deposit > order
+
+            // Update table status if dine_in
+            if (!empty($data['table_id']) && ($data['order_type'] ?? 'dine_in') === 'dine_in') {
+                HotelPosTable::where('id', $data['table_id'])->update(['status' => 'occupied']);
+            }
 
             // 3. Create order
             $order = HotelPosOrder::create([
@@ -144,11 +164,16 @@ class HotelPosService
                 'outlet_id'       => $data['outlet_id'],
                 'booking_id'      => $data['booking_id'] ?? null,
                 'table_no'        => $data['table_no'] ?? null,
+                'table_id'        => $data['table_id'] ?? null,
+                'reservation_id'  => $data['reservation_id'] ?? null,
+                'guest_name'      => $data['guest_name'] ?? null,
+                'guest_phone'     => $data['guest_phone'] ?? null,
                 'order_type'      => $data['order_type'] ?? 'dine_in',
                 'status'          => 'pending',
                 'subtotal'        => $subtotal,
                 'tax_amount'      => $taxTotal,
                 'discount_amount' => $discount,
+                'deposit_applied' => $depositApplied,
                 'total'           => $total,
                 'notes'           => $data['notes'] ?? null,
                 'billed_by'       => $userId,
@@ -181,6 +206,14 @@ class HotelPosService
             $order->billed_by    = $userId;
             $order->billed_at    = now();
             $order->save();
+
+            // Free the table
+            if ($order->table_id) {
+                HotelPosTable::where('id', $order->table_id)->update(['status' => 'available']);
+            }
+            if ($order->reservation_id) {
+                HotelTableReservation::where('id', $order->reservation_id)->update(['status' => 'completed']);
+            }
 
             return $order->fresh(['outlet', 'items']);
         });
@@ -232,5 +265,76 @@ class HotelPosService
         $order->status = 'processing';
         $order->save();
         return $order;
+    }
+
+    // ─── Tables ─────────────────────────────────────────────────────────────
+
+    public function getTables(int $businessId, array $filters = []): \Illuminate\Database\Eloquent\Collection
+    {
+        return HotelPosTable::with('outlet')
+            ->where('business_id', $businessId)
+            ->when(!empty($filters['outlet_id']), fn($q) => $q->where('outlet_id', $filters['outlet_id']))
+            ->when(!empty($filters['status']),    fn($q) => $q->where('status', $filters['status']))
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function createTable(int $businessId, array $data): HotelPosTable
+    {
+        return HotelPosTable::create(array_merge($data, ['business_id' => $businessId]));
+    }
+
+    public function updateTable(int $tableId, int $businessId, array $data): HotelPosTable
+    {
+        $table = HotelPosTable::where('business_id', $businessId)->findOrFail($tableId);
+        $table->update($data);
+        return $table;
+    }
+
+    public function deleteTable(int $tableId, int $businessId): bool
+    {
+        $table = HotelPosTable::where('business_id', $businessId)->findOrFail($tableId);
+        return $table->delete();
+    }
+
+    // ─── Reservations ──────────────────────────────────────────────────────────
+
+    public function getReservations(int $businessId, array $filters = []): \Illuminate\Database\Eloquent\Collection
+    {
+        return HotelTableReservation::with(['outlet', 'table'])
+            ->where('business_id', $businessId)
+            ->when(!empty($filters['outlet_id']), fn($q) => $q->where('outlet_id', $filters['outlet_id']))
+            ->when(!empty($filters['status']),    fn($q) => $q->where('status', $filters['status']))
+            ->when(!empty($filters['date']),      fn($q) => $q->whereDate('reservation_time', $filters['date']))
+            ->orderBy('reservation_time')
+            ->get();
+    }
+
+    public function createReservation(int $businessId, array $data): HotelTableReservation
+    {
+        return DB::transaction(function () use ($businessId, $data) {
+            $reservation = HotelTableReservation::create(array_merge($data, ['business_id' => $businessId]));
+            HotelPosTable::where('id', $data['table_id'])->update(['status' => 'reserved']);
+            return $reservation->load(['outlet', 'table']);
+        });
+    }
+
+    public function updateReservation(int $reservationId, int $businessId, array $data): HotelTableReservation
+    {
+        $reservation = HotelTableReservation::where('business_id', $businessId)->findOrFail($reservationId);
+        $reservation->update($data);
+        
+        if (in_array($data['status'], ['cancelled', 'completed', 'no_show'])) {
+            HotelPosTable::where('id', $reservation->table_id)->update(['status' => 'available']);
+        }
+        
+        return $reservation->load(['outlet', 'table']);
+    }
+
+    public function deleteReservation(int $reservationId, int $businessId): bool
+    {
+        $reservation = HotelTableReservation::where('business_id', $businessId)->findOrFail($reservationId);
+        HotelPosTable::where('id', $reservation->table_id)->update(['status' => 'available']);
+        return $reservation->delete();
     }
 }

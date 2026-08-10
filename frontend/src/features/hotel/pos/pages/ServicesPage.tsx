@@ -94,7 +94,7 @@ export function ServicesPage() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50 dark:bg-[#09090b] p-4 md:p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center flex-wrap gap-3">
           <div>
@@ -119,7 +119,7 @@ export function ServicesPage() {
             title="Food & Beverage" 
             value={services.filter(s => s.category === 'food' || s.category === 'beverage').length} 
             icon={<UtensilsCrossed />} 
-            glowColor={filterCat === 'food' ? 'orange' : 'amber'}
+            glowColor={filterCat === 'food' ? 'amber' : 'amber'}
             onClick={() => setFilterCat('food')}
           />
           <CustomKpiCard 
@@ -139,7 +139,7 @@ export function ServicesPage() {
         {/* Filters */}
         <div className="flex gap-2 flex-wrap">
           <div className="relative flex-1 min-w-[250px]">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute z-10 pointer-events-none left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <Input 
               placeholder="Search services by name..." 
               value={search} 
@@ -147,14 +147,18 @@ export function ServicesPage() {
               className="pl-11 h-12 rounded-2xl bg-white dark:bg-[#111118] border-slate-200/80 dark:border-white/10 shadow-sm" 
             />
           </div>
-          <Select value={filterOutlet} onChange={e => setFilterOutlet(e.target.value)} className="w-48 h-12 rounded-2xl bg-white dark:bg-[#111118] border-slate-200/80 dark:border-white/10 shadow-sm">
-            <option value="">All Outlets</option>
-            {outlets.map(o => <option key={o.id} value={String(o.id)}>{o.name}</option>)}
-          </Select>
-          <Select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="w-48 h-12 rounded-2xl bg-white dark:bg-[#111118] border-slate-200/80 dark:border-white/10 shadow-sm">
-            <option value="">All Categories</option>
-            {SERVICE_CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-          </Select>
+          <div className="w-full sm:w-48">
+            <Select value={filterOutlet} onChange={e => setFilterOutlet(e.target.value)} className="w-full h-12 rounded-2xl bg-white dark:bg-[#111118] border-slate-200/80 dark:border-white/10 shadow-sm">
+              <option value="">All Outlets</option>
+              {outlets.map(o => <option key={o.id} value={String(o.id)}>{o.name}</option>)}
+            </Select>
+          </div>
+          <div className="w-full sm:w-48">
+            <Select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="w-full h-12 rounded-2xl bg-white dark:bg-[#111118] border-slate-200/80 dark:border-white/10 shadow-sm">
+              <option value="">All Categories</option>
+              {SERVICE_CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+            </Select>
+          </div>
         </div>
 
         {/* Services grouped by outlet */}

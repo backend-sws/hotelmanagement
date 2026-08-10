@@ -154,6 +154,10 @@ class HotelPosController extends BaseController
             'outlet_id'       => 'required|exists:hotel_outlets,id',
             'booking_id'      => 'nullable|exists:hotel_bookings,id',
             'table_no'        => 'nullable|string|max:50',
+            'table_id'        => 'nullable|exists:hotel_pos_tables,id',
+            'reservation_id'  => 'nullable|exists:hotel_table_reservations,id',
+            'guest_name'      => 'nullable|string|max:255',
+            'guest_phone'     => 'nullable|string|max:50',
             'order_type'      => 'required|in:dine_in,room_service,takeaway,post_to_room',
             'discount_amount' => 'nullable|numeric|min:0',
             'notes'           => 'nullable|string',
@@ -211,12 +215,124 @@ class HotelPosController extends BaseController
         }, 'Charges posted to room folio');
     }
 
-    #[OA\Post(path: '/business/hotel/pos-orders/{id}/kot', summary: 'Mark KOT as printed', tags: ['Hotel - POS'], security: [['sanctum' => []]], responses: [new OA\Response(response: 200, description: 'KOT printed')])]
-    public function kot(Request $request, $id)
+    #[OA\Post(path: '/business/hotel/pos-orders/{id}/kot-print', summary: 'Mark KOT Printed', tags: ['Hotel - POS'], security: [['sanctum' => []]], responses: [new OA\Response(response: 200, description: 'KOT printed')])]
+    public function kotPrint(Request $request, $id)
     {
         return $this->executeAction(function () use ($request, $id) {
             $businessId = app('current_business_id') ?? $request->user()->business_id;
             return $this->posService->markKotPrinted((int)$id, $businessId);
         }, 'KOT marked as printed');
+    }
+
+    // ─── Tables ─────────────────────────────────────────────────────────────
+
+    #[OA\Get(path: '/business/hotel/tables', summary: 'List POS Tables', tags: ['Hotel - POS'], security: [['sanctum' => []]], responses: [new OA\Response(response: 200, description: 'Tables retrieved')])]
+    public function indexTables(Request $request)
+    {
+        return $this->executeAction(function () use ($request) {
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
+            return $this->posService->getTables($businessId, $request->only(['outlet_id', 'status']));
+        }, 'Tables retrieved');
+    }
+
+    #[OA\Post(path: '/business/hotel/tables', summary: 'Create POS Table', tags: ['Hotel - POS'], security: [['sanctum' => []]], responses: [new OA\Response(response: 201, description: 'Table created')])]
+    public function storeTable(Request $request)
+    {
+        $validated = $request->validate([
+            'outlet_id' => 'required|exists:hotel_outlets,id',
+            'name'      => 'required|string|max:255',
+            'capacity'  => 'integer|min:1',
+            'status'    => 'in:available,occupied,reserved,out_of_service',
+        ]);
+        return $this->executeAction(function () use ($request, $validated) {
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
+            return $this->posService->createTable($businessId, $validated);
+        }, 'Table created', 201);
+    }
+
+    #[OA\Put(path: '/business/hotel/tables/{id}', summary: 'Update POS Table', tags: ['Hotel - POS'], security: [['sanctum' => []]], responses: [new OA\Response(response: 200, description: 'Table updated')])]
+    public function updateTable(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name'     => 'string|max:255',
+            'capacity' => 'integer|min:1',
+            'status'   => 'in:available,occupied,reserved,out_of_service',
+        ]);
+        return $this->executeAction(function () use ($request, $id, $validated) {
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
+            return $this->posService->updateTable((int)$id, $businessId, $validated);
+        }, 'Table updated');
+    }
+
+    #[OA\Delete(path: '/business/hotel/tables/{id}', summary: 'Delete POS Table', tags: ['Hotel - POS'], security: [['sanctum' => []]], responses: [new OA\Response(response: 200, description: 'Table deleted')])]
+    public function destroyTable(Request $request, $id)
+    {
+        return $this->executeAction(function () use ($request, $id) {
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
+            $this->posService->deleteTable((int)$id, $businessId);
+            return null;
+        }, 'Table deleted');
+    }
+
+    // ─── Reservations ───────────────────────────────────────────────────────
+
+    #[OA\Get(path: '/business/hotel/table-reservations', summary: 'List Table Reservations', tags: ['Hotel - POS'], security: [['sanctum' => []]], responses: [new OA\Response(response: 200, description: 'Reservations retrieved')])]
+    public function indexReservations(Request $request)
+    {
+        return $this->executeAction(function () use ($request) {
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
+            return $this->posService->getReservations($businessId, $request->only(['outlet_id', 'status', 'date']));
+        }, 'Reservations retrieved');
+    }
+
+    #[OA\Post(path: '/business/hotel/table-reservations', summary: 'Create Table Reservation', tags: ['Hotel - POS'], security: [['sanctum' => []]], responses: [new OA\Response(response: 201, description: 'Reservation created')])]
+    public function storeReservation(Request $request)
+    {
+        $validated = $request->validate([
+            'outlet_id'        => 'required|exists:hotel_outlets,id',
+            'table_id'         => 'required|exists:hotel_pos_tables,id',
+            'guest_name'       => 'required|string|max:255',
+            'guest_phone'      => 'nullable|string|max:20',
+            'guest_count'      => 'integer|min:1',
+            'reservation_time' => 'required|date',
+            'grace_period_minutes' => 'integer|min:0',
+            'deposit_amount'   => 'numeric|min:0',
+            'special_requests' => 'nullable|string',
+            'status'           => 'in:pending,seated,cancelled,completed,no_show',
+        ]);
+        return $this->executeAction(function () use ($request, $validated) {
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
+            return $this->posService->createReservation($businessId, $validated);
+        }, 'Reservation created', 201);
+    }
+
+    #[OA\Put(path: '/business/hotel/table-reservations/{id}', summary: 'Update Table Reservation', tags: ['Hotel - POS'], security: [['sanctum' => []]], responses: [new OA\Response(response: 200, description: 'Reservation updated')])]
+    public function updateReservation(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'table_id'         => 'exists:hotel_pos_tables,id',
+            'guest_name'       => 'string|max:255',
+            'guest_phone'      => 'nullable|string|max:20',
+            'guest_count'      => 'integer|min:1',
+            'reservation_time' => 'date',
+            'grace_period_minutes' => 'integer|min:0',
+            'deposit_amount'   => 'numeric|min:0',
+            'special_requests' => 'nullable|string',
+            'status'           => 'in:pending,seated,cancelled,completed,no_show',
+        ]);
+        return $this->executeAction(function () use ($request, $id, $validated) {
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
+            return $this->posService->updateReservation((int)$id, $businessId, $validated);
+        }, 'Reservation updated');
+    }
+
+    #[OA\Delete(path: '/business/hotel/table-reservations/{id}', summary: 'Delete Table Reservation', tags: ['Hotel - POS'], security: [['sanctum' => []]], responses: [new OA\Response(response: 200, description: 'Reservation deleted')])]
+    public function destroyReservation(Request $request, $id)
+    {
+        return $this->executeAction(function () use ($request, $id) {
+            $businessId = app('current_business_id') ?? $request->user()->business_id;
+            $this->posService->deleteReservation((int)$id, $businessId);
+            return null;
+        }, 'Reservation deleted');
     }
 }

@@ -172,13 +172,17 @@ export const hotelMenuGroups = [
       { name: "ROOM SERVICE",       href: "/hotel/pos/room-service", icon: ConciergeBell, feature: 'has_hotel_pos' },
       { name: "OUTLETS",            href: "/hotel/pos/outlets",    icon: Building,        feature: 'has_hotel_pos' },
       { name: "MENU & SERVICES",    href: "/hotel/pos/services",   icon: List,            feature: 'has_hotel_pos' },
+      { name: "TABLE SETUP",        href: "/hotel/pos/tables",     icon: LayoutDashboard, feature: 'has_hotel_pos' },
+      { name: "TABLE RESERVATIONS", href: "/hotel/pos/reservations", icon: CalendarDays,  feature: 'has_hotel_pos' },
     ]
   },
   {
     title: "👷 HOUSEKEEPING & STAFF",
     items: [
       { name: "HOUSEKEEPING BOARD", href: "/hotel/housekeeping", icon: Sparkles,        feature: 'has_hotel_housekeeping' },
-      { name: "SHIFT ROSTER",       href: "/hotel/roster",      icon: CalendarDays,    feature: 'has_hotel_shift_roster' },
+      { name: "STAFF ROSTER",       href: "/hotel/roster",       icon: CalendarDays,    feature: 'has_hotel_shift_roster' },
+      { name: "SHIFTS SETUP",       href: "/hotel/shifts",       icon: Clock,           feature: 'has_hotel_shift_roster' },
+      { name: "DEPARTMENTS",        href: "/hotel/departments",  icon: Building2,       feature: 'has_hotel_shift_roster' },
     ]
   },
   {

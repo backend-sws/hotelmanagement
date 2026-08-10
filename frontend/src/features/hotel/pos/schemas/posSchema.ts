@@ -39,6 +39,8 @@ export interface PosOrder {
   outlet_id: number;
   booking_id?: number;
   table_no?: string;
+  guest_name?: string;
+  guest_phone?: string;
   order_type: 'dine_in' | 'room_service' | 'takeaway' | 'post_to_room';
   status: 'pending' | 'processing' | 'served' | 'billed' | 'cancelled';
   subtotal: number;

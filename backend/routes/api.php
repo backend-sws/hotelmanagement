@@ -319,7 +319,19 @@ Route::prefix('v1')->group(function () {
                 Route::patch('pos-orders/{id}/status', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'updateStatus']);
                 Route::post('pos-orders/{id}/bill', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'bill']);
                 Route::post('pos-orders/{id}/post-to-room', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'postToRoom']);
-                Route::post('pos-orders/{id}/kot', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'kot']);
+                Route::post('pos-orders/{id}/kot', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'kotPrint']);
+
+                // Tables
+                Route::get('tables', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'indexTables']);
+                Route::post('tables', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'storeTable']);
+                Route::put('tables/{id}', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'updateTable']);
+                Route::delete('tables/{id}', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'destroyTable']);
+
+                // Table Reservations
+                Route::get('table-reservations', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'indexReservations']);
+                Route::post('table-reservations', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'storeReservation']);
+                Route::put('table-reservations/{id}', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'updateReservation']);
+                Route::delete('table-reservations/{id}', [\App\Http\Controllers\Api\Business\HotelPosController::class, 'destroyReservation']);
             });
 
             // Subscription & Billing
@@ -327,9 +339,42 @@ Route::prefix('v1')->group(function () {
             Route::post('subscriptions/create-order', [\App\Http\Controllers\Api\Business\SubscriptionController::class, 'createOrder']);
             Route::post('subscriptions/verify-payment', [\App\Http\Controllers\Api\Business\SubscriptionController::class, 'verifyPayment']);
             Route::get('subscriptions/{paymentId}/invoice', [\App\Http\Controllers\Api\Business\SubscriptionController::class, 'invoicePdf']);
+            // 🔒 Hotel Housekeeping (feature: has_hotel_housekeeping)
+            Route::middleware(['feature:has_hotel_housekeeping'])->prefix('hotel')->group(function () {
+                Route::get('housekeeping', [\App\Http\Controllers\Api\Business\HotelHousekeepingController::class, 'index']);
+                Route::post('housekeeping', [\App\Http\Controllers\Api\Business\HotelHousekeepingController::class, 'store']);
+                Route::patch('housekeeping/{task}/status', [\App\Http\Controllers\Api\Business\HotelHousekeepingController::class, 'updateStatus']);
+                Route::patch('housekeeping/{task}/assign', [\App\Http\Controllers\Api\Business\HotelHousekeepingController::class, 'assign']);
+                Route::post('housekeeping/{task}/report-issue', [\App\Http\Controllers\Api\Business\HotelHousekeepingController::class, 'reportIssue']);
+                Route::get('housekeeping/daily-report', [\App\Http\Controllers\Api\Business\HotelHousekeepingController::class, 'dailyReport']);
+            });
+
+            // 🔒 Hotel Shift Roster (feature: has_hotel_shift_roster)
+            Route::middleware(['feature:has_hotel_shift_roster'])->prefix('hotel')->group(function () {
+                // Departments
+                Route::get('departments', [\App\Http\Controllers\Api\Business\HotelDepartmentController::class, 'index']);
+                Route::post('departments', [\App\Http\Controllers\Api\Business\HotelDepartmentController::class, 'store']);
+                Route::put('departments/{id}', [\App\Http\Controllers\Api\Business\HotelDepartmentController::class, 'update']);
+                Route::delete('departments/{id}', [\App\Http\Controllers\Api\Business\HotelDepartmentController::class, 'destroy']);
+
+                // Shifts
+                Route::get('shifts', [\App\Http\Controllers\Api\Business\HotelShiftController::class, 'index']);
+                Route::post('shifts', [\App\Http\Controllers\Api\Business\HotelShiftController::class, 'store']);
+                Route::put('shifts/{id}', [\App\Http\Controllers\Api\Business\HotelShiftController::class, 'update']);
+                Route::delete('shifts/{id}', [\App\Http\Controllers\Api\Business\HotelShiftController::class, 'destroy']);
+
+                // Roster
+                Route::get('roster/staff-list', [\App\Http\Controllers\Api\Business\HotelRosterController::class, 'staffList']);
+                Route::get('roster', [\App\Http\Controllers\Api\Business\HotelRosterController::class, 'index']);
+                Route::post('roster', [\App\Http\Controllers\Api\Business\HotelRosterController::class, 'store']);
+                Route::post('roster/bulk-assign', [\App\Http\Controllers\Api\Business\HotelRosterController::class, 'bulkAssign']);
+                Route::patch('roster/{id}/status', [\App\Http\Controllers\Api\Business\HotelRosterController::class, 'updateStatus']);
+                Route::patch('roster/{id}/swap-request', [\App\Http\Controllers\Api\Business\HotelRosterController::class, 'requestSwap']);
+                Route::patch('roster/{id}/approve-swap', [\App\Http\Controllers\Api\Business\HotelRosterController::class, 'approveSwap']);
+                Route::delete('roster/{id}', [\App\Http\Controllers\Api\Business\HotelRosterController::class, 'destroy']);
+            });
+
         });
-
-
 
 
         // Profile (any authenticated user)
@@ -412,6 +457,8 @@ Route::prefix('v1')->group(function () {
             Route::patch('/payouts/{id}/reject', [\App\Http\Controllers\Api\Superadmin\PayoutController::class, 'reject']);
             Route::patch('/payouts/{id}/paid', [\App\Http\Controllers\Api\Superadmin\PayoutController::class, 'markPaid']);
         });
+
+
 
         // ── Partner Portal Routes ──
         Route::middleware(['partner'])->prefix('partner')->group(function () {

@@ -17,11 +17,16 @@ class HotelPosOrder extends Model
         'outlet_id',
         'booking_id',
         'table_no',
+        'table_id',
+        'reservation_id',
+        'guest_name',
+        'guest_phone',
         'order_type',
         'status',
         'subtotal',
         'tax_amount',
         'discount_amount',
+        'deposit_applied',
         'total',
         'payment_mode',
         'notes',
@@ -34,6 +39,7 @@ class HotelPosOrder extends Model
         'subtotal'        => 'float',
         'tax_amount'      => 'float',
         'discount_amount' => 'float',
+        'deposit_applied' => 'float',
         'total'           => 'float',
         'billed_at'       => 'datetime',
         'kot_printed_at'  => 'datetime',
@@ -57,5 +63,15 @@ class HotelPosOrder extends Model
     public function billedBy(): BelongsTo
     {
         return $this->belongsTo(\App\Models\User::class, 'billed_by');
+    }
+
+    public function table(): BelongsTo
+    {
+        return $this->belongsTo(HotelPosTable::class, 'table_id');
+    }
+
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(HotelTableReservation::class, 'reservation_id');
     }
 }

@@ -71,7 +71,7 @@ export default function BrandsPage() {
 
           <div className="w-full max-w-md lg:max-w-sm flex flex-col gap-4">
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute z-10 pointer-events-none left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 value={search}

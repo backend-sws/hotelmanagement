@@ -144,3 +144,97 @@ export function useUpdateOrderStatus() {
     onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to update status'),
   });
 }
+
+// ─── Tables ──────────────────────────────────────────────────────────────────
+
+import type { HotelPosTable, HotelTableReservation } from '../schemas/tableSchema';
+
+export function useTables(filters?: { outlet_id?: number; status?: string }) {
+  return useQuery({
+    queryKey: ['hotel-tables', filters],
+    queryFn: async (): Promise<HotelPosTable[]> => {
+      const res = await api.get('/business/hotel/tables', { params: filters });
+      const d = unwrap(res);
+      return Array.isArray(d) ? d : [];
+    },
+  });
+}
+
+export function useCreateTable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<HotelPosTable>) => api.post('/business/hotel/tables', data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['hotel-tables'] }); toast.success('Table added!'); },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to add table'),
+  });
+}
+
+export function useUpdateTable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<HotelPosTable> & { id: number }) => api.put(`/business/hotel/tables/${id}`, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['hotel-tables'] }); toast.success('Table updated!'); },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to update table'),
+  });
+}
+
+export function useDeleteTable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/business/hotel/tables/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['hotel-tables'] }); toast.success('Table deleted!'); },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to delete table'),
+  });
+}
+
+// ─── Table Reservations ──────────────────────────────────────────────────────
+
+export function useReservations(filters?: { outlet_id?: number; status?: string; date?: string }) {
+  return useQuery({
+    queryKey: ['hotel-reservations', filters],
+    queryFn: async (): Promise<HotelTableReservation[]> => {
+      const res = await api.get('/business/hotel/table-reservations', { params: filters });
+      const d = unwrap(res);
+      return Array.isArray(d) ? d : [];
+    },
+  });
+}
+
+export function useCreateReservation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<HotelTableReservation>) => api.post('/business/hotel/table-reservations', data),
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ['hotel-reservations'] }); 
+      qc.invalidateQueries({ queryKey: ['hotel-tables'] }); 
+      toast.success('Reservation created!'); 
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to create reservation'),
+  });
+}
+
+export function useUpdateReservation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<HotelTableReservation> & { id: number }) => api.put(`/business/hotel/table-reservations/${id}`, data),
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ['hotel-reservations'] });
+      qc.invalidateQueries({ queryKey: ['hotel-tables'] }); 
+      toast.success('Reservation updated!'); 
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to update reservation'),
+  });
+}
+
+export function useDeleteReservation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/business/hotel/table-reservations/${id}`),
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ['hotel-reservations'] }); 
+      qc.invalidateQueries({ queryKey: ['hotel-tables'] });
+      toast.success('Reservation deleted!'); 
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to delete reservation'),
+  });
+}

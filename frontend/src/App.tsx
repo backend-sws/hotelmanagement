@@ -128,6 +128,14 @@ const BookingCalendarPage = lazy(() => import('@/features/hotel/bookings/pages/B
 const RestaurantPosPage = lazy(() => import('@/features/hotel/pos/pages/RestaurantPosPage').then(m => ({ default: m.RestaurantPosPage })));
 const HotelOutletsPage  = lazy(() => import('@/features/hotel/pos/pages/OutletsPage').then(m => ({ default: m.OutletsPage })));
 const HotelServicesPage = lazy(() => import('@/features/hotel/pos/pages/ServicesPage').then(m => ({ default: m.ServicesPage })));
+const TablesSetupPage = lazy(() => import('@/features/hotel/pos/pages/TablesSetupPage'));
+const ReservationsPage = lazy(() => import('@/features/hotel/pos/pages/ReservationsPage'));
+// 🏨 Hotel Phase 4 — Housekeeping
+const HousekeepingPage = lazy(() => import('@/features/hotel/housekeeping/pages/HousekeepingPage').then(m => ({ default: m.HousekeepingPage })));
+// 🏨 Hotel Phase 5 — Staff Roster
+const HotelDepartmentsPage = lazy(() => import('@/features/hotel/roster/pages/DepartmentsPage').then(m => ({ default: m.DepartmentsPage })));
+const HotelShiftsPage = lazy(() => import('@/features/hotel/roster/pages/ShiftsPage').then(m => ({ default: m.ShiftsPage })));
+const HotelShiftRosterPage = lazy(() => import('@/features/hotel/roster/pages/ShiftRosterPage').then(m => ({ default: m.ShiftRosterPage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -430,6 +438,13 @@ function App() {
                 </FeatureGuard>
               </BusinessRoute>
             } />
+            <Route path="/hotel/pos/room-service" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_pos">
+                  <RestaurantPosPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
             <Route path="/hotel/pos/outlets" element={
               <BusinessRoute>
                 <FeatureGuard feature="has_hotel_pos">
@@ -441,6 +456,52 @@ function App() {
               <BusinessRoute>
                 <FeatureGuard feature="has_hotel_pos">
                   <HotelServicesPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/pos/tables" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_pos">
+                  <TablesSetupPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/pos/reservations" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_pos">
+                  <ReservationsPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+
+            {/* 🏨 HOTEL HOUSEKEEPING ROUTES — Phase 4 */}
+            <Route path="/hotel/housekeeping" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_housekeeping">
+                  <HousekeepingPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+
+            {/* 🏨 HOTEL STAFF ROSTER ROUTES — Phase 5 */}
+            <Route path="/hotel/departments" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_shift_roster">
+                  <HotelDepartmentsPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/shifts" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_shift_roster">
+                  <HotelShiftsPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/roster" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_shift_roster">
+                  <HotelShiftRosterPage />
                 </FeatureGuard>
               </BusinessRoute>
             } />
