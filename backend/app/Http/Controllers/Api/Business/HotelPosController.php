@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Business;
 use App\Http\Controllers\BaseController;
 use App\Services\Business\HotelPosService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use OpenApi\Attributes as OA;
 
 class HotelPosController extends BaseController
@@ -88,6 +89,7 @@ class HotelPosController extends BaseController
             'tax_percent' => 'nullable|numeric|min:0|max:100',
             'is_available'=> 'nullable|boolean',
             'sort_order'  => 'nullable|integer',
+            'image_url'   => 'nullable|string',
         ]);
 
         return $this->executeAction(function () use ($request, $validated) {
@@ -109,6 +111,7 @@ class HotelPosController extends BaseController
             'tax_percent' => 'nullable|numeric|min:0|max:100',
             'is_available'=> 'nullable|boolean',
             'sort_order'  => 'nullable|integer',
+            'image_url'   => 'nullable|string',
         ]);
 
         return $this->executeAction(function () use ($request, $id, $validated) {

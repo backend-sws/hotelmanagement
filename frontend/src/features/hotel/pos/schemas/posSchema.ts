@@ -18,6 +18,7 @@ export interface HotelService {
   tax_percent: number;
   is_available: boolean;
   sort_order: number;
+  image_url?: string | null;
   outlet?: HotelOutlet;
 }
 

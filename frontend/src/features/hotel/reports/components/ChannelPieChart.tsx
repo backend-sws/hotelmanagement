@@ -40,7 +40,7 @@ export function ChannelPieChart() {
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                formatter={(value: any) => [`₹${Number(value || 0).toLocaleString()}`, 'Revenue']}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
               />
               <Legend verticalAlign="bottom" height={36} iconType="circle" />

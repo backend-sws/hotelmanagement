@@ -31,7 +31,7 @@ export function RevenueBarChart() {
               <Tooltip 
                 cursor={{ fill: '#f8fafc' }}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                formatter={(value: number) => [`₹${value.toLocaleString()}`, undefined]}
+                formatter={(value: any) => [`₹${Number(value || 0).toLocaleString()}`, undefined]}
               />
               <Legend wrapperStyle={{ paddingTop: '20px' }} />
               <Bar dataKey="Room" stackId="a" fill="#3b82f6" radius={[0, 0, 4, 4]} barSize={20} />

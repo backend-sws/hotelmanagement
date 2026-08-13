@@ -468,6 +468,16 @@ export function RestaurantPosPage() {
                             className="bg-white/80 dark:bg-[#15151a]/80 backdrop-blur-sm border border-slate-200/80 dark:border-white/5 rounded-2xl p-4 text-left hover:border-orange-400 dark:hover:border-orange-500/50 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 group active:scale-[0.98] relative overflow-hidden flex flex-col h-full justify-between">
                             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 to-orange-500/0 group-hover:from-orange-500/5 group-hover:to-transparent transition-all duration-500"></div>
                             
+                            {s.image_url ? (
+                              <div className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-3 shrink-0 relative">
+                                <img src={s.image_url} alt={s.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                              </div>
+                            ) : (
+                              <div className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-3 shrink-0 bg-slate-100 dark:bg-white/5 flex items-center justify-center relative transition-transform duration-500 group-hover:scale-105">
+                                <UtensilsCrossed className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                              </div>
+                            )}
+
                             <div className="relative z-10 font-bold text-[15px] text-slate-800 dark:text-slate-200 group-hover:text-orange-600 dark:group-hover:text-orange-400 leading-snug mb-3 pr-2">{s.name}</div>
                             
                             <div className="relative z-10 mt-auto flex items-end justify-between">

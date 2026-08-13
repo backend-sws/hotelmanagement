@@ -36,7 +36,7 @@ export function OccupancyChart() {
               <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} unit="%" />
               <Tooltip 
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                formatter={(value: number) => [`${value.toFixed(1)}%`, 'Occupancy']}
+                formatter={(value: any) => [`${Number(value || 0).toFixed(1)}%`, 'Occupancy']}
               />
               <Area type="monotone" dataKey="occupancy" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorOccupancy)" />
             </AreaChart>

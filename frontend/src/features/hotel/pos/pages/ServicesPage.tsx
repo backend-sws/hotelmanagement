@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Search, Package, UtensilsCrossed, ToggleRight, ToggleLeft } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Package, UtensilsCrossed, ToggleRight, ToggleLeft, Image, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { useOutlets, useServices, useCreateService, useUpdateService, useDeleteS
 import type { HotelService } from '../schemas/posSchema';
 import { SERVICE_CATEGORIES, CATEGORY_COLORS } from '../constants/posConstants';
 import { toast } from 'sonner';
+import { uploadToR2 } from '@/lib/r2';
 
 const emptyForm = {
   outlet_id: '' as any,
@@ -25,6 +26,8 @@ const emptyForm = {
   tax_percent: '5',
   is_available: true,
   sort_order: '0',
+  image: null as File | null,
+  image_url: '',
 };
 
 export function ServicesPage() {
@@ -34,6 +37,7 @@ export function ServicesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<HotelService | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: outlets = [] } = useOutlets();
   const { data: services = [], isLoading } = useServices({
@@ -61,6 +65,8 @@ export function ServicesPage() {
       tax_percent: String(s.tax_percent),
       is_available: s.is_available,
       sort_order: String(s.sort_order),
+      image: null,
+      image_url: s.image_url || '',
     });
     setShowModal(true);
   };
@@ -68,13 +74,31 @@ export function ServicesPage() {
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Service name required'); return; }
     if (!form.outlet_id) { toast.error('Select an outlet'); return; }
-    const payload = {
+    
+    let imageUrl = form.image_url;
+    if (form.image) {
+      try {
+        setIsUploading(true);
+        const { public_url } = await uploadToR2(form.image, 'hotel/services');
+        imageUrl = public_url;
+      } catch (err: any) {
+        toast.error('Failed to upload image');
+        setIsUploading(false);
+        return;
+      } finally {
+        setIsUploading(false);
+      }
+    }
+
+    const { image: _image, ...payload } = {
       ...form,
       outlet_id: Number(form.outlet_id),
       price: Number(form.price),
       tax_percent: Number(form.tax_percent),
       sort_order: Number(form.sort_order),
+      image_url: imageUrl,
     };
+
     if (editing) {
       await updateService.mutateAsync({ id: editing.id, ...payload });
     } else {
@@ -185,6 +209,13 @@ export function ServicesPage() {
                 <div className="divide-y divide-slate-100 dark:divide-white/5">
                   {items.map(s => (
                     <div key={s.id} className="flex items-center px-5 py-3 gap-4 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                      <div className="w-10 h-10 shrink-0 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden">
+                        {s.image_url ? (
+                          <img src={s.image_url} alt={s.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <UtensilsCrossed className="w-4 h-4 text-slate-300 dark:text-slate-600" />
+                        )}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-slate-900 dark:text-white text-sm">{s.name}</span>
@@ -269,6 +300,30 @@ export function ServicesPage() {
             <Label className="font-bold text-sm text-slate-700 dark:text-slate-300">Description</Label>
             <Textarea placeholder="Optional" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="rounded-xl min-h-[80px] bg-slate-50 dark:bg-white/[0.02]" />
           </div>
+          <div className="col-span-2 space-y-1.5">
+            <Label className="font-bold text-sm text-slate-700 dark:text-slate-300">Image (Optional)</Label>
+            <div className="relative border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl bg-slate-50 dark:bg-white/[0.02] flex items-center justify-center overflow-hidden transition-all duration-200 hover:border-orange-500/50 hover:bg-orange-50/50 dark:hover:bg-orange-500/5">
+              {(form.image || form.image_url) ? (
+                <>
+                  <img src={form.image ? URL.createObjectURL(form.image) : form.image_url} alt="Preview" className="w-full h-40 object-cover" />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <button type="button" onClick={() => setForm(f => ({ ...f, image: null, image_url: '' }))} className="bg-red-500 text-white p-2 rounded-full hover:scale-110 transition-transform shadow-lg">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <label className="w-full h-32 flex flex-col items-center justify-center cursor-pointer text-slate-500">
+                  <Image className="w-8 h-8 mb-2 text-slate-400" />
+                  <span className="text-sm font-semibold">Click to upload image</span>
+                  <span className="text-xs text-slate-400 mt-1">PNG, JPG up to 2MB</span>
+                  <input type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={e => {
+                    if (e.target.files?.[0]) setForm(f => ({ ...f, image: e.target.files![0] }));
+                  }} />
+                </label>
+              )}
+            </div>
+          </div>
           <div className="col-span-2 bg-slate-50 dark:bg-white/[0.02] p-4 rounded-xl border border-slate-100 dark:border-white/5">
             <Toggle 
               checked={form.is_available} 
@@ -280,8 +335,8 @@ export function ServicesPage() {
           <div className="col-span-2 flex gap-3 pt-3">
             <Button variant="outline" className="flex-1 rounded-xl h-11 font-bold" onClick={() => setShowModal(false)}>Cancel</Button>
             <Button className="flex-1 rounded-xl h-11 bg-orange-600 hover:bg-orange-700 text-white font-black tracking-wide shadow-lg shadow-orange-500/25" onClick={handleSave}
-              disabled={createService.isPending || updateService.isPending}>
-              {editing ? 'Update' : 'Create Service'}
+              disabled={isUploading || createService.isPending || updateService.isPending}>
+              {isUploading ? 'Uploading...' : (editing ? 'Update' : 'Create Service')}
             </Button>
           </div>
         </div>
