@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { Menu, Expand, Shrink, Moon, Sun, Palette, Paintbrush, Settings, ArrowRight, Monitor, User, LogOut, CreditCard, Building2, Store, HelpCircle, Crown, Lock } from "lucide-react";
+import { Menu, Expand, Shrink, Moon, Sun, Palette, Paintbrush, Settings, ArrowRight, Monitor, User, LogOut, CreditCard, Building2, Store, HelpCircle, Crown, Lock, Keyboard } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useLayoutStore } from "@/store/layoutStore";
 import { useThemeStore, type LayoutTheme, type PrimaryColor, type FontFamily } from "@/store/themeStore";
 import { useTenantStore } from "@/store/tenantStore";
+import { useShortcutStore } from "@/store/shortcutStore";
+import { ShortcutLegendModal } from "./ShortcutLegendModal";
 import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ModeToggle } from "@/components/ui/mode-toggle";
@@ -352,6 +354,7 @@ export function Header({ className }: { className?: string }) {
   const { toggleSidebar, isSidebarCollapsed } = useLayoutStore();
   const { theme } = useThemeStore();
   const { businesses, activeBusiness, setActiveBusiness, fetchBusinesses } = useTenantStore();
+  const { isLegendOpen, toggleLegend, closeLegend } = useShortcutStore();
   const user = useAuthStore(state => state.user);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
@@ -612,6 +615,19 @@ export function Header({ className }: { className?: string }) {
         {/* Animated Theme Toggle */}
         <ModeToggle />
 
+        {/* Keyboard Shortcut Legend */}
+        <button
+          onClick={toggleLegend}
+          className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-white/5 hover:text-primary-600 dark:hover:text-primary-400 transition-colors relative group"
+          title="Keyboard Shortcuts Map (Alt+K)"
+        >
+          <Keyboard className="w-5 h-5" />
+          <span className="absolute -bottom-1 -right-0.5 flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
+          </span>
+        </button>
+
         {/* Help & Docs */}
         <button
           onClick={() => navigate('/docs')}
@@ -633,6 +649,11 @@ export function Header({ className }: { className?: string }) {
         isOpen={isLockModalOpen}
         onClose={() => setIsLockModalOpen(false)}
         featureName="Multi-Branch"
+      />
+      {/* Keyboard Shortcut Legend Modal */}
+      <ShortcutLegendModal
+        isOpen={isLegendOpen}
+        onClose={closeLegend}
       />
     </header>
   );

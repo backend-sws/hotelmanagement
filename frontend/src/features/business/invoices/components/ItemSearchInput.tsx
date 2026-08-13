@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Input } from '@/components/ui/input';
-import { Search, AlertCircle, Plus, Package } from 'lucide-react';
+import { Search, AlertCircle, Plus, Package, CornerDownLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InventoryFormModal } from '@/features/business/inventory/components/InventoryFormModal';
 
@@ -24,10 +24,12 @@ const getEffectiveRate = (item: any): number => {
 export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const { data: results, isLoading } = useQuery({
+  const { data: results = [], isLoading } = useQuery({
     queryKey: ['items-search', query, priceListId],
     queryFn: async () => {
       const { data } = await api.get('/business/inventory', { 
@@ -39,6 +41,10 @@ export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps)
   });
 
   useEffect(() => {
+    setSelectedIndex(-1);
+  }, [results, query]);
+
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -48,13 +54,50 @@ export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps)
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleSelectItem = (item: any) => {
+    const displayName = item.name || item.model_name || item.item_code || 'Unnamed Product';
+    const displayRate = getEffectiveRate(item);
+    onSelect({
+      ...item,
+      name: displayName,
+      rate: displayRate,
+    });
+    setQuery('');
+    setSelectedIndex(-1);
+    setIsOpen(false);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 50);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isOpen || !results || results.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+    } else if (e.key === 'Enter') {
+      if (selectedIndex >= 0 && selectedIndex < results.length) {
+        e.preventDefault();
+        handleSelectItem(results[selectedIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsOpen(false);
+    }
+  };
+
   return (
     <div ref={wrapperRef} className="relative w-full">
       <div className="relative flex items-center gap-2">
         <div className="relative flex-1">
           <Input
+            ref={inputRef}
             icon={<Search className="h-4 w-4 text-slate-400" />}
-            placeholder="Search items by name, HSN code, or barcode..."
+            placeholder="Type item name, HSN or barcode... (Press ↑ ↓ to navigate, Enter to select)"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -62,22 +105,31 @@ export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps)
             }}
             onFocus={() => setIsOpen(true)}
             onClick={() => setIsOpen(true)}
-            className="bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 h-10 text-xs rounded-xl focus:ring-primary-500 font-medium pl-11"
+            onKeyDown={handleKeyDown}
+            className="bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 h-10 text-xs rounded-xl focus:ring-primary-500 font-medium pl-11 pr-24"
           />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-slate-400 font-mono pointer-events-none hidden sm:flex">
+            <span className="px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-white/10 text-slate-600 dark:text-slate-300 font-bold">↑↓</span>
+            <span>Nav</span>
+            <span className="px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-white/10 text-slate-600 dark:text-slate-300 font-bold ml-1">↵</span>
+            <span>Add</span>
+          </div>
         </div>
         <Button
           type="button"
           size="sm"
           onClick={() => setIsAddModalOpen(true)}
           className="h-10 px-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 shadow-sm"
+          title="Add New Inventory Product (Shortcut: Alt+I or F2)"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>+ New Item</span>
+          <span className="hidden md:inline text-[9px] font-mono bg-primary-700 px-1 py-0.5 rounded text-primary-100">F2</span>
         </Button>
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1.5 bg-white dark:bg-[#111118] rounded-xl border border-slate-200 dark:border-white/10 shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
+        <div className="absolute z-50 w-full mt-1.5 bg-white dark:bg-[#111118] rounded-xl border border-slate-200 dark:border-white/10 shadow-xl max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
           {isLoading ? (
             <div className="p-4 text-xs text-center text-slate-500 font-medium">Loading items...</div>
           ) : !results || results.length === 0 ? (
@@ -94,36 +146,45 @@ export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps)
                 }} 
                 className="w-full bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs h-8"
               >
-                <Plus className="h-3.5 w-3.5 mr-1.5" /> Add New Item
+                <Plus className="h-3.5 w-3.5 mr-1.5" /> Add New Item (Alt+I / F2)
               </Button>
             </div>
           ) : (
             <div className="py-1">
-              {results.map((item: any) => {
+              <div className="px-3 py-1 bg-slate-50/70 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/5 flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                <span>Select product to add to invoice</span>
+                <span className="flex items-center gap-1 text-primary-600 dark:text-primary-400">
+                  <CornerDownLeft className="w-3 h-3" /> Press Enter to Add Multiple Items
+                </span>
+              </div>
+              {results.map((item: any, index: number) => {
                 const displayName = item.name || item.model_name || item.item_code || 'Unnamed Product';
                 const displayRate = getEffectiveRate(item);
+                const isHighlighted = index === selectedIndex;
                 return (
                   <button
                     type="button"
-                    key={item.id}
-                    onClick={() => {
-                      onSelect({
-                        ...item,
-                        name: displayName,
-                        rate: displayRate,
-                      });
-                      setQuery('');
-                      setIsOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors flex items-center justify-between group"
+                    key={item.id || index}
+                    onClick={() => handleSelectItem(item)}
+                    className={`w-full text-left px-4 py-2.5 transition-colors flex items-center justify-between group ${
+                      isHighlighted
+                        ? 'bg-primary-50 dark:bg-primary-500/15 border-l-4 border-primary-500 text-primary-900 dark:text-white'
+                        : 'hover:bg-slate-50 dark:hover:bg-white/[0.04]'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                        isHighlighted 
+                          ? 'bg-primary-500 text-white shadow-sm' 
+                          : 'bg-blue-50 dark:bg-blue-500/10 text-blue-500'
+                      }`}>
                         <Package className="w-4 h-4" />
                       </div>
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-primary-600 transition-colors">{displayName}</span>
+                          <span className={`font-bold text-xs ${isHighlighted ? 'text-primary-700 dark:text-primary-300' : 'text-slate-900 dark:text-white group-hover:text-primary-600'}`}>
+                            {displayName}
+                          </span>
                           {(item.brand?.name || item.brand_name) && (
                             <span className="text-[10px] bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded font-bold border border-purple-200/50 dark:border-purple-500/20">
                               {item.brand?.name || item.brand_name}
@@ -136,22 +197,26 @@ export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps)
                       </div>
                     </div>
                   
-                  <div className="flex items-center gap-2">
-                    {item.quantity <= (item.min_stock_level || 0) && (
-                      <span title="Low Stock" className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded">
-                        <AlertCircle className="h-3 w-3" /> Low Stock
+                    <div className="flex items-center gap-2">
+                      {item.quantity <= (item.min_stock_level || 0) && (
+                        <span title="Low Stock" className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded">
+                          <AlertCircle className="h-3 w-3" /> Low Stock
+                        </span>
+                      )}
+                      <span className="text-[11px] font-bold bg-slate-100 dark:bg-white/10 px-2 py-1 rounded-lg text-slate-700 dark:text-slate-300 font-mono">
+                        {item.quantity} {item.unit || 'pcs'}
                       </span>
-                    )}
-                    <span className="text-[11px] font-bold bg-slate-100 dark:bg-white/10 px-2 py-1 rounded-lg text-slate-700 dark:text-slate-300 font-mono">
-                      {item.quantity} {item.unit || 'pcs'}
-                    </span>
-                    <span className="w-6 h-6 rounded-full bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Plus className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                        isHighlighted
+                          ? 'bg-primary-600 text-white opacity-100 scale-110 shadow-sm'
+                          : 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 opacity-0 group-hover:opacity-100'
+                      }`}>
+                        <Plus className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -161,15 +226,11 @@ export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps)
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={(newItem) => {
-          onSelect({
-            ...newItem,
-            name: newItem.name || newItem.model_name || newItem.item_code || 'Unnamed Product',
-            rate: getEffectiveRate(newItem),
-          });
+          handleSelectItem(newItem);
           setIsAddModalOpen(false);
-          setQuery('');
         }}
       />
     </div>
   );
 }
+

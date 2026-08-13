@@ -1,0 +1,1 @@
+import{p as e,t}from"./schemas-DKftGOkr.js";function n(n){return e(t,n)}export{n as t};

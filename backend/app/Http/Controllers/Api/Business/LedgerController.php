@@ -94,4 +94,21 @@ class LedgerController extends Controller
             'download_url' => url("/api/v1/business/ledger/supplier/{$id}?format=pdf")
         ]);
     }
+
+    public function paymentReceiptPdf($id)
+    {
+        $businessId = app('current_business_id');
+        $entry = \App\Models\LedgerEntry::where('business_id', $businessId)
+            ->where('reference_type', 'payment')
+            ->findOrFail($id);
+            
+        $party = $entry->party;
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdfs.payment_receipt', compact('entry', 'party'))->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true
+        ]);
+        
+        return $pdf->stream("Payment_Receipt_{$entry->id}.pdf");
+    }
 }

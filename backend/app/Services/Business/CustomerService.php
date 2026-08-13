@@ -26,7 +26,15 @@ class CustomerService
             $query->havingRaw('(COALESCE(sales_sum_final_amount, 0) - COALESCE(sales_sum_paid_amount, 0)) = 0');
         }
 
-        return $query->paginate($perPage);
+        $paginator = $query->paginate($perPage);
+
+        $ledgerService = app(\App\Services\LedgerService::class);
+        $paginator->getCollection()->transform(function($customer) use ($ledgerService) {
+            $customer->current_balance = $ledgerService->getBalance('customer', $customer->id);
+            return $customer;
+        });
+
+        return $paginator;
     }
 
     public function createCustomer(array $data)

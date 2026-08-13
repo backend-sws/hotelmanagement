@@ -61,7 +61,7 @@ export default function CustomerLedgerPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#09090b] text-slate-900 dark:text-slate-200">
       {/* Massive Fintech Mesh Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 print:hidden">
         <div className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] bg-blue-500/10 dark:bg-blue-500/20 blur-[120px] rounded-full mix-blend-multiply dark:mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }} />
         <div className="absolute top-[20%] -right-[10%] w-[50%] h-[50%] bg-indigo-500/10 dark:bg-indigo-500/20 blur-[120px] rounded-full mix-blend-multiply dark:mix-blend-screen animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
       </div>
@@ -70,7 +70,7 @@ export default function CustomerLedgerPage() {
       <div className="relative w-full px-4 sm:px-6 lg:px-8 pt-4 pb-14 space-y-6 z-10">
         
         {/* Premium Informative Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm relative z-20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm relative z-20 print:hidden">
           <div className="space-y-1.5 max-w-4xl">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/30 flex items-center justify-center shrink-0">
@@ -103,7 +103,7 @@ export default function CustomerLedgerPage() {
 
         {/* Educational Guide Card */}
         {showGuide && (
-          <Card className="p-6 rounded-2xl bg-gradient-to-br from-blue-50 via-slate-50 to-indigo-50 dark:from-blue-950/40 dark:via-slate-900 dark:to-indigo-950/20 border-2 border-blue-200 dark:border-blue-800/40 shadow-xl transition-all animate-in fade-in slide-in-from-top-4 duration-300">
+          <Card className="p-6 rounded-2xl bg-gradient-to-br from-blue-50 via-slate-50 to-indigo-50 dark:from-blue-950/40 dark:via-slate-900 dark:to-indigo-950/20 border-2 border-blue-200 dark:border-blue-800/40 shadow-xl transition-all animate-in fade-in slide-in-from-top-4 duration-300 print:hidden">
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                 <Sparkles className="w-5 h-5 fill-blue-500 text-blue-600 animate-spin-slow" />
@@ -150,7 +150,7 @@ export default function CustomerLedgerPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* Left Panel: Party Selector (Fluid width on wide screens) */}
-          <div className="lg:col-span-4 xl:col-span-3 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden flex flex-col h-fit lg:sticky lg:top-4 max-h-[820px]">
+          <div className="lg:col-span-4 xl:col-span-3 print:hidden bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden flex flex-col h-fit lg:sticky lg:top-4 max-h-[820px]">
             <div className="p-4 bg-slate-50/70 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/10 space-y-3 shrink-0">
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider flex items-center gap-1.5">
@@ -186,7 +186,7 @@ export default function CustomerLedgerPage() {
               ) : (
                 customers.map((c: any) => {
                   const isSelected = selectedCustomerId === c.id;
-                  const bal = parseFloat(c.opening_balance || '0');
+                  const bal = parseFloat((c.current_balance ?? c.opening_balance) || '0');
                   return (
                     <div
                       key={c.id}
@@ -226,7 +226,7 @@ export default function CustomerLedgerPage() {
           </div>
 
           {/* Right Panel: Account Statement (Expansive full width) */}
-          <div className="lg:col-span-8 xl:col-span-9 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden flex flex-col min-h-[650px]">
+          <div className="lg:col-span-8 xl:col-span-9 print:col-span-12 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 print:border-none rounded-2xl print:rounded-none shadow-xl print:shadow-none overflow-hidden flex flex-col min-h-[650px] print:min-h-0">
             {loadingStatement ? (
               <div className="flex-1 flex flex-col items-center justify-center p-16 text-slate-500 space-y-4">
                 <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
@@ -261,7 +261,7 @@ export default function CustomerLedgerPage() {
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2.5 shrink-0 print:hidden">
                     <Button
                       onClick={handleWhatsAppShare}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-4 h-10 rounded-xl shadow-md shadow-emerald-500/20 gap-1.5 uppercase tracking-wider"
@@ -280,7 +280,7 @@ export default function CustomerLedgerPage() {
 
                 {/* Date Filter & Opening Balance Banner */}
                 <div className="p-4 px-6 bg-slate-100/50 dark:bg-zinc-900/50 border-b border-slate-200/80 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 print:hidden">
                     <Calendar className="w-4 h-4 text-blue-500 mr-0.5" />
                     <span className="uppercase tracking-wide text-slate-700 dark:text-zinc-300 mr-1">Date Range:</span>
                     <Input
@@ -327,6 +327,7 @@ export default function CustomerLedgerPage() {
                         <th className="py-4 px-6 text-right text-rose-600 dark:text-rose-400">Billed Amount (+)</th>
                         <th className="py-4 px-6 text-right text-emerald-600 dark:text-emerald-400">Payment Received (-)</th>
                         <th className="py-4 px-6 text-right text-blue-600 dark:text-blue-400">Running Balance</th>
+                        <th className="py-4 px-6 text-right print:hidden">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200/50 dark:divide-white/5 text-sm font-medium">
@@ -340,6 +341,7 @@ export default function CustomerLedgerPage() {
                         <td className="py-3.5 px-6 text-right font-black text-blue-600 dark:text-blue-400 font-mono text-sm">
                           ₹ {Number(statement.opening_balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </td>
+                        <td className="py-3.5 px-6 text-right print:hidden"></td>
                       </tr>
 
                       {statement.entries.length === 0 ? (
@@ -370,6 +372,18 @@ export default function CustomerLedgerPage() {
                             </td>
                             <td className="py-4 px-6 text-right font-black text-slate-900 dark:text-white font-mono text-sm">
                               ₹ {Number(ent.balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-4 px-6 text-right print:hidden">
+                              {ent.reference_type === 'payment' && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => window.open(`/api/v1/business/ledger/receipt/${ent.id}/pdf`, '_blank')}
+                                  className="h-8 px-3 text-[10px] font-bold text-blue-600 border-blue-200 hover:bg-blue-50"
+                                >
+                                  <Printer className="w-3 h-3 mr-1" /> Receipt
+                                </Button>
+                              )}
                             </td>
                           </tr>
                         ))

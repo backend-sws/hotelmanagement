@@ -124,6 +124,7 @@ export const businessMenuGroups = [
       { name: "PROFIT & LOSS STATEMENT", href: "/business/reports/profit-loss", icon: Calculator, feature: 'has_financial_reports' },
       { name: "BALANCE SHEET", href: "/business/reports/balance-sheet", icon: BookOpen, feature: 'has_financial_reports' },
       { name: "SALES ANALYSIS REPORT", href: "/business/reports/sales", icon: BarChart3, feature: 'has_financial_reports' },
+      { name: "PRODUCT ANALYSIS REPORT", href: "/business/reports/product-analysis", icon: BarChart3, feature: 'has_financial_reports' },
     ]
   },
   {
@@ -445,6 +446,7 @@ export function Sidebar({ className }: { className?: string }) {
         { name: "PROFIT & LOSS STATEMENT", href: "/business/reports/profit-loss", icon: Calculator, feature: 'has_financial_reports' },
         { name: "BALANCE SHEET", href: "/business/reports/balance-sheet", icon: BookOpen, feature: 'has_financial_reports' },
         { name: "SALES ANALYSIS REPORT", href: "/business/reports/sales", icon: BarChart3, feature: 'has_financial_reports' },
+        { name: "PRODUCT ANALYSIS REPORT", href: "/business/reports/product-analysis", icon: BarChart3, feature: 'has_financial_reports' },
       ]
     });
   }

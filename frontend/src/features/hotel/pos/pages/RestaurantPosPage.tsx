@@ -4,8 +4,9 @@ import {
   UtensilsCrossed, Plus, Minus, Trash2, Search, Send, Printer,
   CreditCard, Banknote, Smartphone, Gift, BedDouble,
   Receipt, Clock, CheckCircle2, XCircle, ShoppingCart, Package, ConciergeBell,
-  User, Phone
+  User, Phone, Keyboard
 } from 'lucide-react';
+import { useShortcutStore } from '@/store/shortcutStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -25,6 +26,7 @@ import { useHotelBookings } from '../../bookings/api/useBookings';
 import { useTenantStore } from '@/store/tenantStore';
 
 export function RestaurantPosPage() {
+  const { toggleLegend } = useShortcutStore();
   const navigate = useNavigate();
   const location = useLocation();
   const activeBusiness = useTenantStore(state => state.activeBusiness);
@@ -45,6 +47,35 @@ export function RestaurantPosPage() {
   useEffect(() => {
     setOrderType(isRoomService ? 'room_service' : 'dine_in');
   }, [isRoomService]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl + N for new order
+      if (e.ctrlKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        setCart([]);
+        setTableNo('');
+        setTableId(null);
+        setReservationId(null);
+        setGuestName('');
+        setGuestPhone('');
+        setDiscountAmount(0);
+        toast.info('New order started');
+        return;
+      }
+
+      if (e.key === 'F9') {
+        e.preventDefault();
+        document.getElementById('btn-pos-kot')?.click();
+      }
+      if (e.key === 'F10') {
+        e.preventDefault();
+        document.getElementById('btn-pos-place')?.click();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
   
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [serviceSearch, setServiceSearch] = useState('');
@@ -311,7 +342,12 @@ export function RestaurantPosPage() {
           ))}
         </div>
 
-        <div className="ml-auto flex gap-3">
+        <div className="ml-auto flex gap-2 sm:gap-3 flex-wrap">
+          <Button variant="outline" size="sm" className="rounded-xl font-bold border-slate-300 dark:border-white/10 hover:bg-white dark:hover:bg-white/5 text-xs flex items-center gap-1.5" onClick={toggleLegend} title="View POS & Global Keyboard Shortcuts">
+            <Keyboard className="w-3.5 h-3.5 text-primary-500" />
+            <span>Shortcuts</span>
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10">Alt+K</span>
+          </Button>
           <Button variant="outline" size="sm" className="rounded-xl font-bold border-slate-300 dark:border-white/10 hover:bg-white dark:hover:bg-white/5" onClick={() => navigate('/hotel/pos/outlets')}>Manage Outlets</Button>
           <Button variant="outline" size="sm" className="rounded-xl font-bold border-slate-300 dark:border-white/10 hover:bg-white dark:hover:bg-white/5" onClick={() => navigate('/hotel/pos/services')}>Edit Menu</Button>
         </div>
@@ -580,8 +616,8 @@ export function RestaurantPosPage() {
 
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" className="h-11 rounded-xl font-bold text-[13px] border-slate-300 dark:border-white/10 shadow-sm hover:bg-slate-100 dark:hover:bg-white/5 group" onClick={handleKot} disabled={kotPrint.isPending || createOrder.isPending}>
-                      <Printer className="w-4 h-4 mr-2 text-slate-500 group-hover:text-slate-800 dark:group-hover:text-slate-200" /> Print KOT
+                    <Button id="btn-pos-kot" variant="outline" className="h-11 rounded-xl font-bold text-[13px] border-slate-300 dark:border-white/10 shadow-sm hover:bg-slate-100 dark:hover:bg-white/5 group" onClick={handleKot} disabled={kotPrint.isPending || createOrder.isPending}>
+                      <Printer className="w-4 h-4 mr-2 text-slate-500 group-hover:text-slate-800 dark:group-hover:text-slate-200" /> Print KOT (F9)
                     </Button>
                     <Button variant="outline" className="h-11 rounded-xl font-bold text-[13px] border-slate-300 dark:border-white/10 shadow-sm hover:bg-slate-100 dark:hover:bg-white/5 group" onClick={async () => {
                       if (!selectedOutlet) { toast.error('Select an outlet first'); return; }
@@ -593,8 +629,8 @@ export function RestaurantPosPage() {
                       <BedDouble className="w-4 h-4 mr-2 text-slate-500 group-hover:text-blue-500" /> Room Bill
                     </Button>
                   </div>
-                  <Button className={`w-full h-12 rounded-xl font-black text-base shadow-lg transition-transform active:scale-[0.98] flex items-center justify-center gap-2 ${isRoomService ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/25' : 'bg-orange-600 hover:bg-orange-700 shadow-orange-500/25'} text-white`} onClick={handlePlaceOrder} disabled={createOrder.isPending}>
-                    <Send className="w-5 h-5" /> Place Order 
+                  <Button id="btn-pos-place" className={`w-full h-12 rounded-xl font-black text-base shadow-lg transition-transform active:scale-[0.98] flex items-center justify-center gap-2 ${isRoomService ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/25' : 'bg-orange-600 hover:bg-orange-700 shadow-orange-500/25'} text-white`} onClick={handlePlaceOrder} disabled={createOrder.isPending}>
+                    <Send className="w-5 h-5" /> Place Order (F10)
                     <span className="opacity-50 mx-1">·</span> 
                     ₹{cartTotal.toLocaleString()}
                   </Button>
@@ -750,7 +786,7 @@ export function RestaurantPosPage() {
               {PAYMENT_MODES.map(pm => {
                 const Icon = pm.icon;
                 return (
-                  <button key={pm.value} onClick={() => setPaymentMode(pm.value)}
+                  <button key={pm.value} onClick={() => setPaymentMode(pm.value as any)}
                     className={`flex flex-col items-center gap-3 p-4 rounded-2xl border-2 font-bold text-sm transition-all duration-300 ${paymentMode === pm.value ? 'border-orange-500 bg-orange-500 text-white shadow-lg shadow-orange-500/25 scale-105' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 text-slate-600 dark:text-slate-400 hover:border-orange-300 dark:hover:border-orange-500/50 hover:bg-slate-50 dark:hover:bg-white/5'}`}>
                     <Icon className="w-7 h-7" />
                     <span>{pm.label}</span>

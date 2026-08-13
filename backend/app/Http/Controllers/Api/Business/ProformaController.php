@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Api\Business;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sale;
+use App\Models\Product;
+use App\Models\InventoryMovement;
 use App\Services\InvoiceNumberService;
+use App\Services\LedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -64,6 +67,57 @@ class ProformaController extends Controller
                 $newItem = $item->replicate();
                 $newItem->sale_id = $invoice->id;
                 $newItem->save();
+
+                // Deduct inventory
+                $product = Product::find($item->product_id);
+                if ($product) {
+                    if ($product->quantity < $item->quantity) {
+                        throw new \Exception(
+                            "Insufficient stock for '{$product->model_name}': Available {$product->quantity}, Requested {$item->quantity}."
+                        );
+                    }
+                    $product->decrement('quantity', $item->quantity);
+
+                    InventoryMovement::create([
+                        'product_id'     => $product->id,
+                        'type'           => 'out',
+                        'quantity'       => $item->quantity,
+                        'reference_type' => 'sale',
+                        'reference_id'   => $invoice->id,
+                    ]);
+                }
+            }
+
+            // Record invoice in Ledger
+            if ($invoice->customer_id) {
+                $ledgerService = app(LedgerService::class);
+                $ledgerService->createEntry([
+                    'business_id' => $businessId,
+                    'party_type' => 'customer',
+                    'party_id' => $invoice->customer_id,
+                    'entry_type' => 'invoice',
+                    'reference_type' => 'invoice',
+                    'reference_id' => $invoice->id,
+                    'date' => $invoice->date,
+                    'debit' => $invoice->final_amount,
+                    'credit' => 0,
+                    'narration' => "Sales Invoice #{$invoice->invoice_number} (Converted from Proforma)",
+                ]);
+                
+                if ($invoice->paid_amount > 0) {
+                    $ledgerService->createEntry([
+                        'business_id' => $businessId,
+                        'party_type' => 'customer',
+                        'party_id' => $invoice->customer_id,
+                        'entry_type' => 'payment',
+                        'reference_type' => 'invoice',
+                        'reference_id' => $invoice->id,
+                        'date' => $invoice->date,
+                        'debit' => 0,
+                        'credit' => $invoice->paid_amount,
+                        'narration' => "Payment received for Invoice #{$invoice->invoice_number}",
+                    ]);
+                }
             }
 
             $proforma->update(['status' => 'converted']);

@@ -7,8 +7,14 @@ import { useAuthStore } from "@/store/authStore";
 import { useEffect, useState } from "react";
 import { PageWrapper } from "@/components/PageWrapper";
 import { PageLoadingSkeleton } from "@/components/ui/PageLoadingSkeleton";
+import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
+import { useShortcutStore } from "@/store/shortcutStore";
+import { InventoryFormModal } from "@/features/business/inventory/components/InventoryFormModal";
+import { AddCustomerModal } from "@/features/business/customers/components/AddCustomerModal";
 
 export function AppLayout() {
+  useGlobalShortcuts();
+  const { isAddItemOpen, closeAddItem, isAddCustomerOpen, closeAddCustomer } = useShortcutStore();
   const { theme } = useThemeStore();
   const isSemiDark = theme === 'semi-dark';
   const { fetchBusinesses, activeBusiness, hasFetched } = useTenantStore();
@@ -80,6 +86,9 @@ export function AppLayout() {
           </PageWrapper>
         </main>
       </div>
+      {/* Global Shortcut Modals */}
+      <InventoryFormModal isOpen={isAddItemOpen} onClose={closeAddItem} />
+      <AddCustomerModal isOpen={isAddCustomerOpen} onClose={closeAddCustomer} />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { customerSchema, type CustomerFormValues } from '../schemas/customerSchema';
@@ -62,6 +63,17 @@ export function AddCustomerModal({ isOpen, onClose, onSuccess }: AddCustomerModa
     }
   };
 
+  useEffect(() => {
+    const handleFormKeyDown = (e: KeyboardEvent) => {
+      if (isOpen && e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmit(onSubmit)();
+      }
+    };
+    window.addEventListener('keydown', handleFormKeyDown);
+    return () => window.removeEventListener('keydown', handleFormKeyDown);
+  }, [isOpen, handleSubmit, onSubmit]);
+
   if (!isOpen) return null;
 
   return (
@@ -69,22 +81,32 @@ export function AddCustomerModal({ isOpen, onClose, onSuccess }: AddCustomerModa
       isOpen={isOpen}
       onClose={onClose}
       title={
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 flex items-center justify-center">
-            <UserPlus className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+        <div className="flex items-center justify-between w-full pr-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 flex items-center justify-center">
+              <UserPlus className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+            </div>
+            <span>Add New Customer</span>
           </div>
-          Add New Customer
+          <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded border border-slate-200 dark:border-white/10 hidden sm:inline-block">
+            Alt + C
+          </span>
         </div>
       }
       maxWidth="lg"
       footer={
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose} type="button" disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting} className="bg-primary-600 hover:bg-primary-700">
-            {isSubmitting ? 'Adding...' : 'Add Customer'}
-          </Button>
+        <div className="flex items-center justify-between w-full">
+          <span className="text-[11px] font-medium text-slate-400 hidden sm:flex items-center gap-1">
+            Press <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded">Ctrl + Enter</kbd> to save
+          </span>
+          <div className="flex justify-end gap-2 ml-auto">
+            <Button variant="outline" onClick={onClose} type="button" disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting} className="bg-primary-600 hover:bg-primary-700">
+              {isSubmitting ? 'Adding...' : 'Add Customer'}
+            </Button>
+          </div>
         </div>
       }
     >

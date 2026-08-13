@@ -107,6 +107,22 @@ class InvoiceController extends Controller
             $invoiceTotals = $this->gstService->calculateInvoice($itemsPayload, $taxType, $validated['discount'] ?? 0);
             
             // Round off logic (simple nearest rupee)
+            // Credit Limit Check
+            if ($validated['invoice_type'] === 'sales_invoice' && !empty($validated['customer_id'])) {
+                $customerModel = \App\Models\Customer::find($validated['customer_id']);
+                if ($customerModel && $customerModel->credit_limit > 0) {
+                    $ledgerService = app(\App\Services\LedgerService::class);
+                    $currentOutstanding = $ledgerService->getCustomerOutstanding($customerModel->id);
+                    $pendingAmount = $invoiceTotals['grand_total'] - ($validated['paid_amount'] ?? 0);
+                    if ($pendingAmount > 0) {
+                        $newOutstanding = $currentOutstanding + $pendingAmount;
+                        if ($newOutstanding > $customerModel->credit_limit) {
+                            throw new \Exception("Invoice pending amount exceeds customer credit limit. Current limit: {$customerModel->credit_limit}, New outstanding would be: " . number_format($newOutstanding, 2));
+                        }
+                    }
+                }
+            }
+
             $roundedTotal = round($invoiceTotals['grand_total']);
             $roundOff = round($roundedTotal - $invoiceTotals['grand_total'], 2);
 
@@ -342,6 +358,28 @@ class InvoiceController extends Controller
 
             $invoiceTotals = $this->gstService->calculateInvoice($itemsPayload, $taxType, $validated['discount'] ?? 0);
             
+            // Credit Limit Check
+            if ($validated['invoice_type'] === 'sales_invoice' && !empty($validated['customer_id'])) {
+                $customerModel = \App\Models\Customer::find($validated['customer_id']);
+                if ($customerModel && $customerModel->credit_limit > 0) {
+                    $ledgerService = app(\App\Services\LedgerService::class);
+                    $currentOutstanding = $ledgerService->getCustomerOutstanding($customerModel->id);
+                    
+                    // Adjust current outstanding by removing the old pending amount of THIS invoice
+                    $oldPending = $sale->final_amount - $sale->paid_amount;
+                    $adjustedOutstanding = $currentOutstanding - $oldPending;
+                    
+                    $newPendingAmount = $invoiceTotals['grand_total'] - ($validated['paid_amount'] ?? 0);
+                    
+                    if ($newPendingAmount > 0) {
+                        $newOutstanding = $adjustedOutstanding + $newPendingAmount;
+                        if ($newOutstanding > $customerModel->credit_limit) {
+                            throw new \Exception("Invoice pending amount exceeds customer credit limit. Current limit: {$customerModel->credit_limit}, New outstanding would be: " . number_format($newOutstanding, 2));
+                        }
+                    }
+                }
+            }
+
             $roundedTotal = round($invoiceTotals['grand_total']);
             $roundOff = round($roundedTotal - $invoiceTotals['grand_total'], 2);
 

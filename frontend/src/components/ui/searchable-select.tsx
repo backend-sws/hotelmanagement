@@ -272,11 +272,11 @@ export function SearchableSelect({
       >
         <span className={cn(
           "truncate",
-          selectedOption && selectedOption.value !== ''
+          (selectedOption && selectedOption.value !== '') || (creatable && value)
             ? "text-black dark:text-white font-bold"
             : "text-slate-700 dark:text-zinc-300 font-semibold"
         )}>
-          {selectedOption ? selectedOption.label : placeholder}
+          {selectedOption ? selectedOption.label : (creatable && value ? String(value) : placeholder)}
         </span>
         <ChevronDown className={cn(
           "h-4 w-4 text-slate-500 shrink-0 transition-transform duration-200", 

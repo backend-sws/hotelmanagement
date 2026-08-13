@@ -5,6 +5,7 @@ import { getCustomerColumns } from '../constants/customerColumns';
 import { AddCustomerModal } from '../components/AddCustomerModal';
 import { EditCustomerModal } from '../components/EditCustomerModal';
 import { CollectPaymentModal } from '../components/CollectPaymentModal';
+import { SendCampaignModal } from '../components/SendCampaignModal';
 import type { Customer } from '../schemas/customerSchema';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ export default function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [collectPaymentCustomer, setCollectPaymentCustomer] = useState<any | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+  const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
   const navigate = useNavigate();
 
   // Filters state
@@ -100,6 +102,13 @@ export default function CustomersPage() {
           </div>
           
           <div className="flex flex-wrap items-center gap-3 self-start sm:self-center">
+            <Button 
+              onClick={() => setIsCampaignModalOpen(true)}
+              className="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20 px-4 h-10 text-xs"
+            >
+              <Users className="w-4 h-4 mr-1.5" />
+              Send Campaign
+            </Button>
             <Button 
               onClick={() => setIsAddModalOpen(true)}
               className="rounded-xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white shadow-md shadow-primary-500/20 px-4 h-10 text-xs"
@@ -280,6 +289,11 @@ export default function CustomersPage() {
         isOpen={!!collectPaymentCustomer}
         onClose={() => setCollectPaymentCustomer(null)}
         customer={collectPaymentCustomer}
+      />
+
+      <SendCampaignModal
+        isOpen={isCampaignModalOpen}
+        onClose={() => setIsCampaignModalOpen(false)}
       />
     </div>
   );

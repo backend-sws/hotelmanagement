@@ -79,6 +79,7 @@ const GstReportsPage = lazy(() => import('@/features/business/gst-reports/pages/
 const ProfitLossPage = lazy(() => import('@/features/business/reports/pages/ProfitLossPage'));
 const BalanceSheetPage = lazy(() => import('@/features/business/reports/pages/BalanceSheetPage'));
 const SalesReportPage = lazy(() => import('@/features/business/reports/pages/SalesReportPage'));
+const ProductAnalysisReportPage = lazy(() => import('@/features/business/reports/pages/ProductAnalysisReportPage').then(m => ({ default: m.ProductAnalysisReportPage })));
 
 const DocsPage = lazy(() => import('@/features/docs/pages/DocsPage'));
 const ProjectsListPage = lazy(() => import('@/features/business/projects/pages/ProjectsListPage'));
@@ -365,6 +366,7 @@ function App() {
             <Route path="/business/reports/profit-loss" element={<BusinessRoute><ProfitLossPage /></BusinessRoute>} />
             <Route path="/business/reports/balance-sheet" element={<BusinessRoute><BalanceSheetPage /></BusinessRoute>} />
             <Route path="/business/reports/sales" element={<BusinessRoute><SalesReportPage /></BusinessRoute>} />
+            <Route path="/business/reports/product-analysis" element={<BusinessRoute><ProductAnalysisReportPage /></BusinessRoute>} />
             <Route path="/reports/gst" element={<Navigate to="/business/reports/gst" replace />} />
             <Route path="/reports/profit-loss" element={<Navigate to="/business/reports/profit-loss" replace />} />
             <Route path="/reports/balance-sheet" element={<Navigate to="/business/reports/balance-sheet" replace />} />

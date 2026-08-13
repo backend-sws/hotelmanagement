@@ -26,6 +26,7 @@ export function useGstCalculation(
       let taxable = rate * qty;
       let tax = taxable * (gstRate / 100);
       let cess = taxable * (cessRate / 100);
+      let exclusiveRate = rate;
       
       const itemIsInclusive = item.is_tax_inclusive !== undefined ? item.is_tax_inclusive : isTaxInclusive;
       
@@ -35,6 +36,7 @@ export function useGstCalculation(
         taxable = totalAmount / (1 + (totalRatePercent / 100));
         tax = taxable * (gstRate / 100);
         cess = taxable * (cessRate / 100);
+        exclusiveRate = taxable / qty;
       }
       
       const cgst = (taxMode === 'gst' && taxType === 'gst') ? tax / 2 : 0;
@@ -44,6 +46,7 @@ export function useGstCalculation(
       
       return {
         ...item,
+        rate: exclusiveRate,
         taxable_amount: taxable,
         cgst_amount: cgst,
         sgst_amount: sgst,

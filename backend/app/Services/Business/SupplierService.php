@@ -12,13 +12,21 @@ class SupplierService
 {
     public function getSuppliers($perPage = 15)
     {
-        return Supplier::withSum('purchases', 'bill_amount')
+        $paginator = Supplier::withSum('purchases', 'bill_amount')
             ->withSum('purchases', 'paid_amount')
             ->withSum(['payments as general_payments_sum' => function ($query) {
                 $query->whereNull('supplier_purchase_id');
             }], 'amount')
             ->orderBy('name')
             ->paginate($perPage);
+
+        $ledgerService = app(\App\Services\LedgerService::class);
+        $paginator->getCollection()->transform(function($supplier) use ($ledgerService) {
+            $supplier->current_balance = $ledgerService->getBalance('supplier', $supplier->id);
+            return $supplier;
+        });
+
+        return $paginator;
     }
 
     public function createSupplier(array $data)

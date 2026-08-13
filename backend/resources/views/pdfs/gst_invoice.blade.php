@@ -24,6 +24,20 @@
     <div class="invoice-box">
         <h2 class="center-align" style="text-transform: uppercase;">Tax Invoice</h2>
         
+        @php
+            $balanceDue = $invoice->final_amount - $invoice->paid_amount;
+            if ($balanceDue <= 0.01) {
+                $statusText = 'PAID';
+                $statusColor = '#22c55e';
+            } elseif ($invoice->paid_amount > 0) {
+                $statusText = 'PARTIALLY PAID';
+                $statusColor = '#f59e0b';
+            } else {
+                $statusText = 'UNPAID';
+                $statusColor = '#ef4444';
+            }
+        @endphp
+
         <table cellpadding="0" cellspacing="0">
             <tr>
                 <td class="company-details" style="width:50%;">
@@ -32,8 +46,11 @@
                     <p style="margin:0;">Phone: {{ $invoice->business->phone }}</p>
                     <p style="margin:0;">GSTIN: {{ $invoice->business->gst_settings->gstin ?? 'N/A' }}</p>
                 </td>
-                <td class="right-align" style="width:50%;">
-                    <p class="bold" style="font-size:16px;">Invoice No: {{ $invoice->invoice_number }}</p>
+                <td class="right-align" style="width:50%; position: relative;">
+                    <div style="position: absolute; top: -10px; right: 0; border: 2px solid {{ $statusColor }}; color: {{ $statusColor }}; padding: 5px 10px; font-weight: bold; font-size: 16px; border-radius: 5px; transform: rotate(-5deg); opacity: 0.8; z-index: 1;">
+                        {{ $statusText }}
+                    </div>
+                    <p class="bold" style="font-size:16px; margin-top: 30px;">Invoice No: {{ $invoice->invoice_number }}</p>
                     <p>Date: {{ $invoice->date->format('d-m-Y') }}</p>
                     @if($invoice->due_date)
                     <p>Due Date: {{ \Carbon\Carbon::parse($invoice->due_date)->format('d-m-Y') }}</p>

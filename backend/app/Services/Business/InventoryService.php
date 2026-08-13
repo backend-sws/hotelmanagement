@@ -83,7 +83,25 @@ class InventoryService
 
     public function updateProduct(Product $product, array $data)
     {
+        $oldQuantity = $product->quantity;
+        
         $product->update($data);
+        
+        if (isset($data['quantity']) && $data['quantity'] != $oldQuantity) {
+            $diff = $data['quantity'] - $oldQuantity;
+            $type = $diff > 0 ? 'in' : 'out';
+            
+            $product->movements()->create([
+                'business_id' => $product->business_id,
+                'type' => $type,
+                'quantity' => abs($diff),
+                'reference_type' => 'manual_adjustment',
+                'notes' => 'Manual stock adjustment during product update',
+            ]);
+            
+            $product->logActivity('stock_adjusted', "Manual stock adjustment: " . ($diff > 0 ? '+' : '') . $diff);
+        }
+        
         return $product;
     }
 

@@ -14,14 +14,16 @@ import { ItemSearchInput } from '../components/ItemSearchInput';
 import { InvoiceItemsTable } from '../components/InvoiceItemsTable';
 import { InvoiceSummaryPanel } from '../components/InvoiceSummaryPanel';
 import { PaymentSection } from '../components/PaymentSection';
-import { Save, Printer, Send, FileText, Calendar, Users, Package, FileSpreadsheet, Sparkles, MapPin, Building2 } from 'lucide-react';
+import { Save, Printer, Send, FileText, Calendar, Users, Package, FileSpreadsheet, Sparkles, MapPin, Building2, Keyboard } from 'lucide-react';
 import { toast } from 'sonner';
 import { GST_STATES } from '@/features/business/customers/constants/gstStates';
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '../../projects/api/projectService';
 import { useInvoiceSettings } from '../../settings/api/useInvoiceSettings';
+import { useShortcutStore } from '@/store/shortcutStore';
 
 export default function NewInvoicePage() {
+  const { toggleLegend } = useShortcutStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const store = useInvoiceStore();
@@ -100,6 +102,32 @@ export default function NewInvoicePage() {
     return () => store.reset(); // Cleanup on unmount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        store.reset();
+        navigate('/invoices/new');
+        toast.info('Started a new bill');
+        return;
+      }
+      if (e.key === 'F9') {
+        e.preventDefault();
+        document.getElementById('btn-save-draft')?.click();
+      }
+      if (e.key === 'F10') {
+        e.preventDefault();
+        document.getElementById('btn-save-pdf')?.click();
+      }
+      if (e.key === 'F4') {
+        e.preventDefault();
+        document.getElementById('btn-save-wa')?.click();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [store, navigate]);
 
   const handleSave = async (action: 'draft' | 'pdf' | 'whatsapp') => {
     if (store.items.length === 0) {
@@ -192,32 +220,56 @@ export default function NewInvoicePage() {
             {editId ? 'Modify and update your existing document.' : 'Create invoices, quotations, proforma or delivery challans instantly.'}
           </p>
         </div>
-        <div className="hidden lg:flex items-center gap-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             type="button"
+            variant="outline"
+            size="sm"
+            onClick={toggleLegend}
+            className="h-9 px-3 text-xs font-bold rounded-xl border-slate-200 dark:border-white/10 shadow-sm flex items-center gap-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5"
+            title="View Keyboard Shortcuts Map"
+          >
+            <Keyboard className="w-3.5 h-3.5 text-primary-500" />
+            <span>Shortcuts</span>
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10">Alt+K</span>
+          </Button>
+
+          <Button
+            type="button"
+            id="btn-save-draft"
             variant="outline"
             size="sm"
             onClick={() => handleSave('draft')}
-            className="h-9 px-4 text-xs font-bold rounded-xl border-slate-200 dark:border-white/10 shadow-sm flex items-center gap-1.5"
+            className="h-9 px-3.5 text-xs font-bold rounded-xl border-slate-200 dark:border-white/10 shadow-sm flex items-center gap-1.5"
           >
-            <Save className="w-3.5 h-3.5 text-slate-500" /> {editId ? 'Update Document' : 'Save as Draft'}
+            <Save className="w-3.5 h-3.5 text-slate-500" />
+            <span>{editId ? 'Update Document' : 'Save Draft'}</span>
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 border border-slate-200 dark:border-white/10">F9</span>
           </Button>
+
           <Button
             type="button"
+            id="btn-save-pdf"
             variant="outline"
             size="sm"
             onClick={() => handleSave('pdf')}
-            className="h-9 px-4 text-xs font-bold rounded-xl border-slate-200 dark:border-white/10 shadow-sm flex items-center gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+            className="h-9 px-3.5 text-xs font-bold rounded-xl border-slate-200 dark:border-white/10 shadow-sm flex items-center gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-500/10"
           >
-            <Printer className="w-3.5 h-3.5" /> {editId ? 'Update & Print PDF' : 'Print / Save PDF'}
+            <Printer className="w-3.5 h-3.5" />
+            <span>{editId ? 'Update & Print' : 'Print / PDF'}</span>
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40">F10</span>
           </Button>
+
           <Button
             type="button"
+            id="btn-save-wa"
             size="sm"
             onClick={() => handleSave('whatsapp')}
-            className="h-9 px-4 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5"
+            className="h-9 px-3.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5"
           >
-            <Send className="w-3.5 h-3.5" /> {editId ? 'Update & WhatsApp' : 'Save & WhatsApp'}
+            <Send className="w-3.5 h-3.5" />
+            <span>{editId ? 'Update & WhatsApp' : 'WhatsApp'}</span>
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-700 text-emerald-100">F4</span>
           </Button>
         </div>
       </div>
@@ -516,30 +568,33 @@ export default function NewInvoicePage() {
 
         <div className="grid grid-cols-3 sm:flex items-center gap-2 w-full sm:w-auto">
           <Button
+            id="btn-save-draft"
             type="button"
             variant="outline"
             onClick={() => handleSave('draft')}
             className="h-11 sm:h-10 px-2 sm:px-4 text-xs font-bold rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 shadow-sm flex items-center justify-center gap-1.5"
           >
             <Save className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-            <span className="truncate">{editId ? 'Update' : 'Save Draft'}</span>
+            <span className="truncate">{editId ? 'Update' : 'Save Draft (F9)'}</span>
           </Button>
           <Button
+            id="btn-save-pdf"
             type="button"
             variant="outline"
             onClick={() => handleSave('pdf')}
             className="h-11 sm:h-10 px-2 sm:px-4 text-xs font-bold rounded-xl border-blue-200 dark:border-blue-500/30 bg-blue-50/50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 shadow-sm flex items-center justify-center gap-1.5"
           >
             <Printer className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">{editId ? 'Update & PDF' : 'Save & PDF'}</span>
+            <span className="truncate">{editId ? 'Update & PDF' : 'Save & PDF (F10)'}</span>
           </Button>
           <Button
+            id="btn-save-wa"
             type="button"
             onClick={() => handleSave('whatsapp')}
             className="h-11 sm:h-10 px-2 sm:px-5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5"
           >
             <Send className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">{editId ? 'Update & WA' : 'Save & WA'}</span>
+            <span className="truncate">{editId ? 'Update & WA' : 'Save & WA (F4)'}</span>
           </Button>
         </div>
       </div>

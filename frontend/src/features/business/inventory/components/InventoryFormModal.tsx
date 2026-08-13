@@ -97,8 +97,6 @@ export function InventoryFormModal({ isOpen, onClose, productToEdit, onSuccess }
     }
   }, [productToEdit, reset, isOpen, gstSettings]);
 
-  if (!isOpen) return null;
-
   const onSubmit: SubmitHandler<ProductFormValues> = async (data) => {
     try {
       if (productToEdit) {
@@ -116,29 +114,52 @@ export function InventoryFormModal({ isOpen, onClose, productToEdit, onSuccess }
     }
   };
 
+  useEffect(() => {
+    const handleFormKeyDown = (e: KeyboardEvent) => {
+      if (isOpen && e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        form.handleSubmit(onSubmit)();
+      }
+    };
+    window.addEventListener('keydown', handleFormKeyDown);
+    return () => window.removeEventListener('keydown', handleFormKeyDown);
+  }, [isOpen, form, onSubmit]);
+
+  if (!isOpen) return null;
+
   return (
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
       title={
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 flex items-center justify-center">
-            <Package className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+        <div className="flex items-center justify-between w-full pr-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 flex items-center justify-center">
+              <Package className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+            </div>
+            <span>{productToEdit ? 'Edit Product' : 'Add New Product'}</span>
           </div>
-          {productToEdit ? 'Edit Product' : 'Add New Product'}
+          <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded border border-slate-200 dark:border-white/10 hidden sm:inline-block">
+            Alt + I
+          </span>
         </div>
       }
       maxWidth="2xl"
       footer={
-        <>
-          <Button variant="ghost" size="sm" type="button" onClick={onClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button size="sm" type="submit" form="product-form" disabled={isSubmitting} className="bg-primary-500 hover:bg-primary-600 text-white">
-            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {productToEdit ? 'Save Changes' : 'Add Product'}
-          </Button>
-        </>
+        <div className="flex items-center justify-between w-full">
+          <span className="text-[11px] font-medium text-slate-400 hidden sm:flex items-center gap-1">
+            Press <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded">Ctrl + Enter</kbd> to save
+          </span>
+          <div className="flex justify-end gap-2 ml-auto">
+            <Button variant="ghost" size="sm" type="button" onClick={onClose} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button size="sm" type="submit" form="product-form" disabled={isSubmitting} className="bg-primary-500 hover:bg-primary-600 text-white">
+              {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {productToEdit ? 'Save Changes' : 'Add Product'}
+            </Button>
+          </div>
+        </div>
       }
     >
       <DynamicForm 

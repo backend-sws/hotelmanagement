@@ -143,6 +143,14 @@ Route::prefix('v1')->group(function () {
                 Route::get('purchases/{id}/pdf', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'generatePdf']);
                 Route::post('purchases/{id}/payment', [\App\Http\Controllers\Api\Business\PurchaseController::class, 'recordPayment']);
                 Route::apiResource('purchases', \App\Http\Controllers\Api\Business\PurchaseController::class);
+                Route::apiResource('suppliers', \App\Http\Controllers\Api\SupplierController::class);
+        
+                // Product Analysis
+                Route::get('product-analytics', [\App\Http\Controllers\Api\Business\ProductAnalysisController::class, 'getAnalytics']);
+                
+                // Marketing
+                Route::post('marketing/whatsapp-campaign', [\App\Http\Controllers\Api\Business\MarketingController::class, 'sendWhatsappCampaign']);
+                
                 Route::post('suppliers/{supplier}/purchases', [\App\Http\Controllers\Api\SupplierController::class, 'storePurchase']);
             });
 
@@ -154,6 +162,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('ledger/supplier/{id}/balance', [\App\Http\Controllers\Api\Business\LedgerController::class, 'supplierBalance']);
                 Route::get('ledger/customer/{id}/pdf', [\App\Http\Controllers\Api\Business\LedgerController::class, 'customerStatementPdf']);
                 Route::get('ledger/supplier/{id}/pdf', [\App\Http\Controllers\Api\Business\LedgerController::class, 'supplierStatementPdf']);
+                Route::get('ledger/receipt/{id}/pdf', [\App\Http\Controllers\Api\Business\LedgerController::class, 'paymentReceiptPdf']);
                 Route::get('outstanding/customers', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'customers']);
                 Route::get('outstanding/suppliers', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'suppliers']);
                 Route::get('outstanding/summary', [\App\Http\Controllers\Api\Business\OutstandingController::class, 'summary']);

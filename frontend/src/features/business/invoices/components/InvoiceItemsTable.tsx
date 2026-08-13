@@ -79,7 +79,7 @@ export function InvoiceItemsTable({ calculatedItems, store }: InvoiceItemsTableP
               </td>
               <td className="py-3 px-2 text-center">
                 <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 font-mono">
-                  {item.gst_rate}%
+                  {store.taxMode === 'exempt' ? 0 : item.gst_rate}%
                 </span>
               </td>
               <td className="py-3 px-2 text-center">
