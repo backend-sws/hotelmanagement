@@ -68,6 +68,7 @@ export function OutletsPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-black text-slate-900 dark:text-white">Hotel Outlets</h1>
+            <p className="text-slate-500 text-sm mt-1">Manage all Point of Sale (POS) outlets like restaurants, bars, and spas.</p>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage restaurants, bars, spas & service outlets</p>
           </div>
           <Button onClick={openCreate} className="rounded-xl font-bold bg-orange-600 hover:bg-orange-700 text-white">

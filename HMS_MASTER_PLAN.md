@@ -39,11 +39,11 @@ Hotel Owner / Business Admin
 | Phase 2 | Front Desk + Reservations + Guest | ✅ Done | 100% |
 | Phase 3 | Hotel POS + Room Service | ✅ Done | 100% |
 | Phase 4 | Housekeeping Management | ✅ Done | 100% |
-| Phase 5 | Staff Shift Roster + HR | ⬜ Pending | 0% |
-| Phase 6 | OTA + Channel Manager Integration | ⬜ Pending | 0% |
-| Phase 7 | Night Audit + GST Compliance | ⬜ Pending | 0% |
-| Phase 8 | Revenue Reports + Analytics | ⬜ Pending | 0% |
-| Phase 9 | Corporate Accounts + City Ledger | ⬜ Pending | 0% |
+| Phase 5 | Staff Shift Roster + HR | ✅ Done | 100% |
+| Phase 6 | OTA + Channel Manager Integration | ✅ Done | 100% |
+| Phase 7 | Night Audit + GST Compliance | ✅ Done | 100% |
+| Phase 8 | Revenue Reports + Analytics | ✅ Done | 100% |
+| Phase 9 | Corporate Accounts + City Ledger | ✅ Done | 100% |
 
 > Status key: ⬜ Pending | 🔄 In Progress | ✅ Done
 

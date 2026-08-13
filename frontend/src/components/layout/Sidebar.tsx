@@ -27,6 +27,7 @@ import {
   Radio,
   TrendingUp,
   Building,
+  RefreshCw,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/store/layoutStore";
@@ -190,8 +191,22 @@ export const hotelMenuGroups = [
     title: "📊 HOTEL ANALYTICS",
     items: [
       { name: "NIGHT AUDIT",        href: "/hotel/night-audit", icon: Moon,            feature: 'has_hotel_night_audit' },
-      { name: "OTA & CHANNELS",     href: "/hotel/ota",         icon: Radio,           feature: 'has_hotel_ota' },
       { name: "REVENUE REPORTS",    href: "/hotel/reports",     icon: BarChart3,       feature: 'has_hotel_reports' },
+      { name: "GST & TAX CONFIG",   href: "/hotel/settings/gst",icon: Receipt,         feature: 'has_hotel_gst_compliance' },
+    ]
+  },
+  {
+    title: "📡 OTA INTEGRATION",
+    items: [
+      { name: "CHANNELS",           href: "/hotel/ota/channels", icon: Radio,           feature: 'has_hotel_ota' },
+      { name: "RATE SYNC",          href: "/hotel/ota/sync",     icon: RefreshCw,       feature: 'has_hotel_ota' },
+      { name: "OTA BOOKINGS",       href: "/hotel/ota/bookings", icon: CalendarDays,    feature: 'has_hotel_ota' },
+    ]
+  },
+  {
+    title: "🏢 CORPORATE & B2B",
+    items: [
+      { name: "CORPORATE ACCOUNTS", href: "/hotel/corporate",    icon: Building2,       feature: 'has_hotel_corporate' },
     ]
   },
 ];
@@ -489,15 +504,23 @@ export function Sidebar({ className }: { className?: string }) {
     }))
     .filter(group => group.items.length > 0);
 
-  // Combined business + hotel menu (hotel appended at bottom if any hotel feature is on)
+  // Combined business + hotel menu (hotel inserted before ADMINISTRATION)
+  const businessAdminGroup = filteredBusinessGroups.filter(g => g.title === "ADMINISTRATION");
+  const businessOtherGroups = filteredBusinessGroups.filter(g => g.title !== "ADMINISTRATION");
+  
   const combinedBusinessGroups = [
-    ...filteredBusinessGroups,
+    ...businessOtherGroups,
     ...filteredHotelGroups,
+    ...businessAdminGroup,
   ];
 
+  const staffSelfServiceGroup = filteredStaffGroups.filter(g => g.title === "SELF SERVICE");
+  const staffOtherGroups = filteredStaffGroups.filter(g => g.title !== "SELF SERVICE");
+
   const combinedStaffGroups = [
-    ...filteredStaffGroups,
+    ...staffOtherGroups,
     ...filteredHotelGroups,
+    ...staffSelfServiceGroup,
   ];
 
   let activeMenuGroups = isSuperadmin

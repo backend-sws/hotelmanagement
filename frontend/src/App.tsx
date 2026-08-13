@@ -138,6 +138,22 @@ const HotelDepartmentsPage = lazy(() => import('@/features/hotel/roster/pages/De
 const HotelShiftsPage = lazy(() => import('@/features/hotel/roster/pages/ShiftsPage').then(m => ({ default: m.ShiftsPage })));
 const HotelShiftRosterPage = lazy(() => import('@/features/hotel/roster/pages/ShiftRosterPage').then(m => ({ default: m.ShiftRosterPage })));
 
+// OTA Pages
+const OtaChannelsPage = lazy(() => import('@/features/hotel/ota/pages/OtaChannelsPage'));
+const RateSyncPage = lazy(() => import('@/features/hotel/ota/pages/RateSyncPage'));
+const OtaBookingsPage = lazy(() => import('@/features/hotel/ota/pages/OtaBookingsPage'));
+
+// Hotel Night Audit & GST
+const NightAuditPage = lazy(() => import('@/features/hotel/night-audit/pages/NightAuditPage'));
+const GstConfigPage = lazy(() => import('@/features/hotel/settings/pages/GstConfigPage'));
+
+// Hotel Reports
+const HotelReportsPage = lazy(() => import('@/features/hotel/reports/pages/HotelReportsPage'));
+
+// Hotel Corporate
+const CorporateAccountsPage = lazy(() => import('@/features/hotel/corporate/pages/CorporateAccountsPage'));
+const CorporateDetailPage = lazy(() => import('@/features/hotel/corporate/pages/CorporateDetailPage'));
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -504,6 +520,67 @@ function App() {
               <BusinessRoute>
                 <FeatureGuard feature="has_hotel_shift_roster">
                   <HotelShiftRosterPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+
+            {/* 🏨 HOTEL OTA ROUTES — Phase 6 */}
+            <Route path="/hotel/ota" element={<Navigate to="/hotel/ota/channels" replace />} />
+            <Route path="/hotel/ota/channels" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_ota">
+                  <OtaChannelsPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/ota/sync" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_ota">
+                  <RateSyncPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/ota/bookings" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_ota">
+                  <OtaBookingsPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+
+            {/* Night Audit & GST */}
+            <Route path="/hotel/night-audit" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_night_audit">
+                  <NightAuditPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/reports" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_reports">
+                  <HotelReportsPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/settings/gst" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_gst_compliance">
+                  <GstConfigPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/corporate" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_corporate">
+                  <CorporateAccountsPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/corporate/:id" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_corporate">
+                  <CorporateDetailPage />
                 </FeatureGuard>
               </BusinessRoute>
             } />

@@ -99,6 +99,7 @@ export function ServicesPage() {
         <div className="flex justify-between items-center flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-black text-slate-900 dark:text-white">Services & Menu</h1>
+            <p className="text-slate-500 text-sm mt-1">Manage menus, service items, and pricing for your POS outlets.</p>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Catalog of all billable services across outlets</p>
           </div>
           <Button onClick={openCreate} className="rounded-xl font-bold bg-orange-600 hover:bg-orange-700 text-white">

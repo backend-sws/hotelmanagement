@@ -383,7 +383,47 @@ Route::prefix('v1')->group(function () {
                 Route::delete('roster/{id}', [\App\Http\Controllers\Api\Business\HotelRosterController::class, 'destroy']);
             });
 
+            // 🔒 Hotel OTA Integration (feature: has_hotel_ota)
+            Route::middleware(['feature:has_hotel_ota'])->prefix('hotel')->group(function () {
+                Route::apiResource('ota-channels', \App\Http\Controllers\Api\Business\HotelOtaChannelController::class);
+                Route::get('ota/sync-history', [\App\Http\Controllers\Api\Business\HotelOtaSyncController::class, 'index']);
+                Route::post('ota/sync-all', [\App\Http\Controllers\Api\Business\HotelOtaSyncController::class, 'syncAll']);
+                // OTA Bookings will reuse the existing bookings controller or we can create a separate one.
+                // We'll filter OTA bookings in the frontend or add a query param.
+            });
+
+            // Night Audit
+            Route::middleware(['feature:has_hotel_night_audit'])->prefix('hotel')->group(function () {
+                Route::post('night-audit/run', [\App\Http\Controllers\Api\Business\HotelNightAuditController::class, 'run']);
+                Route::get('night-audit', [\App\Http\Controllers\Api\Business\HotelNightAuditController::class, 'history']);
+                Route::get('night-audit/preview', [\App\Http\Controllers\Api\Business\HotelNightAuditController::class, 'previewTotals']);
+            });
+
+            // GST Config & Compliance
+            Route::middleware(['feature:has_hotel_gst_compliance'])->prefix('hotel')->group(function () {
+                Route::get('tax-config', [\App\Http\Controllers\Api\Business\HotelGstController::class, 'show']);
+                Route::post('tax-config', [\App\Http\Controllers\Api\Business\HotelGstController::class, 'update']);
+            });
+
+            // Reports & Analytics
+            Route::middleware(['feature:has_hotel_reports'])->prefix('hotel/reports')->group(function () {
+                Route::get('occupancy', [\App\Http\Controllers\Api\Business\HotelReportController::class, 'occupancy']);
+                Route::get('revenue', [\App\Http\Controllers\Api\Business\HotelReportController::class, 'revenue']);
+                Route::get('channel-wise', [\App\Http\Controllers\Api\Business\HotelReportController::class, 'channelWise']);
+                Route::get('mis-summary', [\App\Http\Controllers\Api\Business\HotelReportController::class, 'misSummary']);
+            });
+
+            // Corporate Accounts & City Ledger
+            Route::middleware(['feature:has_hotel_corporate'])->prefix('hotel')->group(function () {
+                Route::apiResource('corporate-accounts', \App\Http\Controllers\Api\Business\HotelCorporateController::class);
+                Route::get('corporate-accounts/{id}/statement', [\App\Http\Controllers\Api\Business\HotelCorporateController::class, 'statement']);
+                Route::post('corporate-accounts/{id}/payment', [\App\Http\Controllers\Api\Business\HotelCorporateController::class, 'recordPayment']);
+            });
+
         });
+
+        // Public Webhooks for OTA (Outside auth middleware)
+        Route::post('/ota/webhook/{channelName}', [\App\Http\Controllers\Api\HotelOtaWebhookController::class, 'handle']);
 
 
         // Profile (any authenticated user)
