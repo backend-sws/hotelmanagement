@@ -97,6 +97,9 @@ class SupplierController extends BaseController
             'balance_type' => 'nullable|string|in:debit,credit'
         ]);
 
+        $validated['opening_balance'] = $validated['opening_balance'] ?? 0;
+        $validated['balance_type'] = $validated['balance_type'] ?? 'credit';
+
         return $this->executeAction(function () use ($validated) {
             return $this->supplierService->createSupplier($validated);
         }, 'Supplier created successfully', 201);
@@ -140,6 +143,13 @@ class SupplierController extends BaseController
             'opening_balance' => 'nullable|numeric|min:0',
             'balance_type' => 'nullable|string|in:debit,credit'
         ]);
+
+        if (array_key_exists('opening_balance', $validated)) {
+            $validated['opening_balance'] = $validated['opening_balance'] ?? 0;
+        }
+        if (array_key_exists('balance_type', $validated)) {
+            $validated['balance_type'] = $validated['balance_type'] ?? 'credit';
+        }
 
         return $this->executeAction(function () use ($supplier, $validated) {
             return $this->supplierService->updateSupplier($supplier, $validated);

@@ -110,9 +110,12 @@ export default function InvoiceDetailPage() {
       <div className="flex gap-4 items-center">
         <Button variant="ghost" size="icon" onClick={() => navigate('/invoices')}><ArrowLeft className="h-4 w-4" /></Button>
         <h1 className="text-2xl font-bold">{formatType(invoice.invoice_type)} #{invoice.invoice_number}</h1>
-        {invoice.status === 'completed' && <Badge className="bg-green-500">Completed</Badge>}
-        {invoice.status === 'pending' && <Badge className="bg-red-500">Pending</Badge>}
-        {invoice.status === 'draft' && <Badge variant="outline">Draft</Badge>}
+        {(invoice.status === 'completed' || invoice.status === 'paid') && <Badge className="bg-emerald-500">Paid</Badge>}
+        {(invoice.status === 'partially_paid' || invoice.status === 'partial') && <Badge className="bg-amber-500">Partially Paid</Badge>}
+        {(invoice.status === 'pending' || invoice.status === 'unpaid') && <Badge className="bg-rose-500">Unpaid</Badge>}
+        {(invoice.status === 'converted' || invoice.converted_at) && <Badge className="bg-blue-500">Converted</Badge>}
+        {invoice.status === 'cancelled' && <Badge className="bg-red-600">Cancelled</Badge>}
+        {(invoice.status === 'draft' && !invoice.converted_at) && <Badge variant="outline">Draft</Badge>}
 
         <div className="ml-auto flex gap-2">
           {['proforma', 'quotation', 'delivery_challan'].includes(invoice.invoice_type) && !invoice.converted_at && (

@@ -26,19 +26,56 @@ class ChallanController extends Controller
 
     public function index(Request $request)
     {
-        $businessId = app('current_business_id');
+        $businessId = app('current_business_id') ?? ($request->user() ? $request->user()->business_id : null);
         $query = Sale::with(['customer', 'user'])
             ->where('business_id', $businessId)
             ->where('invoice_type', 'delivery_challan');
 
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        if ($request->filled('status') && $request->status !== 'all') {
+            $status = $request->status;
+            if ($status === 'pending') {
+                $query->whereIn('status', ['pending', 'unpaid', 'draft'])
+                      ->whereNull('converted_at')
+                      ->where('status', '!=', 'converted');
+            } elseif ($status === 'completed' || $status === 'delivered') {
+                $query->whereIn('status', ['completed', 'delivered', 'paid']);
+            } elseif ($status === 'converted') {
+                $query->where(function ($q) {
+                    $q->where('status', 'converted')->orWhereNotNull('converted_at');
+                });
+            } elseif ($status === 'cancelled') {
+                $query->where('status', 'cancelled');
+            } else {
+                $query->where('status', $status);
+            }
         }
-        if ($request->has('customer_id')) {
+
+        if ($request->filled('customer_id')) {
             $query->where('customer_id', $request->customer_id);
         }
 
-        return response()->json(['data' => $query->orderBy('id', 'desc')->paginate(20)]);
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'LIKE', "%{$search}%")
+                  ->orWhere('vehicle_number', 'LIKE', "%{$search}%")
+                  ->orWhere('driver_name', 'LIKE', "%{$search}%")
+                  ->orWhere('notes', 'LIKE', "%{$search}%")
+                  ->orWhereHas('customer', function ($cq) use ($search) {
+                      $cq->where('name', 'LIKE', "%{$search}%")
+                        ->orWhere('phone', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('date', [$request->start_date, $request->end_date]);
+        } elseif ($request->filled('from_date') && $request->filled('to_date')) {
+            $query->whereBetween('date', [$request->from_date, $request->to_date]);
+        }
+
+        $perPage = (int) $request->input('per_page', 20);
+        return response()->json(['data' => $query->orderBy('id', 'desc')->paginate($perPage)]);
     }
 
     public function show($id, Request $request)
@@ -150,7 +187,7 @@ class ChallanController extends Controller
 
             // Mark challans as converted
             foreach ($challans as $c) {
-                $c->update(['status' => 'converted', 'parent_id' => $invoice->id]);
+                $c->update(['status' => 'converted', 'converted_at' => now(), 'parent_id' => $invoice->id]);
             }
 
             return $invoice->load(['items.product', 'customer']);

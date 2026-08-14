@@ -27,6 +27,38 @@ class Customer extends Model
         'price_list_id',
     ];
 
+    protected $attributes = [
+        'credit_limit' => 0.00,
+        'opening_balance' => 0.00,
+        'credit_period' => '0',
+        'balance_type' => 'debit',
+    ];
+
+    protected $casts = [
+        'credit_limit' => 'decimal:2',
+        'opening_balance' => 'decimal:2',
+    ];
+
+    public function setCreditLimitAttribute($value): void
+    {
+        $this->attributes['credit_limit'] = ($value === null || $value === '') ? 0.00 : (float) $value;
+    }
+
+    public function setOpeningBalanceAttribute($value): void
+    {
+        $this->attributes['opening_balance'] = ($value === null || $value === '') ? 0.00 : (float) $value;
+    }
+
+    public function setCreditPeriodAttribute($value): void
+    {
+        $this->attributes['credit_period'] = ($value === null || $value === '') ? '0' : (string) $value;
+    }
+
+    public function setBalanceTypeAttribute($value): void
+    {
+        $this->attributes['balance_type'] = ($value === null || $value === '') ? 'debit' : $value;
+    }
+
     public function business()
     {
         return $this->belongsTo(Business::class);

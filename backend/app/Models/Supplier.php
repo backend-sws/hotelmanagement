@@ -28,6 +28,25 @@ class Supplier extends Model
         'balance_type',
     ];
 
+    protected $attributes = [
+        'opening_balance' => 0.00,
+        'balance_type' => 'credit',
+    ];
+
+    protected $casts = [
+        'opening_balance' => 'decimal:2',
+    ];
+
+    public function setOpeningBalanceAttribute($value): void
+    {
+        $this->attributes['opening_balance'] = ($value === null || $value === '') ? 0.00 : (float) $value;
+    }
+
+    public function setBalanceTypeAttribute($value): void
+    {
+        $this->attributes['balance_type'] = ($value === null || $value === '') ? 'credit' : $value;
+    }
+
     /**
      * The "booted" method of the model.
      */

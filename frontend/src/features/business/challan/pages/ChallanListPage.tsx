@@ -39,9 +39,14 @@ export default function ChallanListPage() {
 
   const challans = data?.data || [];
 
-  const getStatusBadge = (st: string) => {
+  const getStatusBadge = (challanOrStatus: any) => {
+    const st = typeof challanOrStatus === 'object'
+      ? ((challanOrStatus.status === 'converted' || challanOrStatus.converted_at) ? 'converted' : challanOrStatus.status)
+      : challanOrStatus;
+
     switch (st) {
       case 'completed':
+      case 'delivered':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Delivered
@@ -53,22 +58,19 @@ export default function ChallanListPage() {
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Converted
           </span>
         );
-      case 'pending':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" /> Pending
-          </span>
-        );
       case 'cancelled':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Cancelled
           </span>
         );
+      case 'pending':
+      case 'unpaid':
+      case 'draft':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
-            {st}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" /> Pending
           </span>
         );
     }
@@ -423,7 +425,7 @@ export default function ChallanListPage() {
                         {c.vehicle_number || '—'}
                       </td>
                       <td className="py-4 px-6 text-center">
-                        {getStatusBadge(c.status)}
+                        {getStatusBadge(c)}
                       </td>
                       <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">

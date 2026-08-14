@@ -27,25 +27,75 @@ class InvoiceController extends Controller
 
     public function index(Request $request)
     {
-        $query = Sale::with(['customer', 'user'])->where('business_id', app('current_business_id'));
+        $businessId = app('current_business_id') ?? ($request->user() ? $request->user()->business_id : null);
+        $query = Sale::with(['customer', 'user'])->where('business_id', $businessId);
 
-        if ($request->has('invoice_type')) {
+        if ($request->filled('invoice_type') && $request->invoice_type !== 'all') {
             $query->where('invoice_type', $request->invoice_type);
         }
 
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        if ($request->filled('status') && $request->status !== 'all') {
+            $status = $request->status;
+            if ($status === 'paid' || $status === 'completed') {
+                $query->where(function ($q) {
+                    $q->whereIn('status', ['paid', 'completed'])
+                      ->orWhereRaw('paid_amount >= final_amount AND final_amount > 0');
+                });
+            } elseif ($status === 'unpaid' || $status === 'pending') {
+                $query->where(function ($q) {
+                    $q->whereIn('status', ['unpaid', 'pending'])
+                      ->orWhere(function ($sq) {
+                          $sq->where('paid_amount', 0)->where('final_amount', '>', 0);
+                      });
+                });
+            } elseif ($status === 'partially_paid' || $status === 'partial') {
+                $query->where(function ($q) {
+                    $q->whereIn('status', ['partially_paid', 'partial'])
+                      ->orWhereRaw('paid_amount > 0 AND paid_amount < final_amount');
+                });
+            } elseif ($status === 'converted') {
+                $query->where(function ($q) {
+                    $q->where('status', 'converted')
+                      ->orWhereNotNull('converted_at');
+                });
+            } elseif ($status === 'draft') {
+                $query->where(function ($q) {
+                    $q->whereIn('status', ['draft', 'pending'])
+                      ->whereNull('converted_at')
+                      ->where('status', '!=', 'converted');
+                });
+            } elseif ($status === 'cancelled') {
+                $query->where('status', 'cancelled');
+            } else {
+                $query->where('status', $status);
+            }
         }
         
-        if ($request->has('customer_id')) {
+        if ($request->filled('customer_id')) {
             $query->where('customer_id', $request->customer_id);
         }
 
-        if ($request->has('start_date') && $request->has('end_date')) {
-            $query->whereBetween('date', [$request->start_date, $request->end_date]);
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'LIKE', "%{$search}%")
+                  ->orWhere('reference_number', 'LIKE', "%{$search}%")
+                  ->orWhere('notes', 'LIKE', "%{$search}%")
+                  ->orWhereHas('customer', function ($cq) use ($search) {
+                      $cq->where('name', 'LIKE', "%{$search}%")
+                        ->orWhere('phone', 'LIKE', "%{$search}%");
+                  });
+            });
         }
 
-        $invoices = $query->orderBy('id', 'desc')->paginate(20);
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('date', [$request->start_date, $request->end_date]);
+        } elseif ($request->filled('from_date') && $request->filled('to_date')) {
+            $query->whereBetween('date', [$request->from_date, $request->to_date]);
+        }
+
+        $perPage = (int) $request->input('per_page', 20);
+        $invoices = $query->orderBy('id', 'desc')->paginate($perPage);
 
         return response()->json(['data' => $invoices]);
     }
@@ -131,6 +181,8 @@ class InvoiceController extends Controller
             $status = 'paid';
             if ($validated['invoice_type'] === 'proforma' || $validated['invoice_type'] === 'quotation') {
                 $status = 'draft';
+            } elseif ($validated['invoice_type'] === 'delivery_challan') {
+                $status = 'pending';
             } elseif ($paidAmount == 0) {
                 $status = 'unpaid';
             } elseif ($paidAmount < $roundedTotal) {
@@ -387,7 +439,9 @@ class InvoiceController extends Controller
             // FIX BUG-09: consistent status values
             $status = 'paid';
             if ($validated['invoice_type'] === 'proforma' || $validated['invoice_type'] === 'quotation') {
-                $status = 'draft';
+                $status = ($sale->status === 'converted' || $sale->converted_at) ? 'converted' : 'draft';
+            } elseif ($validated['invoice_type'] === 'delivery_challan') {
+                $status = in_array($sale->status, ['completed', 'delivered', 'converted', 'cancelled']) ? $sale->status : 'pending';
             } elseif ($paidAmount == 0) {
                 $status = 'unpaid';
             } elseif ($paidAmount < $roundedTotal) {
@@ -531,13 +585,74 @@ class InvoiceController extends Controller
     {
         $businessId = app('current_business_id');
         $parentInvoice = Sale::with('items')->where('business_id', $businessId)->findOrFail($id);
-        
-        // Example conversion logic: Proforma -> Sales Invoice
-        // We'll leave this basic for now
-        $parentInvoice->converted_at = now();
-        $parentInvoice->save();
 
-        return response()->json(['message' => 'Converted successfully']);
+        $invoice = DB::transaction(function () use ($parentInvoice, $businessId, $request) {
+            $invoiceNumber = $this->invoiceNumberService->generate($businessId, 'sales_invoice');
+
+            $invoice = $parentInvoice->replicate();
+            $invoice->invoice_number = $invoiceNumber;
+            $invoice->invoice_type = 'sales_invoice';
+            $invoice->status = 'unpaid';
+            $invoice->parent_id = $parentInvoice->id;
+            $invoice->user_id = $request->user() ? $request->user()->id : $parentInvoice->user_id;
+            $invoice->date = now()->toDateString();
+            $invoice->converted_at = null;
+            $invoice->save();
+
+            foreach ($parentInvoice->items as $item) {
+                $newItem = $item->replicate();
+                $newItem->sale_id = $invoice->id;
+                $newItem->save();
+
+                // If converting from proforma or quotation (inventory wasn't deducted yet), deduct now
+                if (in_array($parentInvoice->invoice_type, ['proforma', 'quotation'])) {
+                    $product = Product::find($item->product_id);
+                    if ($product) {
+                        if ($product->quantity < $item->quantity) {
+                            throw new \Exception(
+                                "Insufficient stock for '{$product->model_name}': Available {$product->quantity}, Requested {$item->quantity}."
+                            );
+                        }
+                        $product->decrement('quantity', $item->quantity);
+
+                        InventoryMovement::create([
+                            'product_id'     => $product->id,
+                            'type'           => 'out',
+                            'quantity'       => $item->quantity,
+                            'reference_type' => 'sale',
+                            'reference_id'   => $invoice->id,
+                        ]);
+                    }
+                }
+            }
+
+            // Record invoice in Ledger
+            if ($invoice->customer_id) {
+                $ledgerService = app(\App\Services\LedgerService::class);
+                $docName = ucfirst(str_replace('_', ' ', $parentInvoice->invoice_type));
+                $ledgerService->createEntry([
+                    'business_id' => $businessId,
+                    'party_type' => 'customer',
+                    'party_id' => $invoice->customer_id,
+                    'entry_type' => 'invoice',
+                    'reference_type' => 'invoice',
+                    'reference_id' => $invoice->id,
+                    'date' => $invoice->date,
+                    'debit' => $invoice->final_amount,
+                    'credit' => 0,
+                    'narration' => "Sales Invoice #{$invoice->invoice_number} (Converted from {$docName} #{$parentInvoice->invoice_number})",
+                ]);
+            }
+
+            $parentInvoice->update([
+                'status' => 'converted',
+                'converted_at' => now(),
+            ]);
+
+            return $invoice->load(['items.product', 'customer']);
+        });
+
+        return response()->json(['data' => $invoice, 'message' => 'Document converted to Sales Invoice successfully'], 200);
     }
 
     public function sendWhatsapp($id, Request $request)

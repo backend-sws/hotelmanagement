@@ -56,7 +56,11 @@ export default function QuotationListPage() {
     onError: () => toast.error('Conversion failed'),
   });
 
-  const getStatusBadge = (st: string) => {
+  const getStatusBadge = (quotationOrStatus: any) => {
+    const st = typeof quotationOrStatus === 'object'
+      ? ((quotationOrStatus.status === 'converted' || quotationOrStatus.converted_at) ? 'converted' : quotationOrStatus.status)
+      : quotationOrStatus;
+
     switch (st) {
       case 'accepted':
         return (
@@ -82,16 +86,17 @@ export default function QuotationListPage() {
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Rejected
           </span>
         );
+      case 'expired':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Expired
+          </span>
+        );
       case 'draft':
+      default:
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/15 text-slate-700 dark:text-slate-400 border border-slate-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> Draft
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
-            {st}
           </span>
         );
     }
@@ -287,6 +292,7 @@ export default function QuotationListPage() {
                 { value: 'accepted', label: 'Accepted' },
                 { value: 'converted', label: 'Converted to Invoice' },
                 { value: 'rejected', label: 'Rejected' },
+                { value: 'expired', label: 'Expired' },
               ]}
               wrapperClassName="w-full sm:w-52 shrink-0"
             />
@@ -381,7 +387,7 @@ export default function QuotationListPage() {
                         ₹{Number(q.final_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="py-4 px-6 text-center">
-                        {getStatusBadge(q.status)}
+                        {getStatusBadge(q)}
                       </td>
                       <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">

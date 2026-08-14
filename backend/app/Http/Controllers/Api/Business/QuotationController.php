@@ -19,15 +19,53 @@ class QuotationController extends Controller
 
     public function index(Request $request)
     {
+        $businessId = app('current_business_id') ?? ($request->user() ? $request->user()->business_id : null);
         $query = Sale::with(['customer', 'user'])
-            ->where('business_id', app('current_business_id'))
+            ->where('business_id', $businessId)
             ->where('invoice_type', 'quotation');
 
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        if ($request->filled('status') && $request->status !== 'all') {
+            $status = $request->status;
+            if ($status === 'converted') {
+                $query->where(function ($q) {
+                    $q->where('status', 'converted')->orWhereNotNull('converted_at');
+                });
+            } elseif ($status === 'draft') {
+                $query->where(function ($q) {
+                    $q->where('status', 'draft')
+                      ->whereNull('converted_at')
+                      ->where('status', '!=', 'converted');
+                });
+            } else {
+                $query->where('status', $status);
+            }
         }
 
-        return response()->json(['data' => $query->orderBy('id', 'desc')->paginate(20)]);
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'LIKE', "%{$search}%")
+                  ->orWhere('reference_number', 'LIKE', "%{$search}%")
+                  ->orWhere('notes', 'LIKE', "%{$search}%")
+                  ->orWhereHas('customer', function ($cq) use ($search) {
+                      $cq->where('name', 'LIKE', "%{$search}%")
+                        ->orWhere('phone', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('date', [$request->start_date, $request->end_date]);
+        } elseif ($request->filled('from_date') && $request->filled('to_date')) {
+            $query->whereBetween('date', [$request->from_date, $request->to_date]);
+        }
+
+        $perPage = (int) $request->input('per_page', 20);
+        return response()->json(['data' => $query->orderBy('id', 'desc')->paginate($perPage)]);
     }
 
     public function show($id, Request $request)
@@ -84,7 +122,7 @@ class QuotationController extends Controller
                 $newItem->save();
             }
 
-            $quotation->update(['status' => 'converted']);
+            $quotation->update(['status' => 'converted', 'converted_at' => now()]);
 
             return $invoice->load(['items.product', 'customer']);
         });

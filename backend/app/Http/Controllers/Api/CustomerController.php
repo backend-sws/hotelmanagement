@@ -102,6 +102,11 @@ class CustomerController extends BaseController
             'price_list_id' => 'nullable|exists:price_lists,id'
         ]);
 
+        $validated['credit_limit'] = $validated['credit_limit'] ?? 0;
+        $validated['opening_balance'] = $validated['opening_balance'] ?? 0;
+        $validated['credit_period'] = $validated['credit_period'] ?? '0';
+        $validated['balance_type'] = $validated['balance_type'] ?? 'debit';
+
         return $this->executeAction(function () use ($validated) {
             return $this->customerService->createCustomer($validated);
         }, 'Customer created successfully', 201);
@@ -147,6 +152,19 @@ class CustomerController extends BaseController
             'balance_type' => 'nullable|string|in:debit,credit',
             'price_list_id' => 'nullable|exists:price_lists,id'
         ]);
+
+        if (array_key_exists('credit_limit', $validated)) {
+            $validated['credit_limit'] = $validated['credit_limit'] ?? 0;
+        }
+        if (array_key_exists('opening_balance', $validated)) {
+            $validated['opening_balance'] = $validated['opening_balance'] ?? 0;
+        }
+        if (array_key_exists('credit_period', $validated)) {
+            $validated['credit_period'] = $validated['credit_period'] ?? '0';
+        }
+        if (array_key_exists('balance_type', $validated)) {
+            $validated['balance_type'] = $validated['balance_type'] ?? 'debit';
+        }
 
         return $this->executeAction(function () use ($customer, $validated) {
             return $this->customerService->updateCustomer($customer, $validated);

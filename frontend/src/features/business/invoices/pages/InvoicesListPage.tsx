@@ -63,7 +63,11 @@ export default function InvoicesListPage() {
     }
   };
   
-  const getStatusBadge = (st: string) => {
+  const getStatusBadge = (invoiceOrStatus: any) => {
+    const st = typeof invoiceOrStatus === 'object'
+      ? ((invoiceOrStatus.status === 'converted' || invoiceOrStatus.converted_at) ? 'converted' : invoiceOrStatus.status)
+      : invoiceOrStatus;
+
     switch (st) {
       case 'completed':
       case 'paid':
@@ -73,6 +77,7 @@ export default function InvoicesListPage() {
           </span>
         );
       case 'partially_paid':
+      case 'partial':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Partial
@@ -85,16 +90,23 @@ export default function InvoicesListPage() {
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Unpaid
           </span>
         );
+      case 'converted':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Converted
+          </span>
+        );
+      case 'cancelled':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Cancelled
+          </span>
+        );
       case 'draft':
+      default:
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/15 text-slate-700 dark:text-slate-400 border border-slate-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> Draft
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
-            {st}
           </span>
         );
     }
@@ -292,10 +304,12 @@ export default function InvoicesListPage() {
               placeholder="All Statuses"
               options={[
                 { value: 'all', label: 'All Statuses' },
-                { value: 'completed', label: 'Paid' },
+                { value: 'paid', label: 'Paid' },
                 { value: 'partially_paid', label: 'Partially Paid' },
-                { value: 'pending', label: 'Unpaid' },
+                { value: 'unpaid', label: 'Unpaid / Pending' },
                 { value: 'draft', label: 'Draft' },
+                { value: 'converted', label: 'Converted' },
+                { value: 'cancelled', label: 'Cancelled' },
               ]}
               wrapperClassName="w-full sm:w-44 shrink-0"
             />
@@ -396,7 +410,7 @@ export default function InvoicesListPage() {
                         ₹{Number(invoice.final_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="py-4 px-6 text-center">
-                        {getStatusBadge(invoice.status)}
+                        {getStatusBadge(invoice)}
                       </td>
                       <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
