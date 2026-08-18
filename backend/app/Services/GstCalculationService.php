@@ -22,6 +22,19 @@ class GstCalculationService
     public function calculateItemTax(float $rate, float $qty, float $gstRate, string $taxType, float $cessRate = 0): array
     {
         $taxableAmount = $rate * $qty;
+
+        if ($taxType === 'exempt') {
+            return [
+                'taxable_amount' => round($taxableAmount, 2),
+                'cgst_amount'    => 0.0,
+                'sgst_amount'    => 0.0,
+                'igst_amount'    => 0.0,
+                'cess_amount'    => 0.0,
+                'total_tax'      => 0.0,
+                'total_amount'   => round($taxableAmount, 2),
+            ];
+        }
+
         $totalTax = $taxableAmount * ($gstRate / 100);
         $cess = $taxableAmount * ($cessRate / 100);
 
