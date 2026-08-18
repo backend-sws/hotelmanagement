@@ -113,7 +113,9 @@ class InvoiceController extends Controller
             'vehicle_number' => 'nullable|string|max:50',
             'driver_name' => 'nullable|string|max:100',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => 'nullable|exists:products,id',
+            'items.*.name' => 'nullable|string|max:255',
+            'items.*.description' => 'nullable|string',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.rate' => 'required|numeric|min:0',
             'items.*.gst_rate' => 'required|numeric|min:0',
@@ -192,11 +194,12 @@ class InvoiceController extends Controller
             $sale = Sale::create([
                 'business_id' => $businessId,
                 'customer_id' => $validated['customer_id'] ?? null,
-                'user_id' => $request->user()->id,
+                'user_id' => auth()->id() ?? 1,
+                'project_id' => $request->project_id ?? null,
                 'invoice_number' => $invoiceNumber,
                 'invoice_type' => $validated['invoice_type'],
-                'tax_type' => $taxType,
                 'date' => $validated['date'],
+                'invoice_date' => $validated['date'],
                 'due_date' => $validated['due_date'] ?? null,
                 'place_of_supply' => $validated['place_of_supply'] ?? null,
                 
@@ -225,7 +228,9 @@ class InvoiceController extends Controller
             foreach ($itemsPayload as $ip) {
                 SaleItem::create([
                     'sale_id' => $sale->id,
-                    'product_id' => $ip['product_id'],
+                    'product_id' => $ip['product_id'] ?? null,
+                    'name' => $ip['name'] ?? null,
+                    'description' => $ip['description'] ?? null,
                     'quantity' => $ip['quantity'],
                     'rate' => $ip['rate'],
                     'hsn_code' => $ip['hsn_code'] ?? null,
@@ -240,8 +245,8 @@ class InvoiceController extends Controller
                     'amount' => $ip['total_amount'],
                 ]);
 
-                // FIX EDGE-03: Check stock level BEFORE deducting — prevent negative inventory
-                if (in_array($validated['invoice_type'], ['sales_invoice', 'delivery_challan'])) {
+                // FIX EDGE-03: Check stock level BEFORE deducting — only for physical inventory items
+                if (in_array($validated['invoice_type'], ['sales_invoice', 'delivery_challan']) && !empty($ip['product_id'])) {
                     $product = Product::find($ip['product_id']);
                     if ($product) {
                         if ($product->quantity < $ip['quantity']) {
@@ -391,6 +396,7 @@ class InvoiceController extends Controller
                 ->delete();
 
             // Also delete ledger payment entries linked to this sale (they will be recreated below)
+            // Also delete ledger payment entries linked to this sale
             \App\Models\LedgerEntry::where('business_id', $businessId)
                 ->where('reference_type', 'payment')
                 ->where('reference_id', $sale->id)
@@ -417,7 +423,6 @@ class InvoiceController extends Controller
                     $ledgerService = app(\App\Services\LedgerService::class);
                     $currentOutstanding = $ledgerService->getCustomerOutstanding($customerModel->id);
                     
-                    // Adjust current outstanding by removing the old pending amount of THIS invoice
                     $oldPending = $sale->final_amount - $sale->paid_amount;
                     $adjustedOutstanding = $currentOutstanding - $oldPending;
                     
@@ -448,12 +453,13 @@ class InvoiceController extends Controller
                 $status = 'partially_paid';
             }
 
-            // 4. Update Sale record
+            // 4. Update parent Sale
             $sale->update([
                 'customer_id' => $validated['customer_id'] ?? null,
+                'project_id' => $request->project_id ?? null,
                 'invoice_type' => $validated['invoice_type'],
-                'tax_type' => $taxType,
                 'date' => $validated['date'],
+                'invoice_date' => $validated['date'],
                 'due_date' => $validated['due_date'] ?? null,
                 'place_of_supply' => $validated['place_of_supply'] ?? null,
                 'taxable_amount' => $invoiceTotals['taxable_total'],
@@ -481,7 +487,9 @@ class InvoiceController extends Controller
             foreach ($itemsPayload as $ip) {
                 SaleItem::create([
                     'sale_id' => $sale->id,
-                    'product_id' => $ip['product_id'],
+                    'product_id' => $ip['product_id'] ?? null,
+                    'name' => $ip['name'] ?? null,
+                    'description' => $ip['description'] ?? null,
                     'quantity' => $ip['quantity'],
                     'rate' => $ip['rate'],
                     'hsn_code' => $ip['hsn_code'] ?? null,
@@ -496,8 +504,8 @@ class InvoiceController extends Controller
                     'amount' => $ip['total_amount'],
                 ]);
 
-                // FIX EDGE-03: Stock check before deducting on update too
-                if (in_array($validated['invoice_type'], ['sales_invoice', 'delivery_challan'])) {
+                // FIX EDGE-03: Stock check before deducting on update too (only for physical inventory items)
+                if (in_array($validated['invoice_type'], ['sales_invoice', 'delivery_challan']) && !empty($ip['product_id'])) {
                     $product = Product::find($ip['product_id']);
                     if ($product) {
                         if ($product->quantity < $ip['quantity']) {
@@ -539,7 +547,7 @@ class InvoiceController extends Controller
             return $sale->load(['items.product', 'customer']);
         });
 
-        return response()->json(['data' => $updatedInvoice]);
+        return response()->json(['data' => $invoice]);
     }
 
     public function generatePdf($id, Request $request)

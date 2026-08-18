@@ -35,6 +35,7 @@ export function PaymentSection({
           <div className="relative">
             <span className="absolute left-2.5 top-2 text-xs font-bold text-slate-400">₹</span>
             <Input 
+              id="input-paid-amount"
               type="number" 
               min="0"
               disabled={paymentMode === 'Split'}
@@ -43,7 +44,18 @@ export function PaymentSection({
               }`}
               value={paidAmount || ''} 
               placeholder="0.00"
+              onFocus={e => e.target.select()}
               onChange={e => onPaidAmountChange(Number(e.target.value) || 0)} 
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  // Trigger primary save/print action
+                  document.getElementById('btn-save-pdf')?.click();
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  document.getElementById('item-search-input')?.focus();
+                }
+              }}
             />
           </div>
         </div>

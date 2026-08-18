@@ -166,7 +166,7 @@
                 @foreach($invoice->items as $index => $item)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $item->product->name ?? 'Unknown Item' }}</td>
+                    <td>{{ $item->name ?? $item->product?->name ?? $item->product?->model_name ?? 'Item/Service' }}</td>
                     @if($settings['fields']['show_hsn'] ?? true)
                     <td>{{ $item->hsn_code ?? '-' }}</td>
                     @endif

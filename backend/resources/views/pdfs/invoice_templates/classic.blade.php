@@ -158,7 +158,7 @@
                         @if($settings['fields']['show_hsn'] ?? true)
                         <td>{{ $item->hsn_code ?? '-' }}</td>
                         @endif
-                        <td style="text-align: left;">{{ $item->product->name ?? 'Unknown Item' }}</td>
+                        <td style="text-align: left;">{{ $item->name ?? $item->product?->name ?? $item->product?->model_name ?? 'Item/Service' }}</td>
                         @if($settings['fields']['show_qty'] ?? true)
                         <td>{{ floatval($item->quantity) }} {{ $item->unit }}</td>
                         @endif

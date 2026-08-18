@@ -182,12 +182,25 @@ export function InvoiceSummaryPanel({
         <div className="relative w-28">
           <span className="absolute left-2.5 top-1.5 text-xs text-slate-400 font-bold">₹</span>
           <Input 
+            id="input-discount"
             type="number" 
             min="0"
             className="h-8 pl-6 pr-2 text-right font-bold text-slate-900 dark:text-white bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 rounded-lg text-xs" 
             value={discount || ''} 
             placeholder="0.00"
+            onFocus={e => e.target.select()}
             onChange={e => onDiscountChange(Number(e.target.value) || 0)} 
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const paidInput = document.getElementById('input-paid-amount') as HTMLInputElement;
+                paidInput?.focus();
+                paidInput?.select();
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                document.getElementById('item-search-input')?.focus();
+              }
+            }}
           />
         </div>
       </div>

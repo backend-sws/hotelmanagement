@@ -88,8 +88,8 @@ export default function InvoiceDetailPage() {
     driver_name: invoice.driver_name,
     reference_number: invoice.reference_number || '',
     items: invoice.items.map((item: any) => ({
-      name: item.product ? (item.product.name || item.product.model_name || item.product.item_code || 'Item') : 'Item',
-      hsn: item.product ? (item.product.hsn_code || item.hsn_code) : item.hsn_code,
+      name: item.name || (item.product ? (item.product.name || item.product.model_name || item.product.item_code || 'Item') : 'Item'),
+      hsn: item.hsn_code || (item.product ? item.product.hsn_code : ''),
       qty: item.quantity,
       unit: item.unit || (item.product ? item.product.unit : 'PCS') || 'PCS',
       rate: parseFloat(item.rate || item.unit_price || 0).toFixed(2),

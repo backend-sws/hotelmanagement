@@ -1,7 +1,9 @@
 import api from '@/lib/api';
 
 export interface InvoiceItem {
-  product_id: number;
+  product_id: number | null;
+  name?: string;
+  description?: string;
   quantity: number;
   rate: number;
   gst_rate: number;

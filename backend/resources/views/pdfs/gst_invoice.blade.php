@@ -109,7 +109,7 @@
                 @foreach($invoice->items as $index => $item)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $item->product->name ?? 'Unknown Item' }}</td>
+                    <td>{{ $item->name ?? $item->product?->name ?? $item->product?->model_name ?? 'Item/Service' }}</td>
                     <td>{{ $item->hsn_code ?? '-' }}</td>
                     <td class="right-align">{{ floatval($item->quantity) }} {{ $item->unit }}</td>
                     <td class="right-align">{{ number_format($item->rate, 2) }}</td>

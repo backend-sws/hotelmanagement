@@ -278,7 +278,7 @@
                     @php $totalQty += $item->quantity; @endphp
                     <tr>
                         <td class="text-left">
-                            <span class="font-bold" style="color: #000;">{{ $item->product->name ?? 'Item' }}</span>
+                            <span class="font-bold" style="color: #000;">{{ $item->name ?? $item->product?->name ?? $item->product?->model_name ?? 'Item/Service' }}</span>
                             @if(!empty($item->notes))
                                 <div style="font-size: 8px; color: #64748b;">{{ $item->notes }}</div>
                             @endif

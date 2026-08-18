@@ -2,13 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Input } from '@/components/ui/input';
-import { Search, AlertCircle, Plus, Package, CornerDownLeft } from 'lucide-react';
+import { Search, AlertCircle, Plus, Package, CornerDownLeft, Sparkles, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InventoryFormModal } from '@/features/business/inventory/components/InventoryFormModal';
 
 interface ItemSearchInputProps {
   onSelect: (item: any) => void;
   priceListId?: number | null;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+  autoFocus?: boolean;
 }
 
 const getEffectiveRate = (item: any): number => {
@@ -21,13 +23,14 @@ const getEffectiveRate = (item: any): number => {
   return 0;
 };
 
-export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps) {
+export function ItemSearchInput({ onSelect, priceListId, inputRef, autoFocus = false }: ItemSearchInputProps) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const internalInputRef = useRef<HTMLInputElement>(null);
+  const activeInputRef = inputRef || internalInputRef;
 
   const { data: results = [], isLoading } = useQuery({
     queryKey: ['items-search', query, priceListId],
@@ -39,6 +42,14 @@ export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps)
     },
     enabled: isOpen,
   });
+
+  useEffect(() => {
+    if (autoFocus) {
+      setTimeout(() => {
+        activeInputRef.current?.focus();
+      }, 100);
+    }
+  }, [autoFocus]);
 
   useEffect(() => {
     setSelectedIndex(-1);
@@ -66,23 +77,70 @@ export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps)
     setSelectedIndex(-1);
     setIsOpen(false);
     setTimeout(() => {
-      inputRef.current?.focus();
+      activeInputRef.current?.focus();
     }, 50);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!isOpen || !results || results.length === 0) return;
+  const handleAddDirectItem = (customName?: string) => {
+    const name = customName !== undefined ? customName.trim() : (query.trim() || '');
+    const newItemId = Math.random().toString(36).substr(2, 9);
+    onSelect({
+      id: newItemId,
+      product_id: null,
+      name: name,
+      quantity: 1,
+      unit: 'PCS',
+      rate: 0,
+      gst_rate: 18,
+      cess_rate: 0,
+      amount: 0,
+    });
+    setQuery('');
+    setSelectedIndex(-1);
+    setIsOpen(false);
+    setTimeout(() => {
+      const nameInput = document.getElementById(`item-name-${newItemId}`) as HTMLInputElement;
+      if (nameInput) {
+        nameInput.focus();
+        nameInput.select();
+      } else {
+        const rateInput = document.getElementById(`item-rate-${newItemId}`) as HTMLInputElement;
+        rateInput?.focus();
+        rateInput?.select();
+      }
+    }, 100);
+  };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+      if (isOpen && results && results.length > 0) {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+      } else if (!isOpen) {
+        // Move focus down to first item in table
+        const firstQtyInput = document.querySelector('input[id^="item-qty-"]') as HTMLInputElement;
+        if (firstQtyInput) {
+          e.preventDefault();
+          firstQtyInput.focus();
+          firstQtyInput.select();
+        }
+      }
     } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+      if (isOpen && results && results.length > 0) {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+      }
     } else if (e.key === 'Enter') {
-      if (selectedIndex >= 0 && selectedIndex < results.length) {
+      if (isOpen && selectedIndex >= 0 && selectedIndex < results.length) {
         e.preventDefault();
         handleSelectItem(results[selectedIndex]);
+      } else if (isOpen && results.length === 1) {
+        e.preventDefault();
+        handleSelectItem(results[0]);
+      } else if (query.trim()) {
+        // Direct Enter on non-empty query without selection -> Add as Direct Item
+        e.preventDefault();
+        handleAddDirectItem(query);
       }
     } else if (e.key === 'Escape') {
       e.preventDefault();
@@ -92,12 +150,13 @@ export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps)
 
   return (
     <div ref={wrapperRef} className="relative w-full">
-      <div className="relative flex items-center gap-2">
-        <div className="relative flex-1">
+      <div className="relative flex items-center gap-2 flex-wrap sm:flex-nowrap">
+        <div className="relative flex-1 min-w-[240px]">
           <Input
-            ref={inputRef}
+            id="item-search-input"
+            ref={activeInputRef}
             icon={<Search className="h-4 w-4 text-slate-400" />}
-            placeholder="Type item name, HSN or barcode... (Press ↑ ↓ to navigate, Enter to select)"
+            placeholder="Search items by name, barcode or HSN (or type to add directly)..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -115,6 +174,19 @@ export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps)
             <span>Add</span>
           </div>
         </div>
+
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => handleAddDirectItem()}
+          className="h-10 px-3.5 border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 shadow-2xs transition-all"
+          title="Add a clean row directly on the bill without managing inventory"
+        >
+          <Plus className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+          <span>+ Add Row</span>
+        </Button>
+
         <Button
           type="button"
           size="sm"
@@ -129,32 +201,70 @@ export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps)
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1.5 bg-white dark:bg-[#111118] rounded-xl border border-slate-200 dark:border-white/10 shadow-xl max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
+        <div className="absolute z-50 w-full mt-1.5 bg-white dark:bg-[#111118] rounded-xl border border-slate-200 dark:border-white/10 shadow-xl max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
+          {/* Quick Direct Item Option Header when typing */}
+          {query.trim() && (
+            <div className="p-2 bg-slate-50/80 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/5">
+              <button
+                type="button"
+                onClick={() => handleAddDirectItem(query)}
+                className="w-full text-left px-3 py-2 rounded-lg bg-white dark:bg-[#181822] hover:bg-slate-100 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/10 flex items-center justify-between group transition-all"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
+                    <Plus className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>Add &quot;{query}&quot; to bill directly</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-400 font-semibold">Direct</span>
+                    </p>
+                    <p className="text-[10px] text-slate-500">Direct line item without inventory tracking.</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-primary-600 text-white flex items-center gap-1">
+                  ↵ Enter
+                </span>
+              </button>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="p-4 text-xs text-center text-slate-500 font-medium">Loading items...</div>
           ) : !results || results.length === 0 ? (
-            <div className="p-4 text-center">
-              <p className="text-xs text-slate-500 mb-2.5">
-                {query.trim() ? `No item found matching "${query}"` : "No items available in inventory yet."}
+            <div className="p-4 text-center space-y-2">
+              <p className="text-xs text-slate-500">
+                {query.trim() ? `No inventory product found matching "${query}"` : "No items found in inventory."}
               </p>
-              <Button 
-                type="button"
-                size="sm" 
-                onClick={() => {
-                  setIsOpen(false);
-                  setIsAddModalOpen(true);
-                }} 
-                className="w-full bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs h-8"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1.5" /> Add New Item (Alt+I / F2)
-              </Button>
+              <div className="flex items-center justify-center gap-2">
+                <Button 
+                  type="button"
+                  size="sm" 
+                  onClick={() => handleAddDirectItem(query)} 
+                  className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs h-8"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Direct to Bill
+                </Button>
+                <Button 
+                  type="button"
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    setIsOpen(false);
+                    setIsAddModalOpen(true);
+                  }} 
+                  className="rounded-lg text-xs h-8"
+                >
+                  <Package className="h-3.5 w-3.5 mr-1.5" /> Save in Inventory (F2)
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="py-1">
               <div className="px-3 py-1 bg-slate-50/70 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/5 flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                <span>Select product to add to invoice</span>
+                <span>Inventory Products</span>
                 <span className="flex items-center gap-1 text-primary-600 dark:text-primary-400">
-                  <CornerDownLeft className="w-3 h-3" /> Press Enter to Add Multiple Items
+                  <CornerDownLeft className="w-3 h-3" /> Press Enter to Add
                 </span>
               </div>
               {results.map((item: any, index: number) => {
@@ -233,4 +343,5 @@ export function ItemSearchInput({ onSelect, priceListId }: ItemSearchInputProps)
     </div>
   );
 }
+
 

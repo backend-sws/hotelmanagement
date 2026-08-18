@@ -10,13 +10,26 @@ interface CustomerSearchInputProps {
   onSelect: (customer: any) => void;
   selectedCustomer: any | null;
   onClear: () => void;
+  autoFocus?: boolean;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+  onNextFocus?: () => void;
 }
 
-export function CustomerSearchInput({ onSelect, selectedCustomer, onClear }: CustomerSearchInputProps) {
+export function CustomerSearchInput({ 
+  onSelect, 
+  selectedCustomer, 
+  onClear,
+  autoFocus = false,
+  inputRef,
+  onNextFocus
+}: CustomerSearchInputProps) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const internalInputRef = useRef<HTMLInputElement>(null);
+  const activeInputRef = inputRef || internalInputRef;
 
   const { data: results, isLoading } = useQuery({
     queryKey: ['customers-search', query],
@@ -28,6 +41,18 @@ export function CustomerSearchInput({ onSelect, selectedCustomer, onClear }: Cus
   });
 
   useEffect(() => {
+    if (autoFocus && !selectedCustomer) {
+      setTimeout(() => {
+        activeInputRef.current?.focus();
+      }, 100);
+    }
+  }, [autoFocus, selectedCustomer]);
+
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [results, query]);
+
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -36,6 +61,48 @@ export function CustomerSearchInput({ onSelect, selectedCustomer, onClear }: Cus
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleSelectCustomer = (customer: any) => {
+    onSelect(customer);
+    setQuery('');
+    setIsOpen(false);
+    setSelectedIndex(-1);
+    onNextFocus?.();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!isOpen) {
+        setIsOpen(true);
+        return;
+      }
+      if (results && results.length > 0) {
+        setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!isOpen) return;
+      if (results && results.length > 0) {
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (isOpen && results && results.length > 0 && selectedIndex >= 0 && selectedIndex < results.length) {
+        handleSelectCustomer(results[selectedIndex]);
+      } else if (isOpen && results && results.length === 1) {
+        handleSelectCustomer(results[0]);
+      } else {
+        setIsOpen(false);
+        onNextFocus?.();
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsOpen(false);
+    } else if (e.key === 'Tab') {
+      setIsOpen(false);
+    }
+  };
 
   if (selectedCustomer) {
     return (
@@ -81,8 +148,10 @@ export function CustomerSearchInput({ onSelect, selectedCustomer, onClear }: Cus
       <div className="relative flex items-center gap-2">
         <div className="relative flex-1">
           <Input
+            id="customer-search-input"
+            ref={activeInputRef}
             icon={<Search className="h-4 w-4 text-slate-400" />}
-            placeholder="Search Customer by name, phone, or GSTIN..."
+            placeholder="Search Customer (Press Enter to skip to Items, F3 to focus)..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -90,6 +159,7 @@ export function CustomerSearchInput({ onSelect, selectedCustomer, onClear }: Cus
             }}
             onFocus={() => setIsOpen(true)}
             onClick={() => setIsOpen(true)}
+            onKeyDown={handleKeyDown}
             className="bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 h-10 text-xs rounded-xl focus:ring-primary-500 pl-11"
           />
         </div>
@@ -127,25 +197,23 @@ export function CustomerSearchInput({ onSelect, selectedCustomer, onClear }: Cus
             </div>
           ) : (
             <div className="py-1">
-              {results.map((c: any) => (
+              {results.map((c: any, index: number) => (
                 <button
                   type="button"
                   key={c.id}
-                  onClick={() => {
-                    onSelect(c);
-                    setQuery('');
-                    setIsOpen(false);
-                  }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors flex items-center justify-between group"
+                  onClick={() => handleSelectCustomer(c)}
+                  className={`w-full text-left px-4 py-2.5 transition-colors flex items-center justify-between group ${
+                    selectedIndex === index ? 'bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300' : 'hover:bg-slate-50 dark:hover:bg-white/[0.04]'
+                  }`}
                 >
                   <div>
-                    <p className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-primary-600 transition-colors">{c.name}</p>
+                    <p className={`font-bold text-xs ${selectedIndex === index ? 'text-primary-700 dark:text-primary-300' : 'text-slate-900 dark:text-white group-hover:text-primary-600'}`}>{c.name}</p>
                     <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
                       <span>{c.phone || 'No Phone'}</span>
                       {c.gstin && <span className="font-mono text-[10px] bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 rounded">GST: {c.gstin}</span>}
                     </p>
                   </div>
-                  <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className={`text-[10px] font-bold ${selectedIndex === index ? 'opacity-100 text-primary-600' : 'opacity-0 group-hover:opacity-100 text-primary-600 transition-opacity'}`}>
                     Select &rarr;
                   </span>
                 </button>
@@ -159,9 +227,8 @@ export function CustomerSearchInput({ onSelect, selectedCustomer, onClear }: Cus
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={(newCustomer) => {
-          onSelect(newCustomer);
+          handleSelectCustomer(newCustomer);
           setIsAddModalOpen(false);
-          setQuery('');
         }}
       />
     </div>

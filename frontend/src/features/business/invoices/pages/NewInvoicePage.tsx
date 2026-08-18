@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { ItemSearchInput } from '../components/ItemSearchInput';
 import { InvoiceItemsTable } from '../components/InvoiceItemsTable';
 import { InvoiceSummaryPanel } from '../components/InvoiceSummaryPanel';
 import { PaymentSection } from '../components/PaymentSection';
-import { Save, Printer, Send, FileText, Calendar, Users, Package, FileSpreadsheet, Sparkles, MapPin, Building2, Keyboard } from 'lucide-react';
+import { Save, Printer, Send, FileText, Calendar, Users, Package, FileSpreadsheet, Sparkles, MapPin, Building2, Keyboard, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { GST_STATES } from '@/features/business/customers/constants/gstStates';
 import { useQuery } from '@tanstack/react-query';
@@ -27,6 +27,9 @@ export default function NewInvoicePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const store = useInvoiceStore();
+  const customerInputRef = useRef<HTMLInputElement>(null);
+  const itemInputRef = useRef<HTMLInputElement>(null);
+
   const { 
     calculatedItems, taxType, taxableTotal, cgstTotal, sgstTotal, igstTotal, customTaxTotal, cessTotal,
     grandTotal, roundOff, calculatedCharges
@@ -40,6 +43,20 @@ export default function NewInvoicePage() {
   const { data: settings } = useInvoiceSettings();
 
   const editId = searchParams.get('edit') || searchParams.get('id');
+
+  useEffect(() => {
+    // Auto-focus on primary input as soon as the page is opened
+    const timer = setTimeout(() => {
+      if (!store.customer && customerInputRef.current) {
+        customerInputRef.current.focus();
+        customerInputRef.current.select();
+      } else if (itemInputRef.current) {
+        itemInputRef.current.focus();
+        itemInputRef.current.select();
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (editId) {
@@ -110,13 +127,45 @@ export default function NewInvoicePage() {
         store.reset();
         navigate('/invoices/new');
         toast.info('Started a new bill');
+        setTimeout(() => {
+          customerInputRef.current?.focus();
+          customerInputRef.current?.select();
+        }, 150);
         return;
       }
-      if (e.key === 'F9') {
+      if (e.key === 'F2') {
+        e.preventDefault();
+        const addItemBtn = document.querySelector('button[title*="Add New Inventory Product"]') as HTMLButtonElement;
+        addItemBtn?.click();
+      }
+      if (e.key === 'F3' || (e.altKey && e.key.toLowerCase() === 'c')) {
+        e.preventDefault();
+        customerInputRef.current?.focus();
+        customerInputRef.current?.select();
+      }
+      if (e.key === 'F8' || (e.altKey && (e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'i'))) {
+        e.preventDefault();
+        itemInputRef.current?.focus();
+        itemInputRef.current?.select();
+      }
+      if (e.key === 'F7' || (e.altKey && e.key.toLowerCase() === 'p')) {
+        e.preventDefault();
+        const paidInput = document.getElementById('input-paid-amount') as HTMLInputElement;
+        if (paidInput) {
+          paidInput.focus();
+          paidInput.select();
+        }
+      }
+      if (e.altKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        store.setIsTaxInclusive(!store.isTaxInclusive);
+        toast.info(store.isTaxInclusive ? 'Mode: Without Tax (Exclusive)' : 'Mode: With Tax (Inclusive)');
+      }
+      if (e.key === 'F9' || (e.ctrlKey && e.key.toLowerCase() === 's')) {
         e.preventDefault();
         document.getElementById('btn-save-draft')?.click();
       }
-      if (e.key === 'F10') {
+      if (e.key === 'F10' || (e.ctrlKey && e.key.toLowerCase() === 'p')) {
         e.preventDefault();
         document.getElementById('btn-save-pdf')?.click();
       }
@@ -157,13 +206,14 @@ export default function NewInvoicePage() {
         terms_conditions: store.termsConditions,
         bank_details: store.bankDetails,
         items: calculatedItems.map(i => ({
-          product_id: i.product_id,
+          product_id: i.product_id || null,
+          name: i.name || 'Service / Item',
           quantity: Number(i.quantity),
           rate: Number(i.exclusive_rate !== undefined ? i.exclusive_rate : i.rate),
           gst_rate: Number(i.gst_rate || 0),
           cess_rate: Number(i.cess_rate || 0),
-          hsn_code: i.hsn_code,
-          unit: i.unit,
+          hsn_code: i.hsn_code || undefined,
+          unit: i.unit || 'SRV',
         }))
       };
 
@@ -395,9 +445,15 @@ export default function NewInvoicePage() {
             </div>
             
             <CustomerSearchInput 
+              inputRef={customerInputRef}
+              autoFocus={true}
               selectedCustomer={store.customer} 
               onSelect={store.setCustomer} 
-              onClear={() => store.setCustomer(null)}
+              onClear={() => {
+                store.setCustomer(null);
+                setTimeout(() => customerInputRef.current?.focus(), 50);
+              }}
+              onNextFocus={() => itemInputRef.current?.focus()}
             />
 
             {store.customer && (
@@ -431,7 +487,7 @@ export default function NewInvoicePage() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  title="Click to set all items to With Tax or Without Tax"
+                  title="Click to set all items to With Tax or Without Tax (Shortcut: Alt+T)"
                   onClick={() => store.setIsTaxInclusive(!store.isTaxInclusive)}
                   className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
                     store.isTaxInclusive 
@@ -446,22 +502,43 @@ export default function NewInvoicePage() {
               </div>
             </div>
             
+            {/* Rapid Keyboard Navigation Strip */}
+            <div className="flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 text-[11px] text-slate-500 font-medium">
+              <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                <Zap className="w-3 h-3 text-amber-500" /> 100% Keyboard Flow:
+              </span>
+              <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-mono font-bold text-[10px]">F3</kbd> Customer</span>
+              <span>•</span>
+              <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-mono font-bold text-[10px]">F8</kbd> Search Item</span>
+              <span>•</span>
+              <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-mono font-bold text-[10px]">↵</kbd> Add / Edit Qty</span>
+              <span>•</span>
+              <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-mono font-bold text-[10px]">F7</kbd> Payment</span>
+              <span>•</span>
+              <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-bold"><kbd className="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 font-mono text-[10px]">F10</kbd> Print PDF</span>
+            </div>
+
             <ItemSearchInput 
+              inputRef={itemInputRef}
               priceListId={store.customer?.price_list_id} 
-              onSelect={(item) => store.addItem({
-                id: Math.random().toString(36).substr(2, 9),
-                product_id: item.id,
-                name: item.name,
-                hsn_code: item.hsn_code,
-                quantity: 1,
-                unit: item.unit || 'PCS',
-                rate: item.rate,
-                gst_rate: item.gst_rate || 18,
-                cess_rate: 0,
-                amount: item.rate,
-                brand: item.brand,
-                brand_name: item.brand_name
-              } as any)} 
+              onSelect={(item) => {
+                const newItemId = item.id || Math.random().toString(36).substr(2, 9);
+                const isCustom = item.product_id === null || item.product_id === undefined && !item.id;
+                store.addItem({
+                  id: newItemId,
+                  product_id: item.product_id !== undefined ? item.product_id : (item.id || null),
+                  name: item.name,
+                  hsn_code: item.hsn_code,
+                  quantity: item.quantity || 1,
+                  unit: item.unit || (isCustom ? 'SRV' : 'PCS'),
+                  rate: item.rate || 0,
+                  gst_rate: item.gst_rate !== undefined ? item.gst_rate : 18,
+                  cess_rate: item.cess_rate || 0,
+                  amount: item.rate || 0,
+                  brand: item.brand,
+                  brand_name: item.brand_name
+                } as any);
+              }} 
             />
 
             <InvoiceItemsTable calculatedItems={calculatedItems} store={store} />

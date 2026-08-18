@@ -202,7 +202,7 @@
                 @foreach($invoice->items as $item)
                 <tr>
                     <td>
-                        <span class="font-bold">{{ $item->product->name ?? 'Unknown Item' }}</span>
+                        <span class="font-bold">{{ $item->name ?? $item->product?->name ?? $item->product?->model_name ?? 'Item/Service' }}</span>
                     </td>
                     @if($settings['fields']['show_hsn'] ?? true)
                     <td class="text-sm">{{ $item->hsn_code ?? '-' }}</td>
