@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import InvoiceLivePreview from '../features/business/settings/components/InvoiceLivePreview';
+import { numberToIndianWords } from '@/lib/formatters';
 import { Printer } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 
@@ -32,27 +33,34 @@ const PublicInvoiceView = () => {
   useEffect(() => {
     const fetchInvoice = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/public/invoice/${uuid}`);
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+        const response = await axios.get(`${baseUrl}/invoices/verify/${uuid}`);
         setData(response.data);
       } catch (err: any) {
-        setError('Invoice not found or link is invalid.');
+        setError(err.response?.data?.message || 'Invoice not found or expired link');
       } finally {
         setLoading(false);
       }
     };
+
     fetchInvoice();
   }, [uuid]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><p>Loading invoice...</p></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    );
   }
 
   if (error || !data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="bg-white p-8 rounded-lg shadow-sm border border-red-100 text-center">
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Error</h2>
-          <p className="text-slate-500">{error}</p>
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+          <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 font-bold text-xl">!</div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Unavailable</h2>
+          <p className="text-slate-600 mb-4">{error || 'This invoice is no longer accessible.'}</p>
         </div>
       </div>
     );
@@ -62,7 +70,7 @@ const PublicInvoiceView = () => {
 
   const formattedInvoice = {
     invoice_number: sale.invoice_number,
-    date: new Date(sale.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+    date: new Date(sale.invoice_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
     due_date: sale.due_date ? new Date(sale.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
     customer_name: sale.customer ? sale.customer.name : 'Walk-in Customer',
     customer_address: sale.customer ? sale.customer.address : '',
@@ -86,7 +94,7 @@ const PublicInvoiceView = () => {
     tax: parseFloat(sale.total_tax_amount).toFixed(2),
     discount: parseFloat(sale.discount || 0).toFixed(2),
     total: parseFloat(sale.final_amount).toFixed(2),
-    amount_in_words: sale.amount_in_words || '',
+    amount_in_words: sale.amount_in_words || numberToIndianWords(sale.final_amount),
     terms: sale.terms_conditions || settings?.default_terms || '1. Goods once sold will not be taken back.\n2. Subject to local jurisdiction.',
     bank_details: sale.bank_details || settings?.default_bank_details || (business?.bank_settings ? `Bank Name: ${business.bank_settings.bank_name}\nAcct No: ${business.bank_settings.account_number}\nIFSC: ${business.bank_settings.ifsc_code}` : ''),
     uuid: sale.uuid
@@ -131,6 +139,7 @@ const PublicInvoiceView = () => {
             settings={settings}
             business={formattedBusiness}
             invoice={formattedInvoice}
+            rawInvoice={sale}
             isPrintView={true}
           />
         </div>

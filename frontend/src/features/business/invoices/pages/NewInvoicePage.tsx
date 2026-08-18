@@ -159,7 +159,7 @@ export default function NewInvoicePage() {
         items: calculatedItems.map(i => ({
           product_id: i.product_id,
           quantity: Number(i.quantity),
-          rate: Number(i.rate),
+          rate: Number(i.exclusive_rate !== undefined ? i.exclusive_rate : i.rate),
           gst_rate: Number(i.gst_rate || 0),
           cess_rate: Number(i.cess_rate || 0),
           hsn_code: i.hsn_code,

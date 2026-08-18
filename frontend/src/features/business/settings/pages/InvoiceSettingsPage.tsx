@@ -630,7 +630,8 @@ export const InvoiceSettingsTab = () => {
               <Toggle label="Show HSN/SAC Column" checked={settings.fields.show_hsn} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_hsn: v}})} />
               <Toggle label="Show Quantity Column" checked={settings.fields.show_qty} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_qty: v}})} />
               <Toggle label="Show Rate Column" checked={settings.fields.show_rate} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_rate: v}})} />
-              <Toggle label="Show Tax Breakdown" checked={settings.fields.show_tax_breakdown} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_tax_breakdown: v}})} />
+              <Toggle label="Show Tax Amount" checked={settings.fields.show_tax_amount ?? true} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_tax_amount: v}})} />
+              <Toggle label="Show Tax Breakdown (CGST/SGST Details)" checked={settings.fields.show_tax_breakdown} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_tax_breakdown: v}})} />
               <Toggle label="Show Payment Breakdown" checked={settings.fields.show_payment_breakdown ?? true} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_payment_breakdown: v}})} />
               <Toggle label="Show Discount (if any)" checked={settings.fields.show_discount} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_discount: v}})} />
             </div>

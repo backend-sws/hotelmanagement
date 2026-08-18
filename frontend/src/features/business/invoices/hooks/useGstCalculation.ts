@@ -18,25 +18,37 @@ export function useGstCalculation(
 
   return useMemo(() => {
     const calculatedItems = items.map((item) => {
-      const qty = item.quantity || 0;
-      const rate = item.rate || 0;
-      const gstRate = taxMode === 'exempt' ? 0 : (item.gst_rate || 0);
-      const cessRate = taxMode === 'exempt' ? 0 : (item.cess_rate || 0);
-      
-      let taxable = rate * qty;
-      let tax = taxable * (gstRate / 100);
-      let cess = taxable * (cessRate / 100);
-      let exclusiveRate = rate;
+      const qty = Number(item.quantity || 0);
+      const rate = Number(item.rate || 0);
+      const gstRate = taxMode === 'exempt' ? 0 : Number(item.gst_rate || 0);
+      const cessRate = taxMode === 'exempt' ? 0 : Number(item.cess_rate || 0);
       
       const itemIsInclusive = item.is_tax_inclusive !== undefined ? item.is_tax_inclusive : isTaxInclusive;
       
-      if (itemIsInclusive && (gstRate > 0 || cessRate > 0)) {
-        const totalAmount = rate * qty;
+      let taxable = 0;
+      let tax = 0;
+      let cess = 0;
+      let exclusiveRate = rate;
+      let totalItemAmount = 0;
+      
+      if (itemIsInclusive) {
+        // WITH TAX: The user-entered rate is inclusive of tax.
+        // Total amount = rate * qty (e.g. 100 * 1 = 100)
+        totalItemAmount = rate * qty;
         const totalRatePercent = gstRate + cessRate;
-        taxable = totalAmount / (1 + (totalRatePercent / 100));
+        taxable = totalRatePercent > 0 ? totalItemAmount / (1 + (totalRatePercent / 100)) : totalItemAmount;
         tax = taxable * (gstRate / 100);
         cess = taxable * (cessRate / 100);
-        exclusiveRate = taxable / qty;
+        exclusiveRate = qty > 0 ? taxable / qty : 0;
+      } else {
+        // WITHOUT TAX: The user-entered rate is exclusive of tax.
+        // Taxable = rate * qty (e.g. 100 * 1 = 100)
+        // Total amount = taxable + tax + cess (e.g. 100 + 18 = 118)
+        taxable = rate * qty;
+        tax = taxable * (gstRate / 100);
+        cess = taxable * (cessRate / 100);
+        exclusiveRate = rate;
+        totalItemAmount = taxable + tax + cess;
       }
       
       const cgst = (taxMode === 'gst' && taxType === 'gst') ? tax / 2 : 0;
@@ -46,14 +58,15 @@ export function useGstCalculation(
       
       return {
         ...item,
-        rate: exclusiveRate,
+        rate: item.rate, // Keep the user-entered rate fixed in UI
+        exclusive_rate: exclusiveRate,
         taxable_amount: taxable,
         cgst_amount: cgst,
         sgst_amount: sgst,
         igst_amount: igst,
         custom_tax_amount: customTax,
         cess_amount: cess,
-        amount: taxable + tax + cess,
+        amount: totalItemAmount,
         _taxRaw: tax + cess
       };
     });

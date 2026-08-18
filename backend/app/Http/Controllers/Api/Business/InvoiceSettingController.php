@@ -188,6 +188,7 @@ class InvoiceSettingController extends Controller
                 'show_due_date' => true,
                 'show_signature' => true,
                 'show_customer_phone' => true,
+                'show_tax_amount' => true,
                 'show_tax_breakdown' => true,
                 'show_rate' => true,
                 'show_qty' => true,

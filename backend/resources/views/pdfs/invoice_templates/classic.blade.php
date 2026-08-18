@@ -141,7 +141,7 @@
                 @if($settings['fields']['show_rate'] ?? true)
                 <td style="width: 10%;">RATE</td>
                 @endif
-                @if($settings['fields']['show_tax_breakdown'] ?? true)
+                @if(($settings['fields']['show_tax_amount'] ?? true) && ($settings['fields']['show_tax_breakdown'] ?? true))
                     @if($invoice->tax_type !== 'exempt')
                     <td style="width: 10%;">TAX</td>
                     @endif
@@ -165,7 +165,7 @@
                         @if($settings['fields']['show_rate'] ?? true)
                         <td>{{ number_format($item->rate, 2) }}</td>
                         @endif
-                        @if($settings['fields']['show_tax_breakdown'] ?? true)
+                        @if(($settings['fields']['show_tax_amount'] ?? true) && ($settings['fields']['show_tax_breakdown'] ?? true))
                             @if($invoice->tax_type !== 'exempt')
                             <td>{{ number_format(($invoice->tax_type === 'gst') ? ($item->cgst_amount + $item->sgst_amount) : $item->igst_amount, 2) }}</td>
                             @endif
@@ -185,7 +185,7 @@
                         @if($settings['fields']['show_rate'] ?? true)
                         <td style="border-bottom: none; border-top: none;"></td>
                         @endif
-                        @if($settings['fields']['show_tax_breakdown'] ?? true)
+                        @if(($settings['fields']['show_tax_amount'] ?? true) && ($settings['fields']['show_tax_breakdown'] ?? true))
                             @if($invoice->tax_type !== 'exempt')
                             <td style="border-bottom: none; border-top: none;"></td>
                             @endif
@@ -202,23 +202,53 @@
                     if($settings['fields']['show_hsn'] ?? true) $colSpan++;
                     if($settings['fields']['show_qty'] ?? true) $colSpan++;
                     if($settings['fields']['show_rate'] ?? true) $colSpan++;
-                    if(($settings['fields']['show_tax_breakdown'] ?? true) && $invoice->tax_type !== 'exempt') $colSpan++;
+                    if(($settings['fields']['show_tax_amount'] ?? true) && ($settings['fields']['show_tax_breakdown'] ?? true) && $invoice->tax_type !== 'exempt') $colSpan++;
                 @endphp
                 <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
                 <td class="font-bold text-center">Total</td>
                 <td class="text-right font-bold">₹ {{ number_format($invoice->taxable_amount, 2) }}</td>
             </tr>
-            <tr>
-                <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
-                <td class="font-bold text-center">Tax Amount</td>
-                <td class="text-right">₹ {{ number_format($invoice->total_tax_amount - ($invoice->cess_amount ?? 0), 2) }}</td>
-            </tr>
-            @if(($invoice->cess_amount ?? 0) > 0)
-            <tr>
-                <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
-                <td class="font-bold text-center">CESS Amount</td>
-                <td class="text-right">₹ {{ number_format($invoice->cess_amount, 2) }}</td>
-            </tr>
+            @if($settings['fields']['show_tax_amount'] ?? true)
+                @if(($settings['fields']['show_tax_breakdown'] ?? true) && $invoice->tax_type !== 'exempt')
+                    @if($invoice->tax_type === 'gst')
+                    <tr>
+                        <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
+                        <td class="font-bold text-center">CGST</td>
+                        <td class="text-right font-bold">₹ {{ number_format($invoice->cgst_amount, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
+                        <td class="font-bold text-center">SGST</td>
+                        <td class="text-right font-bold">₹ {{ number_format($invoice->sgst_amount, 2) }}</td>
+                    </tr>
+                    @elseif($invoice->tax_type === 'igst')
+                    <tr>
+                        <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
+                        <td class="font-bold text-center">IGST</td>
+                        <td class="text-right font-bold">₹ {{ number_format($invoice->igst_amount, 2) }}</td>
+                    </tr>
+                    @endif
+                    @if(($invoice->cess_amount ?? 0) > 0)
+                    <tr>
+                        <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
+                        <td class="font-bold text-center">CESS Amount</td>
+                        <td class="text-right">₹ {{ number_format($invoice->cess_amount, 2) }}</td>
+                    </tr>
+                    @endif
+                @else
+                    <tr>
+                        <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
+                        <td class="font-bold text-center">Tax Amount</td>
+                        <td class="text-right">₹ {{ number_format($invoice->total_tax_amount - ($invoice->cess_amount ?? 0), 2) }}</td>
+                    </tr>
+                    @if(($invoice->cess_amount ?? 0) > 0)
+                    <tr>
+                        <td colspan="{{ $colSpan }}" style="border-right: none;"></td>
+                        <td class="font-bold text-center">CESS Amount</td>
+                        <td class="text-right">₹ {{ number_format($invoice->cess_amount, 2) }}</td>
+                    </tr>
+                    @endif
+                @endif
             @endif
             @if($settings['fields']['show_discount'] ?? true)
             <tr>
@@ -276,19 +306,13 @@
             @if($settings['fields']['show_amount_in_words'] ?? true)
             <tr>
                 @php
-                    $amountInWords = '';
-                    if (class_exists('NumberFormatter')) {
-                        $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
-                        $amountInWords = $formatter->format($invoice->final_amount);
-                    } else {
-                        $amountInWords = $invoice->final_amount; 
-                    }
+                    $amountInWords = $invoice->amount_in_words ?? \App\Services\AmountInWordsService::numberToIndianWords($invoice->final_amount);
                 @endphp
-                <td colspan="{{ $colSpan + 2 }}" class="font-bold" style="font-size: 10px;">Rupees in Word: <span style="text-transform: capitalize; font-weight: normal;">{{ $amountInWords }} only.</span></td>
+                <td colspan="{{ $colSpan + 2 }}" class="font-bold" style="font-size: 10px;">Rupees in Word: <span style="text-transform: capitalize; font-weight: normal;">{{ $amountInWords }}</span></td>
             </tr>
             @endif
 
-            @if($invoice->tax_type !== 'exempt' && ($settings['fields']['show_tax_breakdown'] ?? true))
+            @if(($settings['fields']['show_tax_amount'] ?? true) && ($settings['fields']['show_tax_breakdown'] ?? true) && $invoice->tax_type !== 'exempt')
             <tr>
                 <td colspan="{{ $colSpan + 2 }}" style="padding: 10px;">
                     @php

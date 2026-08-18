@@ -138,15 +138,9 @@
                 
                 <p class="bold" style="margin-top:10px;">Amount in Words:</p>
                 @php
-                    $amountInWords = '';
-                    if (class_exists('NumberFormatter')) {
-                        $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
-                        $amountInWords = $formatter->format($invoice->final_amount);
-                    } else {
-                        $amountInWords = $invoice->final_amount; // Fallback
-                    }
+                    $amountInWords = $invoice->amount_in_words ?? \App\Services\AmountInWordsService::numberToIndianWords($invoice->final_amount);
                 @endphp
-                <p style="font-size:11px; text-transform: capitalize;">INR {{ $amountInWords }} Only.</p>
+                <p style="font-size:11px; text-transform: capitalize;">INR {{ $amountInWords }}</p>
             </div>
             
             <div style="display: table-cell; width: 40%;">

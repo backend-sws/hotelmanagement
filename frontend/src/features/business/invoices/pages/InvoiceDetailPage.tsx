@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { GST_STATES } from '@/features/business/customers/constants/gstStates';
 import { useInvoiceSettings } from '@/features/business/settings/api/useInvoiceSettings';
 import InvoiceLivePreview from '@/features/business/settings/components/InvoiceLivePreview';
+import { numberToIndianWords } from '@/lib/formatters';
 
 export default function InvoiceDetailPage() {
   const { id } = useParams();
@@ -99,7 +100,7 @@ export default function InvoiceDetailPage() {
     tax: parseFloat(invoice.total_tax_amount || (Number(invoice.cgst_amount || 0) + Number(invoice.sgst_amount || 0) + Number(invoice.igst_amount || 0))).toFixed(2),
     discount: parseFloat(invoice.discount || 0).toFixed(2),
     total: parseFloat(invoice.final_amount).toFixed(2),
-    amount_in_words: invoice.amount_in_words || '',
+    amount_in_words: invoice.amount_in_words || numberToIndianWords(invoice.final_amount),
     terms: invoice.terms_conditions || settings?.default_terms || '1. Goods once sold will not be taken back.\n2. Subject to local jurisdiction.',
     bank_details: invoice.bank_details || settings?.default_bank_details || (invoice.business?.bank_settings ? `Bank Name: ${invoice.business.bank_settings.bank_name}\nAcct No: ${invoice.business.bank_settings.account_number}\nIFSC: ${invoice.business.bank_settings.ifsc_code}` : ''),
     uuid: invoice.uuid

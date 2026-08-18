@@ -79,7 +79,12 @@ class Sale extends Model
         'paid_amount'      => 'float',
     ];
 
-    protected $appends = ['public_url'];
+    protected $appends = ['public_url', 'amount_in_words'];
+
+    public function getAmountInWordsAttribute()
+    {
+        return \App\Services\AmountInWordsService::numberToIndianWords($this->final_amount ?? 0);
+    }
 
     public function getPublicUrlAttribute()
     {

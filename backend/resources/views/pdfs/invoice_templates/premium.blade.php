@@ -262,7 +262,7 @@
                     @if($settings['fields']['show_discount'] ?? true)
                     <th style="width: 10%;">DISC.</th>
                     @endif
-                    @if($settings['fields']['show_tax_breakdown'] ?? true)
+                    @if(($settings['fields']['show_tax_amount'] ?? true) && ($settings['fields']['show_tax_breakdown'] ?? true))
                         @if($invoice->tax_type !== 'exempt')
                         <th style="width: 10%;">TAX</th>
                         @endif
@@ -278,11 +278,9 @@
                     @php $totalQty += $item->quantity; @endphp
                     <tr>
                         <td class="text-left">
-                            <div class="font-bold">{{ $item->product->name ?? $item->product_id }}</div>
-                            @if(!empty($item->product->model_name) || !empty($item->product->brand))
-                                <div class="text-sm" style="color: #64748b; margin-top: 2px;">
-                                    {{ $item->product->brand }} {{ $item->product->model_name }}
-                                </div>
+                            <span class="font-bold" style="color: #000;">{{ $item->product->name ?? 'Item' }}</span>
+                            @if(!empty($item->notes))
+                                <div style="font-size: 8px; color: #64748b;">{{ $item->notes }}</div>
                             @endif
                         </td>
                         
@@ -311,7 +309,7 @@
                         </td>
                         @endif
                         
-                        @if($settings['fields']['show_tax_breakdown'] ?? true)
+                        @if(($settings['fields']['show_tax_amount'] ?? true) && ($settings['fields']['show_tax_breakdown'] ?? true))
                             @if($invoice->tax_type !== 'exempt')
                             <td>
                                 {{ number_format($item->total_tax, 2) }}
@@ -344,7 +342,7 @@
                     <td></td>
                     @endif
                     
-                    @if($settings['fields']['show_tax_breakdown'] ?? true)
+                    @if(($settings['fields']['show_tax_amount'] ?? true) && ($settings['fields']['show_tax_breakdown'] ?? true))
                         @if($invoice->tax_type !== 'exempt')
                         <td>&#8377; {{ number_format($invoice->total_tax_amount, 2) }}</td>
                         @endif
@@ -355,7 +353,7 @@
             </tbody>
         </table>
 
-        @if($invoice->tax_type !== 'exempt' && ($settings['fields']['show_tax_breakdown'] ?? true))
+        @if(($settings['fields']['show_tax_amount'] ?? true) && ($settings['fields']['show_tax_breakdown'] ?? true) && $invoice->tax_type !== 'exempt')
         @php
             $taxSummary = [];
             foreach($invoice->items as $item) {
@@ -379,35 +377,39 @@
             <table class="items-table" style="width: 70%; margin-top: 0; font-size: 10px;">
                 <thead>
                     <tr>
-                        <th class="text-left" style="padding: 4px;">Tax Rate</th>
-                        <th class="text-right" style="padding: 4px;">Taxable Value</th>
-                        @if($invoice->tax_type === 'gst')
-                        <th class="text-right" style="padding: 4px;">CGST</th>
-                        <th class="text-right" style="padding: 4px;">SGST</th>
+                        <th class="text-left">TAX RATE</th>
+                        <th class="text-right">TAXABLE VALUE</th>
+                        @if($invoice->tax_type === 'igst')
+                        <th class="text-right">IGST</th>
+                        @elseif($invoice->tax_type === 'gst')
+                        <th class="text-right">CGST</th>
+                        <th class="text-right">SGST</th>
                         @else
-                        <th class="text-right" style="padding: 4px;">IGST</th>
+                        <th class="text-right">{{ $settings['custom_tax_label'] ?? 'VAT' }}</th>
                         @endif
                         @if(($invoice->cess_amount ?? 0) > 0)
-                        <th class="text-right" style="padding: 4px;">CESS</th>
+                        <th class="text-right">CESS</th>
                         @endif
-                        <th class="text-right" style="padding: 4px;">Total Tax</th>
+                        <th class="text-right">TOTAL TAX</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($taxSummary as $rate => $taxes)
                     <tr>
-                        <td class="text-left" style="padding: 4px;">GST {{ $rate }}%</td>
-                        <td class="text-right" style="padding: 4px;">&#8377; {{ number_format($taxes['taxable'], 2) }}</td>
-                        @if($invoice->tax_type === 'gst')
-                        <td class="text-right" style="padding: 4px;">&#8377; {{ number_format($taxes['cgst'], 2) }}</td>
-                        <td class="text-right" style="padding: 4px;">&#8377; {{ number_format($taxes['sgst'], 2) }}</td>
+                        <td class="text-left font-bold">{{ $rate }}%</td>
+                        <td class="text-right">&#8377; {{ number_format($taxes['taxable'], 2) }}</td>
+                        @if($invoice->tax_type === 'igst')
+                        <td class="text-right">&#8377; {{ number_format($taxes['igst'], 2) }}</td>
+                        @elseif($invoice->tax_type === 'gst')
+                        <td class="text-right">&#8377; {{ number_format($taxes['cgst'], 2) }}</td>
+                        <td class="text-right">&#8377; {{ number_format($taxes['sgst'], 2) }}</td>
                         @else
-                        <td class="text-right" style="padding: 4px;">&#8377; {{ number_format($taxes['igst'], 2) }}</td>
+                        <td class="text-right">&#8377; {{ number_format($taxes['total'], 2) }}</td>
                         @endif
                         @if(($invoice->cess_amount ?? 0) > 0)
-                        <td class="text-right" style="padding: 4px;">&#8377; {{ number_format($taxes['cess'], 2) }}</td>
+                        <td class="text-right">&#8377; {{ number_format($taxes['cess'], 2) }}</td>
                         @endif
-                        <td class="text-right" style="padding: 4px;">&#8377; {{ number_format($taxes['total'], 2) }}</td>
+                        <td class="text-right font-bold">&#8377; {{ number_format($taxes['total'], 2) }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -416,7 +418,7 @@
         @endif
 
         <!-- SUMMARY & NOTES -->
-        <table style="width: 100%; margin-top: 10px;">
+        <table style="width: 100%; margin-top: 20px; page-break-inside: avoid;">
             <tr>
                 <td style="width: 55%; vertical-align: top; padding-right: 30px;">
                     @if($invoice->notes)
@@ -452,38 +454,40 @@
                             <td class="value">&#8377; {{ number_format($invoice->taxable_amount, 2) }}</td>
                         </tr>
                         
-                        @if(($settings['fields']['show_tax_breakdown'] ?? true) && $invoice->tax_type !== 'exempt')
-                            @if($invoice->tax_type === 'igst')
-                                <tr>
-                                    <td class="label">IGST</td>
-                                    <td class="value">&#8377; {{ number_format($invoice->igst_amount, 2) }}</td>
-                                </tr>
-                            @elseif($invoice->tax_type === 'gst')
-                                <tr>
-                                    <td class="label">CGST</td>
-                                    <td class="value">&#8377; {{ number_format($invoice->cgst_amount, 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="label">SGST</td>
-                                    <td class="value">&#8377; {{ number_format($invoice->sgst_amount, 2) }}</td>
-                                </tr>
+                        @if($settings['fields']['show_tax_amount'] ?? true)
+                            @if(($settings['fields']['show_tax_breakdown'] ?? true) && $invoice->tax_type !== 'exempt')
+                                @if($invoice->tax_type === 'igst')
+                                    <tr>
+                                        <td class="label">IGST</td>
+                                        <td class="value">&#8377; {{ number_format($invoice->igst_amount, 2) }}</td>
+                                    </tr>
+                                @elseif($invoice->tax_type === 'gst')
+                                    <tr>
+                                        <td class="label">CGST</td>
+                                        <td class="value">&#8377; {{ number_format($invoice->cgst_amount, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">SGST</td>
+                                        <td class="value">&#8377; {{ number_format($invoice->sgst_amount, 2) }}</td>
+                                    </tr>
+                                @else
+                                    <tr>
+                                        <td class="label">{{ $settings['custom_tax_label'] ?? 'VAT' }}</td>
+                                        <td class="value">&#8377; {{ number_format($invoice->total_tax_amount - ($invoice->cess_amount ?? 0), 2) }}</td>
+                                    </tr>
+                                @endif
+                                @if(($invoice->cess_amount ?? 0) > 0)
+                                    <tr>
+                                        <td class="label">CESS</td>
+                                        <td class="value">&#8377; {{ number_format($invoice->cess_amount, 2) }}</td>
+                                    </tr>
+                                @endif
                             @else
                                 <tr>
-                                    <td class="label">{{ $settings['custom_tax_label'] ?? 'VAT' }}</td>
-                                    <td class="value">&#8377; {{ number_format($invoice->total_tax_amount - ($invoice->cess_amount ?? 0), 2) }}</td>
+                                    <td class="label">Total Tax</td>
+                                    <td class="value">&#8377; {{ number_format($invoice->total_tax_amount, 2) }}</td>
                                 </tr>
                             @endif
-                            @if(($invoice->cess_amount ?? 0) > 0)
-                                <tr>
-                                    <td class="label">CESS</td>
-                                    <td class="value">&#8377; {{ number_format($invoice->cess_amount, 2) }}</td>
-                                </tr>
-                            @endif
-                        @else
-                            <tr>
-                                <td class="label">Total Tax</td>
-                                <td class="value">&#8377; {{ number_format($invoice->total_tax_amount, 2) }}</td>
-                            </tr>
                         @endif
 
                         @if($invoice->discount > 0)
@@ -544,7 +548,7 @@
         @if(($settings['fields']['show_amount_in_words'] ?? true))
         <div class="amount-words">
             <span class="font-bold" style="color: #000;">Total Amount (in words)</span><br>
-            Rupees {{ \App\Helpers\CurrencyHelper::amountToWords($invoice->final_amount) }} Only
+            {{ $invoice->amount_in_words ?? \App\Services\AmountInWordsService::numberToIndianWords($invoice->final_amount) }}
         </div>
         @endif
 
