@@ -34,8 +34,13 @@ const PublicInvoiceView = () => {
     const fetchInvoice = async () => {
       try {
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
-        const response = await axios.get(`${baseUrl}/invoices/verify/${uuid}`);
-        setData(response.data);
+        try {
+          const response = await axios.get(`${baseUrl}/public/invoice/${uuid}`);
+          setData(response.data);
+        } catch {
+          const response = await axios.get(`${baseUrl}/invoices/verify/${uuid}`);
+          setData(response.data);
+        }
       } catch (err: any) {
         setError(err.response?.data?.message || 'Invoice not found or expired link');
       } finally {

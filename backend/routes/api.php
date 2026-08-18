@@ -16,6 +16,7 @@ Route::prefix('v1')->group(function () {
 
     // Public Routes
     Route::get('/public/invoice/{uuid}', [App\Http\Controllers\Api\PublicInvoiceController::class, 'show']);
+    Route::get('/invoices/verify/{uuid}', [App\Http\Controllers\Api\PublicInvoiceController::class, 'show']);
 
     // Partner self-registration (public)
     Route::post('/partner/register', [PartnerPortalController::class, 'register']);
