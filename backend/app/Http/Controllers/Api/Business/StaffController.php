@@ -36,6 +36,8 @@ class StaffController extends BaseController
             'commission_rate' => 'nullable|numeric|min:0|max:100',
             'join_date' => 'nullable|date',
             'salary_components' => 'nullable|array',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string',
         ]);
 
         // Check if phone or email already exists as staff in this business
@@ -90,6 +92,8 @@ class StaffController extends BaseController
             'join_date' => 'nullable|date',
             'status' => 'nullable|string|in:active,inactive',
             'salary_components' => 'nullable|array',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string',
         ]);
 
         try {

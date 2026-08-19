@@ -41,26 +41,64 @@ class PermissionSeeder extends Seeder
             'manage_own_profile',
         ];
 
-        // Business/Tenant-specific permissions
+        // Comprehensive Business, Hotel, and Staff permissions
         $businessPermissions = [
+            // Hotel Operations
+            'manage_hotel_dashboard',
+            'manage_hotel_bookings',
+            'manage_hotel_rooms',
+            'manage_hotel_pos',
+            'manage_hotel_housekeeping',
+            'manage_hotel_shifts',
+            'manage_hotel_night_audit',
+            'manage_hotel_reports',
+            'manage_hotel_ota',
+            'manage_hotel_corporate',
+
+            // Sales & Billing
             'manage_sales',
-            'manage_inventory',
-            'manage_purchases',
+            'manage_challans',
+            'manage_proforma',
+            'manage_quotations',
+            'manage_credit_notes',
             'manage_expenses',
+
+            // Purchases & Inventory
+            'manage_purchases',
+            'manage_inventory',
+            'manage_stock_transfers',
+            'manage_material_consumption',
+            'manage_price_lists',
+
+            // Customers & Suppliers Khata
             'manage_customers',
             'manage_suppliers',
+            'manage_ledger',
+
+            // Finance, Cash & Cheques
+            'manage_finance',
+            'manage_cheques',
+
+            // Projects & BOQ
+            'manage_projects',
+
+            // HRM & Staff
             'manage_staff',
             'manage_attendance',
+            'view_attendance',
             'manage_payroll',
-            'manage_business_settings',
-            'manage_ledger',
-            'manage_finance',
-            'manage_projects',
+            'manage_leaves',
+            'manage_salary_advances',
+
+            // Reports & Settings
             'view_reports',
+            'view_audit_logs',
+            'manage_business_settings',
         ];
 
-        // Create all permissions
-        foreach (array_merge($permissions, $partnerPermissions, $businessPermissions) as $permission) {
+        // Create all permissions in database
+        $allPermissions = array_unique(array_merge($permissions, $partnerPermissions, $businessPermissions));
+        foreach ($allPermissions as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
@@ -81,3 +119,4 @@ class PermissionSeeder extends Seeder
         }
     }
 }
+

@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Services\StorageService;
+use App\Traits\LogsActivity;
 
 class Setting extends Model
 {
+    use LogsActivity;
+
     protected $fillable = ['key', 'value', 'type'];
 
     /**

@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 
 class HotelShiftRoster extends Model
 {
+    use LogsActivity;
+
     protected $table = 'hotel_shift_roster';
 
     protected $fillable = [

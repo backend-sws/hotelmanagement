@@ -104,6 +104,11 @@ class StaffService
                 $user->assignRole($role);
             }
 
+            // Sync custom permissions if provided
+            if (isset($data['permissions']) && is_array($data['permissions'])) {
+                $this->updateStaffPermissions($user->id, $data['permissions']);
+            }
+
             return [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -116,6 +121,7 @@ class StaffService
                 'commission_rate' => $data['commission_rate'] ?? 0,
                 'join_date' => $data['join_date'] ?? now()->toDateString(),
                 'status' => 'active',
+                'permissions' => $data['permissions'] ?? [],
             ];
         });
     }
@@ -164,6 +170,11 @@ class StaffService
                 ->where('business_id', $businessId)
                 ->where('user_id', $userId)
                 ->update($pivotData);
+        }
+
+        // Sync custom permissions if provided
+        if (isset($data['permissions']) && is_array($data['permissions'])) {
+            $this->updateStaffPermissions($userId, $data['permissions']);
         }
     }
 
@@ -226,8 +237,11 @@ class StaffService
         $thisMonthCommission = SaleCommission::where('user_id', $userId)
             ->where('created_at', '>=', $thisMonth)->sum('commission_amount');
 
+        $permissions = $this->getStaffPermissions($userId);
+
         return [
             'staff' => $staff,
+            'permissions' => $permissions,
             'stats' => [
                 'total_sales' => $totalSales,
                 'total_sales_amount' => (float) $totalSalesAmount,

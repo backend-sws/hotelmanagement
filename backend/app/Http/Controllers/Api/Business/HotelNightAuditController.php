@@ -127,6 +127,21 @@ class HotelNightAuditController extends BaseController
                     'status' => 'completed',
                 ]);
 
+                // Create audit trail entry
+                app(\App\Services\System\ActivityLogService::class)->log(
+                    action: 'night_audit',
+                    modelType: HotelNightAuditLog::class,
+                    modelId: $log->id,
+                    description: "Completed Hotel Night Audit for {$today} (Occupied: {$activeBookings->count()}/{$totalRooms} rooms, Revenue: ₹" . number_format($totalRoomRevenue + $totalTax, 2) . ")",
+                    properties: [
+                        'audit_date' => $today,
+                        'rooms_occupied' => $activeBookings->count(),
+                        'rooms_available' => $totalRooms - $activeBookings->count(),
+                        'total_revenue' => $totalRoomRevenue + $totalTax,
+                    ],
+                    tenantId: $businessId
+                );
+
                 return $log;
             });
         }, 'Night audit completed successfully');

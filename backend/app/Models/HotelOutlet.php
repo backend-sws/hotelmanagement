@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Traits\BelongsToBusiness;
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class HotelOutlet extends Model
 {
-    use BelongsToBusiness;
+    use BelongsToBusiness, LogsActivity;
 
     protected $fillable = [
         'business_id',

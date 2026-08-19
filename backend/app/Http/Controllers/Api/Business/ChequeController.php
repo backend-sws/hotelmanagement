@@ -352,6 +352,13 @@ class ChequeController extends Controller
 
             $cheque->update($updates);
 
+            $cheque->logActivity("cheque_{$newStatus}", "Cheque #{$cheque->cheque_number} ({$cheque->bank_name}, ₹" . number_format($cheque->amount, 2) . ") marked as " . strtoupper($newStatus), [
+                'cheque_number' => $cheque->cheque_number,
+                'amount' => $cheque->amount,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+            ]);
+
             DB::commit();
 
             return response()->json([

@@ -247,6 +247,12 @@ class HotelBookingService
             $room->save();
         }
 
+        $booking->logActivity('check_in', "Checked in guest {$booking->guest?->name} to Room {$booking->room?->room_number} (#{$booking->booking_number})", [
+            'room_id' => $booking->room_id,
+            'guest_id' => $booking->guest_id,
+            'check_in_at' => now()->toDateTimeString(),
+        ]);
+
         return $booking;
     }
 
@@ -287,6 +293,13 @@ class HotelBookingService
                 $room->status = 'dirty';
                 $room->save();
             }
+
+            $booking->logActivity('check_out', "Checked out guest {$booking->guest?->name} from Room {$booking->room?->room_number} (#{$booking->booking_number})", [
+                'grand_total' => $booking->grand_total,
+                'amount_paid' => $booking->amount_paid,
+                'balance_due' => $booking->balance_due,
+                'settlement_payment' => $paymentAmount,
+            ]);
 
             return $booking->fresh(['payments', 'guest', 'room']);
         });

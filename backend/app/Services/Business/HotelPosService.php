@@ -215,6 +215,13 @@ class HotelPosService
                 HotelTableReservation::where('id', $order->reservation_id)->update(['status' => 'completed']);
             }
 
+            $order->logActivity('billed', "Settled POS Order #{$order->order_number} for ₹" . number_format($order->total, 2) . " via " . strtoupper($order->payment_mode), [
+                'order_number' => $order->order_number,
+                'total' => $order->total,
+                'payment_mode' => $order->payment_mode,
+                'outlet_id' => $order->outlet_id,
+            ]);
+
             return $order->fresh(['outlet', 'items']);
         });
     }
@@ -253,6 +260,13 @@ class HotelPosService
             $order->payment_mode = 'post_to_room';
             $order->billed_at = now();
             $order->save();
+
+            $order->logActivity('post_to_room', "Posted POS Order #{$order->order_number} (₹" . number_format($order->total, 2) . ") to Room Folio for Booking #{$booking->booking_number}", [
+                'order_number' => $order->order_number,
+                'booking_id' => $booking->id,
+                'booking_number' => $booking->booking_number,
+                'total' => $order->total,
+            ]);
 
             return $order->fresh(['outlet', 'items']);
         });

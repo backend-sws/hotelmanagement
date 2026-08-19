@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Filterable;
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Lead extends Model
 {
-    use Filterable, SoftDeletes;
+    use Filterable, SoftDeletes, LogsActivity;
     protected $fillable = [
         'partner_id',
         'business_name',

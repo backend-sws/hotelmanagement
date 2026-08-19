@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Traits\BelongsToBusiness;
+use App\Traits\LogsActivity;
 
 class StockTransfer extends Model
 {
-    use HasFactory, BelongsToBusiness;
+    use HasFactory, BelongsToBusiness, LogsActivity;
 
     protected $fillable = [
         'business_id',

@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Traits\BelongsToBusiness;
+use App\Traits\LogsActivity;
 
 class BankAccount extends Model
 {
-    use HasFactory, BelongsToBusiness;
+    use HasFactory, BelongsToBusiness, LogsActivity;
 
     protected $fillable = [
         'business_id',

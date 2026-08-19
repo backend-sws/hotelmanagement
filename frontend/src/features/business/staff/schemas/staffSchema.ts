@@ -18,6 +18,7 @@ export const staffSchema = z.object({
     type: z.enum(['earning', 'deduction']),
     amount: z.number().min(0),
   })).optional(),
+  permissions: z.array(z.string()).optional(),
 });
 
 export type StaffFormData = z.infer<typeof staffSchema>;

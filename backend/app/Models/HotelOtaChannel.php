@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToBusiness;
+use App\Traits\LogsActivity;
 
 class HotelOtaChannel extends Model
 {
-    use HasFactory, BelongsToBusiness;
+    use HasFactory, BelongsToBusiness, LogsActivity;
 
     protected $guarded = [];
 

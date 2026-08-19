@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 
 class HotelDepartment extends Model
 {
+    use LogsActivity;
+
     protected $fillable = [
         'business_id', 'name', 'description', 'color', 'head_user_id', 'is_active',
     ];

@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 
 use App\Traits\BelongsToBusiness;
+use App\Traits\LogsActivity;
 
 class Supplier extends Model
 {
-    use HasFactory, BelongsToBusiness;
+    use HasFactory, BelongsToBusiness, LogsActivity;
 
     protected $fillable = [
         'business_id',

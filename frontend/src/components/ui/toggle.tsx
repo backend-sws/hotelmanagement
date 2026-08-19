@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 interface ToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
-  label: string;
+  label?: string;
   description?: string;
 }
 

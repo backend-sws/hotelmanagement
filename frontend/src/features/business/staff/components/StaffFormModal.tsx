@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,6 +13,9 @@ import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { formatCurrency } from '@/lib/formatters';
 
 import { staffSchema, type StaffFormData } from '../schemas/staffSchema';
+import { ALL_STAFF_PERMISSIONS, ROLE_PRESETS } from './PermissionsModal';
+import { ShieldCheck, ChevronDown, ChevronUp, Sparkles, CheckSquare } from 'lucide-react';
+import { Toggle } from '@/components/ui/toggle';
 
 interface StaffFormModalProps {
   isOpen: boolean;
@@ -26,6 +29,9 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
   const { data: availableComponents, isLoading: isComponentsLoading } = useGetPayrollComponents();
 
   const isEditing = !!staff;
+  const [showPermissions, setShowPermissions] = useState(false);
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [activePreset, setActivePreset] = useState<string>('front_desk');
 
   const { register, handleSubmit, control, reset, setValue, watch, formState: { errors } } = useForm<StaffFormData>({
     resolver: zodResolver(staffSchema),
@@ -38,6 +44,7 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
       status: 'active',
       join_date: new Date().toISOString().split('T')[0],
       salary_components: [],
+      permissions: [],
     }
   });
 
@@ -120,6 +127,11 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
          };
       });
 
+      const initialPermissions = staff?.permissions && Array.isArray(staff.permissions)
+        ? staff.permissions
+        : (staff?.role === 'manager' ? ROLE_PRESETS.all.perms : ROLE_PRESETS.front_desk.perms);
+      setSelectedPermissions(initialPermissions);
+
       reset({
         name: staff?.name || '',
         phone: staff?.phone || '',
@@ -132,6 +144,7 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
         status: staff?.status || 'active',
         join_date: staff?.join_date || new Date().toISOString().split('T')[0],
         salary_components: initialComponents,
+        permissions: initialPermissions,
       });
     }
   }, [staff, isOpen, availableComponents, reset]);
@@ -140,6 +153,7 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
     if (availableComponents && availableComponents.length > 0) {
       data.monthly_salary = calculatedSalary;
     }
+    data.permissions = selectedPermissions;
     
     if (isEditing) {
       updateMutation.mutate(
@@ -280,6 +294,95 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
                       />
                     )}
                   />
+              </div>
+            )}
+          </div>
+
+          {/* Access Permissions & Role Presets */}
+          <div className="border-t border-slate-200 dark:border-white/10 pt-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  Module Access & Permissions ({selectedPermissions.length} selected)
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Select a pre-configured role template or customize module permissions</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPermissions(!showPermissions)}
+                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                {showPermissions ? 'Hide List' : 'Customize All'}
+                {showPermissions ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+
+            {/* Quick Preset Buttons */}
+            <div className="flex flex-wrap gap-1.5">
+              {Object.entries(ROLE_PRESETS).map(([key, preset]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    setActivePreset(key);
+                    setSelectedPermissions(preset.perms);
+                  }}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                    activePreset === key
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                      : 'bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-indigo-500'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Expandable detailed permissions */}
+            {showPermissions && (
+              <div className="mt-2 p-3 bg-slate-50 dark:bg-zinc-900/60 rounded-2xl border border-slate-200/80 dark:border-white/5 space-y-2 max-h-56 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {ALL_STAFF_PERMISSIONS.map(perm => {
+                    const isChecked = selectedPermissions.includes(perm.id);
+                    return (
+                      <div 
+                        key={perm.id} 
+                        onClick={() => {
+                          setActivePreset('custom');
+                          if (isChecked) {
+                            setSelectedPermissions((prev: string[]) => prev.filter((p: string) => p !== perm.id));
+                          } else {
+                            setSelectedPermissions((prev: string[]) => [...prev, perm.id]);
+                          }
+                        }}
+                        className={`p-2 border rounded-xl cursor-pointer flex items-center justify-between select-none transition-all ${
+                          isChecked
+                            ? 'border-indigo-500/80 bg-indigo-50/40 dark:bg-indigo-950/20'
+                            : 'border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c0c0f]'
+                        }`}
+                      >
+                        <div className="pr-2 space-y-0.5">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">{perm.label}</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">{perm.description}</span>
+                        </div>
+                        <div className="shrink-0" onClick={e => e.stopPropagation()}>
+                          <Toggle
+                            checked={isChecked}
+                            onChange={checked => {
+                              setActivePreset('custom');
+                              if (checked) {
+                                setSelectedPermissions((prev: string[]) => [...prev, perm.id]);
+                              } else {
+                                setSelectedPermissions((prev: string[]) => prev.filter((p: string) => p !== perm.id));
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

@@ -496,13 +496,42 @@ export function Sidebar({ className }: { className?: string }) {
     ].filter(Boolean) as any[]
   });
 
-  // Hotel: only show groups/items that the tenant has enabled via feature flags
+  // Hotel: show groups/items that the tenant has enabled via feature flags
   const filteredHotelGroups = hotelMenuGroups
     .map(group => ({
       ...group,
       items: group.items.filter(item => !item.feature || hasFeature(item.feature as string)),
     }))
     .filter(group => group.items.length > 0);
+
+  // Staff Hotel Groups: granular filtering based on staff permissions
+  const filteredStaffHotelGroups = hotelMenuGroups
+    .map(group => {
+      let allowed = false;
+      if (group.title.includes("HOTEL DASHBOARD")) {
+        allowed = hasPermission('manage_hotel_dashboard') || hasPermission('manage_hotel_bookings');
+      } else if (group.title.includes("FRONT DESK")) {
+        allowed = hasPermission('manage_hotel_bookings');
+      } else if (group.title.includes("ROOMS")) {
+        allowed = hasPermission('manage_hotel_rooms');
+      } else if (group.title.includes("HOTEL POS")) {
+        allowed = hasPermission('manage_hotel_pos');
+      } else if (group.title.includes("HOUSEKEEPING & STAFF")) {
+        allowed = hasPermission('manage_hotel_housekeeping') || hasPermission('manage_hotel_shifts');
+      } else if (group.title.includes("HOTEL ANALYTICS")) {
+        allowed = hasPermission('manage_hotel_night_audit') || hasPermission('manage_hotel_reports');
+      } else if (group.title.includes("OTA INTEGRATION")) {
+        allowed = hasPermission('manage_hotel_ota');
+      }
+
+      if (!allowed) return null;
+
+      return {
+        ...group,
+        items: group.items.filter(item => !item.feature || hasFeature(item.feature as string)),
+      };
+    })
+    .filter((g): g is typeof hotelMenuGroups[number] => g !== null && g.items.length > 0);
 
   // Combined business + hotel menu (hotel inserted before ADMINISTRATION)
   const businessAdminGroup = filteredBusinessGroups.filter(g => g.title === "ADMINISTRATION");
@@ -519,7 +548,7 @@ export function Sidebar({ className }: { className?: string }) {
 
   const combinedStaffGroups = [
     ...staffOtherGroups,
-    ...filteredHotelGroups,
+    ...filteredStaffHotelGroups,
     ...staffSelfServiceGroup,
   ];
 

@@ -12,11 +12,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Services\StorageService;
+use App\Traits\LogsActivity;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes, LogsActivity;
 
     /**
      * The attributes that are mass assignable.
