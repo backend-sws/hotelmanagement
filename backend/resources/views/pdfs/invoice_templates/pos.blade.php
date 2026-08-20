@@ -256,15 +256,40 @@
         </div>
         @endif
 
+        @if(($settings['fields']['show_signature'] ?? false) || ($settings['fields']['show_receiver_signature'] ?? false))
+        <div style="margin-top: 8px; border-top: 1px dotted #888; padding-top: 6px;">
+            <table class="totals-table">
+                <tr>
+                    @if($settings['fields']['show_receiver_signature'] ?? false)
+                    <td class="text-center" style="width: 50%; vertical-align: bottom;">
+                        <div style="border-bottom: 1px dashed #888; width: 80%; margin: 0 auto 3px auto; height: 25px;"></div>
+                        <div style="font-size: 7pt; font-weight: bold;">Receiver's Sign</div>
+                    </td>
+                    @endif
+                    @if($settings['fields']['show_signature'] ?? false)
+                    <td class="text-center" style="width: {{ ($settings['fields']['show_receiver_signature'] ?? false) ? '50%' : '100%' }}; vertical-align: bottom;">
+                        @if(!empty($settings['signature_image']))
+                            <img src="{{ public_path('storage/' . $settings['signature_image']) }}" style="max-height: 35px; margin-bottom: 2px;" alt="Signature"><br>
+                        @else
+                            <div style="border-bottom: 1px dashed #888; width: 80%; margin: 0 auto 3px auto; height: 25px;"></div>
+                        @endif
+                        <div style="font-size: 7.5pt; font-weight: bold;">
+                            {{ $settings['signature_label'] ?? 'Authorized Signatory' }}
+                        </div>
+                        <div style="font-size: 7pt; color: #555;">
+                            For {{ $invoice->business->name }}
+                        </div>
+                    </td>
+                    @endif
+                </tr>
+            </table>
+        </div>
+        @endif
+
         <div class="dashed-line"></div>
 
         <div class="text-center" style="font-size: 8.5pt; font-weight: bold; margin-top: 4px;">
             *** THANK YOU! VISIT AGAIN ***
-            @if($settings['fields']['show_signature'] ?? false)
-                <div style="font-size: 7.5pt; font-weight: normal; color: #555; margin-top: 4px;">
-                    {{ $settings['signature_label'] ?? 'Authorized Signatory' }}
-                </div>
-            @endif
         </div>
     </div>
 </body>

@@ -1430,14 +1430,41 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
           </div>
         )}
 
+        {/* Signatures Section */}
+        {(settings.fields.show_signature !== false || settings.fields.show_receiver_signature) && (
+          <div style={{ marginTop: '12px', borderTop: `1px dotted #9ca3af`, paddingTop: '8px', display: 'flex', justifyContent: settings.fields.show_receiver_signature ? 'space-between' : 'center', alignItems: 'flex-end' }}>
+            {settings.fields.show_receiver_signature && (
+              <div style={{ textAlign: 'center', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ borderBottom: `1px dashed ${borderColor || '#9ca3af'}`, width: '100px', height: '35px', marginBottom: '4px' }}></div>
+                <p style={{ fontSize: `${Math.max(baseSize - 2.5, 8.5)}px`, fontWeight: 'bold', margin: 0, color: primaryColor }}>Receiver's Sign</p>
+              </div>
+            )}
+
+            {settings.fields.show_signature !== false && (
+              <div style={{ textAlign: 'center', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
+                {settings.signature_image ? (
+                  <img 
+                    src={settings.signature_image} 
+                    alt="Signature" 
+                    style={{ maxHeight: '45px', maxWidth: '130px', marginBottom: '4px', objectFit: 'contain' }} 
+                  />
+                ) : (
+                  <div style={{ borderBottom: `1px dashed ${borderColor || '#9ca3af'}`, width: '110px', height: '35px', marginBottom: '4px' }}></div>
+                )}
+                <p style={{ fontSize: `${Math.max(baseSize - 1.5, 9)}px`, fontWeight: 'bold', margin: 0, color: primaryColor }}>
+                  {settings.signature_label || 'Authorized Signatory'}
+                </p>
+                <p style={{ fontSize: `${Math.max(baseSize - 3, 8)}px`, color: secondaryColor, margin: '1px 0 0 0' }}>
+                  For {business.name}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Footer Greetings */}
         <div style={{ textAlign: 'center', marginTop: '10px', borderTop: `1px dashed ${primaryColor}80`, paddingTop: '6px' }}>
           <p style={{ fontSize: `${baseSize}px`, fontWeight: 'bold', margin: '0 0 2px 0', color: primaryColor }}>*** THANK YOU! VISIT AGAIN ***</p>
-          {settings.fields.show_signature !== false && (
-            <p style={{ fontSize: `${Math.max(baseSize - 2.5, 8.5)}px`, color: secondaryColor, margin: '4px 0 0 0' }}>
-              {settings.signature_label || 'Authorized Signatory'} - For {business.name}
-            </p>
-          )}
         </div>
       </div>
     );
