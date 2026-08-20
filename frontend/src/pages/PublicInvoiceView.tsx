@@ -75,13 +75,22 @@ const PublicInvoiceView = () => {
 
   const formattedInvoice = {
     invoice_number: sale.invoice_number,
-    date: new Date(sale.invoice_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-    due_date: sale.due_date ? new Date(sale.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
+    date: (() => {
+      const dStr = sale.date || sale.invoice_date || sale.created_at;
+      if (!dStr) return '';
+      const d = new Date(dStr);
+      return isNaN(d.getTime()) ? String(dStr).split('T')[0] : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    })(),
+    due_date: (() => {
+      if (!sale.due_date) return null;
+      const d = new Date(sale.due_date);
+      return isNaN(d.getTime()) ? String(sale.due_date).split('T')[0] : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    })(),
     customer_name: sale.customer ? sale.customer.name : 'Walk-in Customer',
     customer_address: sale.customer ? sale.customer.address : '',
     customer_phone: sale.customer ? sale.customer.phone : '',
     customer_gstin: sale.customer ? sale.customer.gstin : '',
-    type: sale.invoice_type.replace('_', ' ').toUpperCase(),
+    type: sale.invoice_type ? sale.invoice_type.replace('_', ' ').toUpperCase() : 'TAX INVOICE',
     place_of_supply: sale.place_of_supply,
     vehicle_number: sale.vehicle_number,
     driver_name: sale.driver_name,
@@ -117,7 +126,7 @@ const PublicInvoiceView = () => {
     address: business.address,
     phone: business.phone,
     email: business.email,
-    gstin: business?.gst_settings?.gstin,
+    gstin: business?.gst_number || business?.gstin || business?.gst_settings?.gstin || '',
     logo: getImageUrl(business.logo_path) || getImageUrl(business?.settings?.whitelabel_logo) || null
   };
 

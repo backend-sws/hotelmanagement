@@ -70,7 +70,7 @@ export default function InvoiceDetailPage() {
     address: invoice.business.address,
     phone: invoice.business.phone,
     email: invoice.business.email,
-    gstin: invoice.business?.gst_settings?.gstin,
+    gstin: invoice.business?.gst_number || invoice.business?.gstin || invoice.business?.gst_settings?.gstin || '',
     logo: getImageUrl(invoice.business.logo_path) || getImageUrl(invoice.business?.settings?.whitelabel_logo) || null
   } : undefined;
 

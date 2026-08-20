@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { invoiceService } from '../api/invoiceService';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, FileText, ArrowRightLeft, Eye, Download, MessageSquare, Pencil, ChevronLeft, ChevronRight, FileSpreadsheet, HelpCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, FileText, ArrowRightLeft, Eye, Download, Printer, MessageSquare, Pencil, ChevronLeft, ChevronRight, FileSpreadsheet, HelpCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { FilterContainer, FilterSearch, FilterSelect, FilterReset } from '@/components/ui/filter-controls';
@@ -80,15 +80,19 @@ export default function ProformaListPage() {
     }
   };
 
-  const handleDownloadPdf = async (e: React.MouseEvent, id: number, invoiceNum: string) => {
+  const handlePrint = async (e: React.MouseEvent, p: any) => {
     e.stopPropagation();
+    if (p.uuid) {
+      window.open(`/invoice/${p.uuid}?print=true`, '_blank');
+      return;
+    }
     try {
       toast.info('Generating PDF...');
-      const blob = await invoiceService.getPdf(id);
+      const blob = await invoiceService.getPdf(p.id);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${invoiceNum}.pdf`;
+      a.download = `${p.invoice_number}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -386,11 +390,11 @@ export default function ProformaListPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            onClick={(e) => handleDownloadPdf(e, p.id, p.invoice_number)}
-                            title="Download PDF"
-                            className="h-8 w-8 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg"
+                            onClick={(e) => handlePrint(e, p)}
+                            title="Direct Print"
+                            className="h-8 w-8 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg"
                           >
-                            <Download className="h-4 w-4" />
+                            <Printer className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost" 

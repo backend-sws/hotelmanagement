@@ -211,12 +211,14 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
               <h3 style={{ margin: 0, color: primaryColor }}>{business.name}</h3>
               <p style={{ margin: 0 }}>{business.address}</p>
               <p style={{ margin: 0 }}>Phone: {business.phone}</p>
-              {settings.fields.show_gstin !== false && <p style={{ margin: 0 }}>GSTIN: {business.gstin}</p>}
+              {settings.fields.show_gstin !== false && business.gstin && <p style={{ margin: 0 }}>GSTIN: {business.gstin}</p>}
               {renderCustomFields(primaryColor)}
             </td>
             <td style={{ width: '50%', verticalAlign: 'top', textAlign: 'right', padding: '5px' }}>
               <p style={{ fontWeight: 'bold', fontSize: '16px', margin: 0 }}>Invoice No: {invoice.invoice_number}</p>
-              {settings.fields.show_reference_number !== false && <p style={{ margin: 0 }}>Ref: {invoice.reference_number}</p>}
+              {settings.fields.show_reference_number !== false && invoice.reference_number && String(invoice.reference_number).trim() !== '' && (
+                <p style={{ margin: 0 }}>Ref No: {invoice.reference_number}</p>
+              )}
               <p style={{ margin: 0 }}>Date: {invoice.date}</p>
               {settings.fields.show_due_date !== false && invoice.due_date && <p style={{ margin: 0 }}>Due Date: {invoice.due_date}</p>}
               {settings.fields.show_invoice_type !== false && <p style={{ margin: 0 }}>Type: {invoice.type}</p>}
@@ -232,16 +234,16 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
               <td style={{ width: '50%', verticalAlign: 'top' }}>
                 <p style={{ fontWeight: 'bold', margin: '0 0 5px 0' }}>Billed To:</p>
                 <p style={{ margin: 0 }}>{invoice.customer_name}</p>
-                <p style={{ margin: 0 }}>{invoice.customer_address}</p>
-                {settings.fields.show_customer_phone !== false && <p style={{ margin: 0 }}>Phone: {invoice.customer_phone}</p>}
-                {settings.fields.show_gstin !== false && <p style={{ margin: 0 }}>GSTIN: {invoice.customer_gstin}</p>}
-                {settings.fields.show_place_of_supply !== false && <p style={{ margin: 0 }}>State: {invoice.place_of_supply}</p>}
+                {invoice.customer_address && <p style={{ margin: 0 }}>{invoice.customer_address}</p>}
+                {settings.fields.show_customer_phone !== false && invoice.customer_phone && <p style={{ margin: 0 }}>Phone: {invoice.customer_phone}</p>}
+                {settings.fields.show_gstin !== false && invoice.customer_gstin && <p style={{ margin: 0 }}>GSTIN: {invoice.customer_gstin}</p>}
+                {settings.fields.show_place_of_supply !== false && invoice.place_of_supply && <p style={{ margin: 0 }}>State: {invoice.place_of_supply}</p>}
               </td>
               <td style={{ width: '50%', verticalAlign: 'top' }}>
-                {settings.fields.show_vehicle_info !== false && (
+                {settings.fields.show_vehicle_info !== false && (invoice.vehicle_number || invoice.driver_name) && (
                   <>
-                    <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Vehicle No:</span> {invoice.vehicle_number}</p>
-                    <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Driver Name:</span> {invoice.driver_name}</p>
+                    {invoice.vehicle_number && <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Vehicle No:</span> {invoice.vehicle_number}</p>}
+                    {invoice.driver_name && <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Driver Name:</span> {invoice.driver_name}</p>}
                   </>
                 )}
               </td>
@@ -477,9 +479,10 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
         <div style={{ border: `2px solid ${primaryColor}`, borderBottom: 'none', paddingBottom: '8px' }}>
           <h1 style={{ color: primaryColor, fontSize: '32px', fontWeight: 'bold', margin: 0, padding: '12px 0 5px 0', textTransform: 'uppercase', textAlign: 'center' }}>{business.name}</h1>
           <p style={{ fontWeight: '600', textAlign: 'center', fontSize: '13px', margin: 0, paddingBottom: '5px' }}>{business.address}</p>
-          {settings.fields.show_gstin !== false && (
+          {settings.fields.show_gstin !== false && (business.gstin || business.phone) && (
             <p style={{ fontWeight: '600', textAlign: 'center', fontSize: '13px', margin: 0, paddingBottom: '5px' }}>
-              GSTIN: {business.gstin} <span style={{ marginLeft: '20px' }}>MOB:- {business.phone}</span>
+              {business.gstin && <>GSTIN: {business.gstin}</>}
+              {business.phone && <span style={{ marginLeft: business.gstin ? '20px' : '0' }}>MOB:- {business.phone}</span>}
             </p>
           )}
         </div>
@@ -494,14 +497,16 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
             <td colSpan={leftColSpan} style={{ width: '50%', border: `1px solid ${primaryColor}`, padding: '8px', verticalAlign: 'top', fontSize: '13px' }}>
               <p style={{ fontWeight: 'bold', margin: '0 0 4px 0', color: primaryColor, fontSize: '14px' }}>Billing Address :-</p>
               <p style={{ margin: '0 0 2px 0', fontWeight: '600', fontSize: '14px' }}>{invoice.customer_name}</p>
-              <p style={{ margin: '0 0 2px 0' }}>{invoice.customer_address}</p>
-              {settings.fields.show_customer_phone !== false && <p style={{ margin: '0 0 2px 0' }}>Mob:- {invoice.customer_phone}</p>}
-              {settings.fields.show_gstin !== false && <p style={{ margin: 0 }}>GSTIN: {invoice.customer_gstin}</p>}
+              {invoice.customer_address && <p style={{ margin: '0 0 2px 0' }}>{invoice.customer_address}</p>}
+              {settings.fields.show_customer_phone !== false && invoice.customer_phone && <p style={{ margin: '0 0 2px 0' }}>Mob:- {invoice.customer_phone}</p>}
+              {settings.fields.show_gstin !== false && invoice.customer_gstin && <p style={{ margin: 0 }}>GSTIN: {invoice.customer_gstin}</p>}
             </td>
             <td colSpan={rightColSpan} style={{ width: '50%', border: `1px solid ${primaryColor}`, padding: '8px', verticalAlign: 'top', fontSize: '13px' }}>
               <p style={{ margin: '0 0 4px 0' }}><span style={{ fontWeight: 'bold', color: primaryColor }}>Date:-</span> {invoice.date}</p>
               <p style={{ margin: '0 0 4px 0' }}><span style={{ fontWeight: 'bold', color: primaryColor }}>Invoice No:-</span> {invoice.invoice_number}</p>
-              {settings.fields.show_reference_number !== false && <p style={{ margin: '0 0 4px 0' }}><span style={{ fontWeight: 'bold', color: primaryColor }}>Ref No:-</span> {invoice.reference_number}</p>}
+              {settings.fields.show_reference_number !== false && invoice.reference_number && String(invoice.reference_number).trim() !== '' && (
+                <p style={{ margin: '0 0 4px 0' }}><span style={{ fontWeight: 'bold', color: primaryColor }}>Ref No:-</span> {invoice.reference_number}</p>
+              )}
               {settings.fields.show_due_date !== false && invoice.due_date && <p style={{ margin: '0 0 4px 0' }}><span style={{ fontWeight: 'bold', color: primaryColor }}>Due Date:-</span> {invoice.due_date}</p>}
               {settings.fields.show_vehicle_info !== false && <p style={{ margin: '0 0 4px 0' }}><span style={{ fontWeight: 'bold', color: primaryColor }}>Vehicle No:-</span> {invoice.vehicle_number}</p>}
             </td>
@@ -677,9 +682,9 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
           )}
           <h2 style={{ color: primaryColor, margin: '0 0 5px 0', fontSize: '24px' }}>{business.name}</h2>
           <p style={{ margin: 0, lineHeight: 1.5, fontSize: '0.85em', color: secondaryColor }}>
-            {business.address}<br />
-            Phone: {business.phone}
-            {settings.fields.show_gstin !== false && <><br />GSTIN: {business.gstin}</>}
+            {business.address && <>{business.address}<br /></>}
+            {business.phone && <>Phone: {business.phone}</>}
+            {settings.fields.show_gstin !== false && business.gstin && <><br />GSTIN: {business.gstin}</>}
           </p>
           {renderCustomFields(secondaryColor)}
         </div>
@@ -687,7 +692,7 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
           <h1 style={{ margin: '0 0 10px 0', fontSize: '32px', letterSpacing: '2px', color: borderColor }}>{invoice.type || 'INVOICE'}</h1>
           <div style={{ display: 'inline-block', textAlign: 'left', minWidth: '200px', padding: '15px', borderRadius: `${borderRadius}px`, border: frameStyle !== 'none' ? `1px ${frameStyle} ${borderColor}` : 'none', backgroundColor: '#f8fafc' }}>
             <p style={{ margin: '0 0 5px 0' }}><span style={{ fontSize: '0.85em', color: secondaryColor }}>Invoice No:</span><br /> <span style={{ fontWeight: 'bold' }}>{invoice.invoice_number}</span></p>
-            {settings.fields.show_reference_number !== false && (
+            {settings.fields.show_reference_number !== false && invoice.reference_number && String(invoice.reference_number).trim() !== '' && (
               <p style={{ margin: '0 0 5px 0' }}><span style={{ fontSize: '0.85em', color: secondaryColor }}>Ref No:</span><br /> <span style={{ fontWeight: 'bold' }}>{invoice.reference_number}</span></p>
             )}
             <p style={{ margin: '0 0 5px 0' }}><span style={{ fontSize: '0.85em', color: secondaryColor }}>Date:</span><br /> <span style={{ fontWeight: 'bold' }}>{invoice.date}</span></p>
@@ -703,20 +708,20 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
           <p style={{ color: primaryColor, fontWeight: 'bold', margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '1px' }}>Billed To</p>
           <p style={{ fontWeight: 'bold', margin: '0 0 5px 0', fontSize: '16px' }}>{invoice.customer_name}</p>
           <p style={{ fontSize: '0.85em', color: secondaryColor, margin: 0, lineHeight: 1.5 }}>
-            {invoice.customer_address}
-            {settings.fields.show_customer_phone !== false && <><br />Phone: {invoice.customer_phone}</>}
-            {settings.fields.show_gstin !== false && <><br />GSTIN: {invoice.customer_gstin}</>}
+            {invoice.customer_address && <>{invoice.customer_address}<br /></>}
+            {settings.fields.show_customer_phone !== false && invoice.customer_phone && <>Phone: {invoice.customer_phone}<br /></>}
+            {settings.fields.show_gstin !== false && invoice.customer_gstin && <>GSTIN: {invoice.customer_gstin}</>}
           </p>
         </div>
         <div style={{ width: '48%', padding: '15px', borderRadius: `${borderRadius}px`, border: frameStyle !== 'none' ? `1px ${frameStyle} ${borderColor}` : 'none', backgroundColor: '#f8fafc' }}>
           <p style={{ color: primaryColor, fontWeight: 'bold', margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '1px' }}>Order Details</p>
           <p style={{ fontSize: '0.85em', color: secondaryColor, margin: 0, lineHeight: 1.5 }}>
             <span style={{ fontWeight: 'bold' }}>Type:</span> {invoice.type}<br />
-            {settings.fields.show_place_of_supply !== false && <><span style={{ fontWeight: 'bold' }}>Place of Supply:</span> {invoice.place_of_supply}<br /></>}
-            {settings.fields.show_vehicle_info !== false && (
+            {settings.fields.show_place_of_supply !== false && invoice.place_of_supply && <><span style={{ fontWeight: 'bold' }}>Place of Supply:</span> {invoice.place_of_supply}<br /></>}
+            {settings.fields.show_vehicle_info !== false && (invoice.vehicle_number || invoice.driver_name) && (
               <>
-                <span style={{ fontWeight: 'bold' }}>Vehicle:</span> {invoice.vehicle_number}<br />
-                <span style={{ fontWeight: 'bold' }}>Driver:</span> {invoice.driver_name}
+                {invoice.vehicle_number && <><span style={{ fontWeight: 'bold' }}>Vehicle:</span> {invoice.vehicle_number}<br /></>}
+                {invoice.driver_name && <><span style={{ fontWeight: 'bold' }}>Driver:</span> {invoice.driver_name}</>}
               </>
             )}
           </p>
@@ -933,7 +938,7 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
               <span style={{ fontWeight: '700', fontSize: '14px', color: '#0f172a' }}>{invoice.due_date}</span>
             </div>
           )}
-          {settings.fields.show_reference_number !== false && invoice.reference_number && (
+          {settings.fields.show_reference_number !== false && invoice.reference_number && String(invoice.reference_number).trim() !== '' && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: '12px', color: '#64748b' }}>P.O. No.</span>
               <span style={{ fontWeight: '700', fontSize: '14px', color: '#0f172a' }}>{invoice.reference_number}</span>

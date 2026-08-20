@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { invoiceService } from '../api/invoiceService';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, FileText, CheckCircle2, AlertCircle, Eye, Download, MessageSquare, ChevronLeft, ChevronRight, FileSpreadsheet, Pencil, HelpCircle, Sparkles, ChevronDown, ChevronUp, Receipt } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, AlertCircle, Eye, Download, Printer, MessageSquare, ChevronLeft, ChevronRight, FileSpreadsheet, Pencil, HelpCircle, Sparkles, ChevronDown, ChevronUp, Receipt } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
@@ -123,13 +123,13 @@ export default function InvoicesListPage() {
     }
   };
 
-  const handleDownloadPdf = async (e: React.MouseEvent, invoice: any) => {
+  const handlePrint = async (e: React.MouseEvent, invoice: any) => {
     e.stopPropagation();
     if (!invoice.uuid) {
       toast.error('Invoice UUID missing');
       return;
     }
-    window.open(`/invoice/${invoice.uuid}`, '_blank');
+    window.open(`/invoice/${invoice.uuid}?print=true`, '_blank');
   };
 
   const handleWhatsapp = async (e: React.MouseEvent, id: number) => {
@@ -435,11 +435,11 @@ export default function InvoicesListPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            onClick={(e) => handleDownloadPdf(e, invoice)}
-                            title="Download PDF"
-                            className="h-8 w-8 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg"
+                            onClick={(e) => handlePrint(e, invoice)}
+                            title="Direct Print"
+                            className="h-8 w-8 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg"
                           >
-                            <Download className="h-4 w-4" />
+                            <Printer className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
