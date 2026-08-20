@@ -72,65 +72,7 @@ class SaleService
         return DB::transaction(function () use ($data) {
             // Generate Invoice Number
             $businessId = app('current_business_id') ?? (auth()->check() ? (auth()->user()->business_id ?? auth()->user()->businesses()->first()?->id) : null);
-            $business = \App\Models\Business::find($businessId);
-            $pattern = $business->settings['sale_invoice_prefix'] ?? 'INV-{SEQ:4}';
-            
-            // Replace date placeholders
-            $date = now();
-            $pattern = str_replace('{YYYY}', $date->format('Y'), $pattern);
-            $pattern = str_replace('{YY}', $date->format('y'), $pattern);
-            $pattern = str_replace('{MM}', $date->format('m'), $pattern);
-            
-            // Find {SEQ:n}
-            $seqLength = 4;
-            if (preg_match('/\{SEQ:(\d+)\}/', $pattern, $matches)) {
-                $seqLength = (int) $matches[1];
-                $pattern = str_replace($matches[0], '{SEQ}', $pattern);
-            } else {
-                if (!str_contains($pattern, '{SEQ}')) {
-                    $pattern .= '{SEQ}';
-                }
-            }
-            
-            $parts = explode('{SEQ}', $pattern);
-            $prefix = $parts[0];
-            $suffix = $parts[1] ?? '';
-            
-            $lastSale = Sale::withTrashed()
-                ->where('business_id', $businessId)
-                ->where('invoice_number', 'like', $prefix . '%' . $suffix)
-                ->where('invoice_number', 'not like', 'UDH-%')
-                ->orderBy('id', 'desc')
-                ->first();
-                
-            $nextNumber = 1;
-            if ($lastSale) {
-                $invNum = $lastSale->invoice_number;
-                // Extract the sequence between prefix and suffix
-                $seqStr = substr($invNum, strlen($prefix));
-                if ($suffix !== '') {
-                    $seqStr = substr($seqStr, 0, -strlen($suffix));
-                }
-                if (is_numeric($seqStr)) {
-                    $nextNumber = (int) $seqStr + 1;
-                } else {
-                    preg_match('/(\d+)/', $seqStr, $m);
-                    if (!empty($m)) {
-                        $nextNumber = (int) $m[1] + 1;
-                    }
-                }
-            }
-
-            do {
-                $invoiceNumber = $prefix . str_pad($nextNumber, $seqLength, '0', STR_PAD_LEFT) . $suffix;
-                $exists = Sale::withTrashed()
-                    ->where('business_id', $businessId)
-                    ->where('invoice_number', $invoiceNumber)
-                    ->exists();
-                if ($exists) {
-                    $nextNumber++;
-                }
-            } while ($exists);
+            $invoiceNumber = app(\App\Services\InvoiceNumberService::class)->generate($businessId, 'sales_invoice');
 
             // Calculate totals
             $totalAmount = 0;

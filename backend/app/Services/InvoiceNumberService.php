@@ -38,19 +38,36 @@ class InvoiceNumberService
             
             $pattern = $rawPattern ?? ($defaultPrefixes[$type] ?? 'DOC-');
             
-            // Replace date placeholders
+            // Replace date placeholders (support composite and single tokens, case-insensitive)
             $date = now();
-            $pattern = str_replace('{YYYY}', $date->format('Y'), $pattern);
-            $pattern = str_replace('{YY}', $date->format('y'), $pattern);
-            $pattern = str_replace('{MM}', $date->format('m'), $pattern);
+            $replacements = [
+                '{YYYYMMDD}' => $date->format('Ymd'),
+                '{yyyymmdd}' => $date->format('Ymd'),
+                '{YYMMDD}'   => $date->format('ymd'),
+                '{yymmdd}'   => $date->format('ymd'),
+                '{YYYYMM}'   => $date->format('Ym'),
+                '{yyyymm}'   => $date->format('Ym'),
+                '{YYMM}'     => $date->format('ym'),
+                '{yymm}'     => $date->format('ym'),
+                '{YYYY}'     => $date->format('Y'),
+                '{yyyy}'     => $date->format('Y'),
+                '{YY}'       => $date->format('y'),
+                '{yy}'       => $date->format('y'),
+                '{MM}'       => $date->format('m'),
+                '{mm}'       => $date->format('m'),
+                '{DD}'       => $date->format('d'),
+                '{dd}'       => $date->format('d'),
+            ];
+            $pattern = str_replace(array_keys($replacements), array_values($replacements), $pattern);
             
             // Find {SEQ:n} or default sequence length
             $seqLength = 4;
-            if (preg_match('/\{SEQ:(\d+)\}/', $pattern, $matches)) {
+            if (preg_match('/\{SEQ:(\d+)\}/i', $pattern, $matches)) {
                 $seqLength = (int) $matches[1];
                 $pattern = str_replace($matches[0], '{SEQ}', $pattern);
-            } elseif (str_contains($pattern, '{SEQ}')) {
+            } elseif (preg_match('/\{SEQ\}/i', $pattern)) {
                 $seqLength = 4;
+                $pattern = preg_replace('/\{SEQ\}/i', '{SEQ}', $pattern);
             } else {
                 // If it's a simple prefix like "INV-", append {SEQ}
                 $pattern .= '{SEQ}';
