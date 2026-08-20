@@ -28,6 +28,7 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
       show_logo: true, show_hsn: true, show_bank_details: true, show_terms: true,
       show_discount: true, show_vehicle_info: true, show_amount_in_words: true,
       show_gstin: true, show_place_of_supply: true, show_due_date: true,
+      show_invoice_type: true,
       show_signature: true, show_customer_phone: true, show_tax_amount: true, show_tax_breakdown: true,
       show_rate: true, show_qty: true, show_reference_number: true,
       show_watermark: false, show_receiver_signature: false, show_qr_code: true,
@@ -217,8 +218,8 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
               <p style={{ fontWeight: 'bold', fontSize: '16px', margin: 0 }}>Invoice No: {invoice.invoice_number}</p>
               {settings.fields.show_reference_number !== false && <p style={{ margin: 0 }}>Ref: {invoice.reference_number}</p>}
               <p style={{ margin: 0 }}>Date: {invoice.date}</p>
-              {settings.fields.show_due_date !== false && <p style={{ margin: 0 }}>Due Date: {invoice.due_date}</p>}
-              <p style={{ margin: 0 }}>Type: {invoice.type}</p>
+              {settings.fields.show_due_date !== false && invoice.due_date && <p style={{ margin: 0 }}>Due Date: {invoice.due_date}</p>}
+              {settings.fields.show_invoice_type !== false && <p style={{ margin: 0 }}>Type: {invoice.type}</p>}
             </td>
           </tr>
         </tbody>
@@ -346,7 +347,7 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <tbody>
               <tr>
-                <td style={{ padding: '6px 10px', color: '#475569' }}>Total Taxable Value</td>
+                <td style={{ padding: '6px 10px', color: '#475569' }}>Total</td>
                 <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: '500' }}>₹ {invoice.subtotal}</td>
               </tr>
               {settings.fields.show_tax_amount !== false && (
@@ -429,12 +430,12 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '50px', alignItems: 'flex-end' }}>
         <div style={{ flex: 1, textAlign: 'left' }}>
           {settings.fields.show_qr_code !== false && invoice.uuid && (
-            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-              <QRCode value={`${window.location.origin}/invoice/${invoice.uuid}`} size={80} level="M" />
-                <p style={{ fontSize: '12px', margin: '5px 0 0 0', color: '#64748b' }}>Scan to View</p>
-              </div>
-            )}
-          </div>
+            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#ffffff', padding: '8px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+              <QRCode value={`${window.location.origin}/invoice/${invoice.uuid}`} size={115} level="M" />
+              <p style={{ fontSize: '11px', fontWeight: 'bold', margin: '6px 0 0 0', color: '#475569' }}>Scan to Verify & View</p>
+            </div>
+          )}
+        </div>
           
           <div style={{ flex: 1, textAlign: 'center' }}>
             {settings.fields.show_receiver_signature !== false && (
@@ -501,7 +502,7 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
               <p style={{ margin: '0 0 4px 0' }}><span style={{ fontWeight: 'bold', color: primaryColor }}>Date:-</span> {invoice.date}</p>
               <p style={{ margin: '0 0 4px 0' }}><span style={{ fontWeight: 'bold', color: primaryColor }}>Invoice No:-</span> {invoice.invoice_number}</p>
               {settings.fields.show_reference_number !== false && <p style={{ margin: '0 0 4px 0' }}><span style={{ fontWeight: 'bold', color: primaryColor }}>Ref No:-</span> {invoice.reference_number}</p>}
-              {settings.fields.show_due_date !== false && <p style={{ margin: '0 0 4px 0' }}><span style={{ fontWeight: 'bold', color: primaryColor }}>Due Date:-</span> {invoice.due_date}</p>}
+              {settings.fields.show_due_date !== false && invoice.due_date && <p style={{ margin: '0 0 4px 0' }}><span style={{ fontWeight: 'bold', color: primaryColor }}>Due Date:-</span> {invoice.due_date}</p>}
               {settings.fields.show_vehicle_info !== false && <p style={{ margin: '0 0 4px 0' }}><span style={{ fontWeight: 'bold', color: primaryColor }}>Vehicle No:-</span> {invoice.vehicle_number}</p>}
             </td>
           </tr>
@@ -641,9 +642,9 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
                   )}
                 </div>
                 {settings.fields.show_qr_code !== false && invoice.uuid && (
-                  <div style={{ textAlign: 'center', marginLeft: '15px' }}>
-                    <QRCode value={`${window.location.origin}/invoice/${invoice.uuid}`} size={64} level="M" />
-                    <p style={{ fontSize: '11px', margin: '4px 0 0 0', fontWeight: '500', color: primaryColor }}>Scan to View</p>
+                  <div style={{ textAlign: 'center', marginLeft: '15px', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#ffffff', padding: '6px', borderRadius: '8px', border: `1.5px solid ${primaryColor}50` }}>
+                    <QRCode value={`${window.location.origin}/invoice/${invoice.uuid}`} size={105} level="M" />
+                    <p style={{ fontSize: '11px', margin: '4px 0 0 0', fontWeight: 'bold', color: primaryColor }}>Scan to Verify</p>
                   </div>
                 )}
               </div>
@@ -690,7 +691,7 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
               <p style={{ margin: '0 0 5px 0' }}><span style={{ fontSize: '0.85em', color: secondaryColor }}>Ref No:</span><br /> <span style={{ fontWeight: 'bold' }}>{invoice.reference_number}</span></p>
             )}
             <p style={{ margin: '0 0 5px 0' }}><span style={{ fontSize: '0.85em', color: secondaryColor }}>Date:</span><br /> <span style={{ fontWeight: 'bold' }}>{invoice.date}</span></p>
-            {settings.fields.show_due_date !== false && (
+            {settings.fields.show_due_date !== false && invoice.due_date && (
               <p style={{ margin: 0 }}><span style={{ fontSize: '0.85em', color: secondaryColor }}>Due Date:</span><br /> <span style={{ fontWeight: 'bold' }}>{invoice.due_date}</span></p>
             )}
           </div>
@@ -857,9 +858,9 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '60px', alignItems: 'flex-end' }}>
         <div style={{ flex: 1, textAlign: 'left' }}>
           {settings.fields.show_qr_code !== false && invoice.uuid && (
-            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-              <QRCode value={`${window.location.origin}/invoice/${invoice.uuid}`} size={80} level="M" />
-              <p style={{ fontSize: '9px', margin: '5px 0 0 0', color: secondaryColor }}>Scan to View Online</p>
+            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#ffffff', padding: '8px', borderRadius: '10px', border: `1px solid ${borderColor}`, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+              <QRCode value={`${window.location.origin}/invoice/${invoice.uuid}`} size={115} level="M" />
+              <p style={{ fontSize: '11px', fontWeight: 'bold', margin: '6px 0 0 0', color: secondaryColor }}>Scan to View Online</p>
             </div>
           )}
         </div>
@@ -926,7 +927,7 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
             <span style={{ fontSize: '12px', color: '#64748b' }}>Invoice Date</span>
             <span style={{ fontWeight: '700', fontSize: '14px', color: '#0f172a' }}>{invoice.date}</span>
           </div>
-          {settings.fields.show_due_date !== false && (
+          {settings.fields.show_due_date !== false && invoice.due_date && (
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
               <span style={{ fontSize: '12px', color: '#64748b' }}>Due Date</span>
               <span style={{ fontWeight: '700', fontSize: '14px', color: '#0f172a' }}>{invoice.due_date}</span>
@@ -1098,9 +1099,9 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '60px', alignItems: 'flex-end' }}>
         <div style={{ flex: 1, textAlign: 'left' }}>
           {settings.fields.show_qr_code !== false && invoice.uuid && (
-            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-              <QRCode value={`${window.location.origin}/invoice/${invoice.uuid}`} size={80} level="M" />
-              <p style={{ fontSize: '10px', margin: '8px 0 0 0', color: '#64748b', fontWeight: '500' }}>Scan to Verify</p>
+            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#ffffff', padding: '8px', borderRadius: '10px', border: `1px solid ${borderColor}`, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+              <QRCode value={`${window.location.origin}/invoice/${invoice.uuid}`} size={115} level="M" />
+              <p style={{ fontSize: '11px', margin: '6px 0 0 0', color: '#475569', fontWeight: 'bold' }}>Scan to Verify</p>
             </div>
           )}
         </div>

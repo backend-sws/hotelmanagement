@@ -76,26 +76,28 @@
         .customer-table .lbl {
             font-weight: 700;
             color: #1a1a1a;
-            width: 15%;
+            width: 14%;
             white-space: nowrap;
         }
 
         .customer-table .val {
             color: #1a1a1a;
-            width: 32%;
+            width: 29%;
         }
 
         .customer-table .qr-cell {
             text-align: center;
             vertical-align: middle;
-            width: 12%;
+            width: 14%;
         }
 
         .qr-code {
-            width: 55px;
-            height: 55px;
+            width: 75px;
+            height: 75px;
             display: block;
             margin: 0 auto;
+            background: #ffffff;
+            padding: 2px;
         }
 
         /* ══════════════════════════════════════════════

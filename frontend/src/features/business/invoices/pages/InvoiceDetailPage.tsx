@@ -127,7 +127,7 @@ export default function InvoiceDetailPage() {
           <Button variant="outline" onClick={() => navigate(`/invoices/new?edit=${invoice.id}`)} className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10">
             <Pencil className="h-4 w-4 mr-2" /> Edit
           </Button>
-          <Button variant="outline" onClick={handlePdf}><Printer className="h-4 w-4 mr-2" /> PDF</Button>
+          <Button variant="outline" onClick={handlePdf}><Printer className="h-4 w-4 mr-2" /> Print</Button>
           <Button onClick={handleWhatsapp} className="bg-green-100 text-green-700 hover:bg-green-200 border-0">
             <Send className="h-4 w-4 mr-2" /> WhatsApp
           </Button>

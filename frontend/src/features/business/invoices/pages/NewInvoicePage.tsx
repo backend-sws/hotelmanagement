@@ -325,12 +325,54 @@ export default function NewInvoicePage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column (4 Cols on lg, 3 on xl): Doc Setup, Customer, Dates */}
+        {/* Left Column (4 Cols on lg, 3 on xl): Customer, Doc Setup, Dates */}
         <div className="lg:col-span-4 xl:col-span-3 space-y-6">
+          {/* 1. Billed To Customer (Primary Top Card) */}
+          <Card className="p-5 space-y-4 rounded-2xl border-slate-200/80 dark:border-white/10 shadow-sm bg-white dark:bg-[#09090b]">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-500" />
+                <h3 className="font-bold text-sm text-slate-800 dark:text-white uppercase tracking-wider">Billed To (Customer)</h3>
+              </div>
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 border border-slate-200 dark:border-white/10">F3</span>
+            </div>
+            
+            <CustomerSearchInput 
+              inputRef={customerInputRef}
+              autoFocus={true}
+              selectedCustomer={store.customer} 
+              onSelect={store.setCustomer} 
+              onClear={() => {
+                store.setCustomer(null);
+                setTimeout(() => customerInputRef.current?.focus(), 50);
+              }}
+              onNextFocus={() => itemInputRef.current?.focus()}
+            />
+
+            {store.customer && (
+              <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 flex items-center justify-between text-xs">
+                <span className="text-slate-500 flex items-center gap-1.5 font-bold"><MapPin className="w-3.5 h-3.5 text-amber-500" /> Place of Supply</span>
+                <Select
+                  value={store.placeOfSupply}
+                  onChange={e => store.setPlaceOfSupply(e.target.value)}
+                  className="h-8 text-xs font-bold font-mono px-2.5 py-0 bg-white dark:bg-[#111118] border-slate-200 dark:border-white/10 rounded-lg max-w-[180px]"
+                >
+                  <option value="">Select State</option>
+                  {GST_STATES.map(s => (
+                    <option key={s.code} value={`${s.code} - ${s.name}`}>
+                      {s.code} - {s.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
+          </Card>
+
+          {/* 2. Document Setup & Reference */}
           <Card className="p-5 space-y-4 rounded-2xl border-slate-200/80 dark:border-white/10 shadow-sm bg-white dark:bg-[#09090b]">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-white/5">
               <FileText className="w-4 h-4 text-primary-500" />
-              <h3 className="font-bold text-sm text-slate-800 dark:text-white uppercase tracking-wider">Document Type</h3>
+              <h3 className="font-bold text-sm text-slate-800 dark:text-white uppercase tracking-wider">Document Details</h3>
             </div>
 
             <div className="space-y-1.5">
@@ -435,45 +477,6 @@ export default function NewInvoicePage() {
               </div>
             </div>
           </Card>
-
-          <Card className="p-5 space-y-4 rounded-2xl border-slate-200/80 dark:border-white/10 shadow-sm bg-white dark:bg-[#09090b]">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-500" />
-                <h3 className="font-bold text-sm text-slate-800 dark:text-white uppercase tracking-wider">Billed To (Customer)</h3>
-              </div>
-            </div>
-            
-            <CustomerSearchInput 
-              inputRef={customerInputRef}
-              autoFocus={true}
-              selectedCustomer={store.customer} 
-              onSelect={store.setCustomer} 
-              onClear={() => {
-                store.setCustomer(null);
-                setTimeout(() => customerInputRef.current?.focus(), 50);
-              }}
-              onNextFocus={() => itemInputRef.current?.focus()}
-            />
-
-            {store.customer && (
-              <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 flex items-center justify-between text-xs">
-                <span className="text-slate-500 flex items-center gap-1.5 font-bold"><MapPin className="w-3.5 h-3.5 text-amber-500" /> Place of Supply</span>
-                <Select
-                  value={store.placeOfSupply}
-                  onChange={e => store.setPlaceOfSupply(e.target.value)}
-                  className="h-8 text-xs font-bold font-mono px-2.5 py-0 bg-white dark:bg-[#111118] border-slate-200 dark:border-white/10 rounded-lg max-w-[180px]"
-                >
-                  <option value="">Select State</option>
-                  {GST_STATES.map(s => (
-                    <option key={s.code} value={`${s.code} - ${s.name}`}>
-                      {s.code} - {s.name}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            )}
-          </Card>
         </div>
 
         {/* Right Column (8 Cols on lg, 9 on xl): Items Table & Bottom Panels */}
@@ -524,20 +527,32 @@ export default function NewInvoicePage() {
               onSelect={(item) => {
                 const newItemId = item.id || Math.random().toString(36).substr(2, 9);
                 const isCustom = item.product_id === null || item.product_id === undefined && !item.id;
+                const itemGstRate = (item.gst_rate !== undefined && item.gst_rate !== null && item.gst_rate !== '') ? Number(item.gst_rate) : 0;
+                const itemCessRate = (item.cess_rate !== undefined && item.cess_rate !== null && item.cess_rate !== '') ? Number(item.cess_rate) : 0;
+                
                 store.addItem({
                   id: newItemId,
                   product_id: item.product_id !== undefined ? item.product_id : (item.id || null),
                   name: item.name,
                   hsn_code: item.hsn_code,
-                  quantity: item.quantity || 1,
+                  quantity: 1, // Default to 1 unit on invoice, NOT inventory stock
                   unit: item.unit || (isCustom ? 'SRV' : 'PCS'),
-                  rate: item.rate || 0,
-                  gst_rate: item.gst_rate !== undefined ? item.gst_rate : 18,
-                  cess_rate: item.cess_rate || 0,
-                  amount: item.rate || 0,
+                  rate: Number(item.rate || 0),
+                  gst_rate: itemGstRate,
+                  cess_rate: itemCessRate,
+                  amount: Number(item.rate || 0),
                   brand: item.brand,
                   brand_name: item.brand_name
                 } as any);
+
+                // Auto-focus on the newly added item's quantity input
+                setTimeout(() => {
+                  const qtyInput = document.getElementById(`item-qty-${newItemId}`) as HTMLInputElement;
+                  if (qtyInput) {
+                    qtyInput.focus();
+                    qtyInput.select();
+                  }
+                }, 80);
               }} 
             />
 
@@ -662,7 +677,7 @@ export default function NewInvoicePage() {
             className="h-11 sm:h-10 px-2 sm:px-4 text-xs font-bold rounded-xl border-blue-200 dark:border-blue-500/30 bg-blue-50/50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 shadow-sm flex items-center justify-center gap-1.5"
           >
             <Printer className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">{editId ? 'Update & PDF' : 'Save & PDF (F10)'}</span>
+            <span className="truncate">{editId ? 'Update & Print' : 'Save & Print (F10)'}</span>
           </Button>
           <Button
             id="btn-save-wa"

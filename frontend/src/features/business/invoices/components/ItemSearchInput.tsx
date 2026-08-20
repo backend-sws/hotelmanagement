@@ -68,17 +68,20 @@ export function ItemSearchInput({ onSelect, priceListId, inputRef, autoFocus = f
   const handleSelectItem = (item: any) => {
     const displayName = item.name || item.model_name || item.item_code || 'Unnamed Product';
     const displayRate = getEffectiveRate(item);
+    const itemGstRate = (item.gst_rate !== undefined && item.gst_rate !== null && item.gst_rate !== '') ? Number(item.gst_rate) : 0;
+    const itemCessRate = (item.cess_rate !== undefined && item.cess_rate !== null && item.cess_rate !== '') ? Number(item.cess_rate) : 0;
+    
     onSelect({
       ...item,
       name: displayName,
       rate: displayRate,
+      quantity: 1, // Default to 1 unit for invoice line item (not inventory stock)
+      gst_rate: itemGstRate,
+      cess_rate: itemCessRate,
     });
     setQuery('');
     setSelectedIndex(-1);
     setIsOpen(false);
-    setTimeout(() => {
-      activeInputRef.current?.focus();
-    }, 50);
   };
 
   const handleAddDirectItem = (customName?: string) => {
@@ -91,7 +94,7 @@ export function ItemSearchInput({ onSelect, priceListId, inputRef, autoFocus = f
       quantity: 1,
       unit: 'PCS',
       rate: 0,
-      gst_rate: 18,
+      gst_rate: 0,
       cess_rate: 0,
       amount: 0,
     });
@@ -162,7 +165,11 @@ export function ItemSearchInput({ onSelect, priceListId, inputRef, autoFocus = f
               setQuery(e.target.value);
               setIsOpen(true);
             }}
-            onFocus={() => setIsOpen(true)}
+            onFocus={() => {
+              if (query.trim()) {
+                setIsOpen(true);
+              }
+            }}
             onClick={() => setIsOpen(true)}
             onKeyDown={handleKeyDown}
             className="bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 h-10 text-xs rounded-xl focus:ring-primary-500 font-medium pl-11 pr-24"

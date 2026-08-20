@@ -186,6 +186,7 @@ class InvoiceSettingController extends Controller
                 'show_gstin' => true,
                 'show_place_of_supply' => true,
                 'show_due_date' => true,
+                'show_invoice_type' => true,
                 'show_signature' => true,
                 'show_customer_phone' => true,
                 'show_tax_amount' => true,

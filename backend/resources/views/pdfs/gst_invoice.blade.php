@@ -146,7 +146,7 @@
             <div style="display: table-cell; width: 40%;">
                 <table class="items-table">
                     <tr>
-                        <td>Total Taxable Value</td>
+                        <td>Total</td>
                         <td class="right-align">{{ number_format($invoice->taxable_amount, 2) }}</td>
                     </tr>
                     @if($invoice->tax_type === 'gst')

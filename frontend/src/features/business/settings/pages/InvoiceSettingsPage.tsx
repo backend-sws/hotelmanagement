@@ -530,6 +530,8 @@ export const InvoiceSettingsTab = () => {
                   </div>
                 )}
               </div>
+              <Toggle label="Show Due Date" checked={settings.fields.show_due_date ?? true} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_due_date: v}})} />
+              <Toggle label="Show Document Type (e.g. Type: TAX INVOICE)" checked={settings.fields.show_invoice_type ?? true} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_invoice_type: v}})} />
               <Toggle label="Show Amount in Words" checked={settings.fields.show_amount_in_words} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_amount_in_words: v}})} />
               <Toggle label="Show Bank Details" checked={settings.fields.show_bank_details} onChange={(v) => setSettings({...settings, fields: {...settings.fields, show_bank_details: v}})} />
               <div className="space-y-2">

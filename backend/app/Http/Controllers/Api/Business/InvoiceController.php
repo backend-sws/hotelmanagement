@@ -547,7 +547,7 @@ class InvoiceController extends Controller
             return $sale->load(['items.product', 'customer']);
         });
 
-        return response()->json(['data' => $invoice]);
+        return response()->json(['data' => $updatedInvoice]);
     }
 
     public function generatePdf($id, Request $request)

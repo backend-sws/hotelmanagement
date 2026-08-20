@@ -208,9 +208,11 @@ function ProfileMenu() {
     };
   }, [isOpen]);
 
-  // Handle absolute vs relative avatar URL
+  // Handle absolute (R2 CDN) vs relative avatar URL
   const avatarUrl = user?.avatar
-    ? user.avatar.startsWith('http') ? user.avatar : `${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${user.avatar}`
+    ? (user.avatar.startsWith('http') 
+        ? user.avatar 
+        : `${(import.meta.env.VITE_API_URL || '').replace(/\/api(\/v1)?\/?$/, '').replace(/\/v1\/?$/, '')}/storage/${user.avatar.replace(/^\/?storage\//, '')}`)
     : `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=0f172a&color=ffffff`;
 
   return (

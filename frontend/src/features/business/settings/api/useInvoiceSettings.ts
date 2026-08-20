@@ -24,6 +24,7 @@ export interface InvoiceSettings {
     show_gstin: boolean;
     show_place_of_supply: boolean;
     show_due_date: boolean;
+    show_invoice_type?: boolean;
     show_signature: boolean;
     show_customer_phone: boolean;
     show_tax_amount?: boolean;

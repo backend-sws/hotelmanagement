@@ -227,11 +227,12 @@ export function InvoiceItemsTable({ calculatedItems, store }: InvoiceItemsTableP
                 <td className="py-2.5 px-2 text-center align-middle">
                   <select
                     className="h-9 px-2 text-xs font-bold font-mono text-center rounded-lg bg-blue-50/80 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40 cursor-pointer shadow-2xs"
-                    value={store.taxMode === 'exempt' ? 0 : (item.gst_rate ?? 18)}
+                    value={store.taxMode === 'exempt' ? 0 : Number(item.gst_rate ?? 0)}
                     disabled={store.taxMode === 'exempt'}
                     onChange={e => store.updateItem(item.id, { gst_rate: Number(e.target.value) })}
                   >
                     <option value="0">0%</option>
+                    <option value="3">3%</option>
                     <option value="5">5%</option>
                     <option value="12">12%</option>
                     <option value="18">18%</option>

@@ -94,7 +94,9 @@
                     @if($invoice->due_date && ($settings['fields']['show_due_date'] ?? true))
                     <p>Due Date: {{ \Carbon\Carbon::parse($invoice->due_date)->format('d-m-Y') }}</p>
                     @endif
+                    @if($settings['fields']['show_invoice_type'] ?? true)
                     <p>Type: {{ strtoupper(str_replace('_', ' ', $invoice->invoice_type)) }}</p>
+                    @endif
                 </td>
             </tr>
         </table>
@@ -306,7 +308,7 @@
             <div style="display: table-cell; width: 40%;">
                 <table class="items-table">
                     <tr>
-                        <td>Total Taxable Value</td>
+                        <td>Total</td>
                         <td class="right-align">{{ number_format($invoice->taxable_amount, 2) }}</td>
                     </tr>
                     @if($settings['fields']['show_tax_amount'] ?? true)
