@@ -580,7 +580,9 @@ class InvoiceController extends Controller
     public function stats(Request $request)
     {
         $businessId = app('current_business_id');
-        $query = Sale::where('business_id', $businessId);
+        $query = Sale::where('business_id', $businessId)
+            ->whereNotIn('status', ['cancelled', 'draft'])
+            ->where('invoice_number', 'not like', 'UDH-%');
 
         return response()->json(['data' => [
             'total_invoiced' => (clone $query)->whereIn('invoice_type', ['sales_invoice'])->sum('total_amount'),
@@ -661,6 +663,94 @@ class InvoiceController extends Controller
         });
 
         return response()->json(['data' => $invoice, 'message' => 'Document converted to Sales Invoice successfully'], 200);
+    }
+
+    public function cancel($id, Request $request)
+    {
+        $businessId = app('current_business_id');
+        $sale = Sale::with('items')->where('business_id', $businessId)->findOrFail($id);
+
+        if ($sale->status === 'cancelled') {
+            return response()->json(['message' => 'Invoice is already cancelled'], 400);
+        }
+
+        DB::transaction(function () use ($sale, $businessId) {
+            // 1. Restore inventory stock if stock was deducted
+            if (in_array($sale->invoice_type, ['sales_invoice', 'delivery_challan'])) {
+                foreach ($sale->items as $item) {
+                    if (!empty($item->product_id)) {
+                        $product = Product::find($item->product_id);
+                        if ($product) {
+                            $product->increment('quantity', $item->quantity);
+                        }
+                    }
+                }
+                InventoryMovement::where('reference_type', 'sale')->where('reference_id', $sale->id)->delete();
+            }
+
+            // 2. Remove ledger entries for this invoice so customer balance is reduced
+            \App\Models\LedgerEntry::where('business_id', $businessId)
+                ->where('reference_type', 'invoice')
+                ->where('reference_id', $sale->id)
+                ->delete();
+
+            \App\Models\LedgerEntry::where('business_id', $businessId)
+                ->where('reference_type', 'payment')
+                ->where('reference_id', $sale->id)
+                ->delete();
+
+            // 3. Mark invoice as cancelled
+            $sale->update([
+                'status' => 'cancelled',
+            ]);
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Invoice cancelled successfully and inventory/ledger reverted',
+            'data' => $sale->fresh(['customer', 'items'])
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $businessId = app('current_business_id');
+        $sale = Sale::with('items')->where('business_id', $businessId)->findOrFail($id);
+
+        DB::transaction(function () use ($sale, $businessId) {
+            // 1. If not already cancelled, restore inventory stock and delete ledger entries
+            if ($sale->status !== 'cancelled') {
+                if (in_array($sale->invoice_type, ['sales_invoice', 'delivery_challan'])) {
+                    foreach ($sale->items as $item) {
+                        if (!empty($item->product_id)) {
+                            $product = Product::find($item->product_id);
+                            if ($product) {
+                                $product->increment('quantity', $item->quantity);
+                            }
+                        }
+                    }
+                    InventoryMovement::where('reference_type', 'sale')->where('reference_id', $sale->id)->delete();
+                }
+
+                \App\Models\LedgerEntry::where('business_id', $businessId)
+                    ->where('reference_type', 'invoice')
+                    ->where('reference_id', $sale->id)
+                    ->delete();
+
+                \App\Models\LedgerEntry::where('business_id', $businessId)
+                    ->where('reference_type', 'payment')
+                    ->where('reference_id', $sale->id)
+                    ->delete();
+            }
+
+            // 2. Soft delete the invoice
+            $sale->delete();
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Invoice deleted successfully'
+        ]);
     }
 
     public function sendWhatsapp($id, Request $request)

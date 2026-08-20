@@ -63,3 +63,17 @@ export const useUpdateCustomer = () => {
     },
   });
 };
+
+export const useDeleteCustomer = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.delete(`/business/customers/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+};

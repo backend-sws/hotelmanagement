@@ -40,24 +40,28 @@ class DashboardController extends Controller
         $todaySales = floatval(Sale::where('business_id', $businessId)
             ->whereDate('date', $today)
             ->where('invoice_number', 'not like', 'UDH-%')
+            ->whereNotIn('status', ['cancelled', 'draft'])
             ->sum('final_amount'));
 
         // 2. This Month's Revenue
         $monthlyRevenue = floatval(Sale::where('business_id', $businessId)
             ->where('date', '>=', $thisMonth)
             ->where('invoice_number', 'not like', 'UDH-%')
+            ->whereNotIn('status', ['cancelled', 'draft'])
             ->sum('final_amount'));
 
         // 3. Pending Payments (Expected due on sales)
         $pendingSalesAmount = floatval(Sale::where('business_id', $businessId)
-            ->whereIn('status', ['pending', 'partial'])
+            ->whereIn('status', ['pending', 'partial', 'unpaid', 'partially_paid'])
+            ->where('status', '!=', 'cancelled')
             ->where('invoice_number', 'not like', 'UDH-%')
             ->sum('final_amount'));
         $paidOnPending = floatval(Sale::where('business_id', $businessId)
-            ->whereIn('status', ['pending', 'partial'])
+            ->whereIn('status', ['pending', 'partial', 'unpaid', 'partially_paid'])
+            ->where('status', '!=', 'cancelled')
             ->where('invoice_number', 'not like', 'UDH-%')
             ->sum('paid_amount'));
-        $pendingPayments = $pendingSalesAmount - $paidOnPending;
+        $pendingPayments = max(0, $pendingSalesAmount - $paidOnPending);
 
         // 4. Staff Attendance (Today)
         $activeStaffCount = User::whereHas('businesses', function ($q) use ($businessId) {
@@ -78,6 +82,7 @@ class DashboardController extends Controller
         $totalInvoices = Sale::where('business_id', $businessId)
             ->where('date', '>=', $thisMonth)
             ->where('invoice_number', 'not like', 'UDH-%')
+            ->whereNotIn('status', ['cancelled', 'draft'])
             ->count();
 
         // 7. Liquidity: Cash in Hand & Bank Balances
@@ -154,7 +159,7 @@ class DashboardController extends Controller
         // 10. Top 5 Buying Customers This Month
         $topCustomers = Sale::with('customer:id,name,phone')
             ->where('business_id', $businessId)
-            ->whereIn('status', ['paid', 'partial', 'pending'])
+            ->whereNotIn('status', ['cancelled', 'draft'])
             ->where('invoice_number', 'not like', 'UDH-%')
             ->whereDate('date', '>=', $thisMonth)
             ->whereNotNull('customer_id')
@@ -235,7 +240,7 @@ class DashboardController extends Controller
         $todayDateStr = Carbon::today()->toDateString();
 
         $salesGrouped = Sale::where('business_id', $businessId)
-            ->whereIn('status', ['paid', 'partial', 'pending'])
+            ->whereNotIn('status', ['cancelled', 'draft'])
             ->where('invoice_number', 'not like', 'UDH-%')
             ->whereDate('date', '>=', $fourteenDaysAgo)
             ->whereDate('date', '<=', $todayDateStr)

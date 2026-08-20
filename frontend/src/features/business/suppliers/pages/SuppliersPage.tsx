@@ -1,25 +1,30 @@
 import React, { useState } from 'react';
-import { useSuppliers } from '../api/useSuppliers';
+import { useSuppliers, useDeleteSupplier } from '../api/useSuppliers';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, Building2, Phone, MapPin, Package, FileText, ChevronRight, UserPlus, Edit2, HelpCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Building2, Phone, MapPin, Package, FileText, ChevronRight, UserPlus, Edit2, Trash2, HelpCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/formatters';
 import { AddSupplierModal } from '../components/AddSupplierModal';
 import { EditSupplierModal } from '../components/EditSupplierModal';
+import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import { TableSkeleton } from '@/components/ui/skeleton-loaders';
+import { toast } from 'sonner';
 
 export default function SuppliersPage() {
   const [page, setPage] = useState(1);
   const { data: response, isLoading } = useSuppliers(page);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<any | null>(null);
+  const [deletingSupplier, setDeletingSupplier] = useState<any | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const navigate = useNavigate();
+
+  const deleteSupplierMutation = useDeleteSupplier();
 
   const suppliers = response?.data || [];
   const meta = response?.meta;
@@ -31,6 +36,17 @@ export default function SuppliersPage() {
     const paid = s.purchases_sum_paid_amount || 0;
     return sum + (billed - paid);
   }, 0) || 0;
+
+  const handleDeleteSupplier = async () => {
+    if (!deletingSupplier?.id) return;
+    try {
+      await deleteSupplierMutation.mutateAsync(deletingSupplier.id);
+      toast.success('Supplier deleted successfully');
+      setDeletingSupplier(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete supplier');
+    }
+  };
 
   const columns: ColumnDef<any>[] = [
     {
@@ -97,10 +113,11 @@ export default function SuppliersPage() {
       header: '',
       className: 'text-right',
       cell: (supplier) => (
-        <div className="flex justify-end gap-1">
+        <div className="flex justify-end gap-1 items-center">
           <Button 
             variant="ghost" 
             size="icon" 
+            title="Edit Supplier"
             onClick={(e) => {
               e.stopPropagation();
               setEditingSupplier(supplier);
@@ -111,6 +128,19 @@ export default function SuppliersPage() {
           <Button 
             variant="ghost" 
             size="icon" 
+            className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+            title="Delete Supplier"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeletingSupplier(supplier);
+            }}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            title="View Details"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/suppliers/${supplier.id}`);
@@ -263,6 +293,15 @@ export default function SuppliersPage() {
             supplier={editingSupplier} 
           />
         )}
+
+        <DeleteConfirmModal
+          isOpen={!!deletingSupplier}
+          onClose={() => setDeletingSupplier(null)}
+          onConfirm={handleDeleteSupplier}
+          title="Delete Supplier"
+          description={`Are you sure you want to delete supplier "${deletingSupplier?.name}"? All past purchase history and ledgers will be safely preserved in soft-delete.`}
+          isLoading={deleteSupplierMutation.isPending}
+        />
       </div>
     </div>
   );

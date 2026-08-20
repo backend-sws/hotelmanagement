@@ -143,9 +143,10 @@ const OtaChannelsPage = lazy(() => import('@/features/hotel/ota/pages/OtaChannel
 const RateSyncPage = lazy(() => import('@/features/hotel/ota/pages/RateSyncPage'));
 const OtaBookingsPage = lazy(() => import('@/features/hotel/ota/pages/OtaBookingsPage'));
 
-// Hotel Night Audit & GST
+// Hotel Night Audit & GST & Billing Settings
 const NightAuditPage = lazy(() => import('@/features/hotel/night-audit/pages/NightAuditPage'));
 const GstConfigPage = lazy(() => import('@/features/hotel/settings/pages/GstConfigPage'));
+const HotelBillingSettingsPage = lazy(() => import('@/features/hotel/settings/pages/HotelBillingSettingsPage'));
 
 // Hotel Reports
 const HotelReportsPage = lazy(() => import('@/features/hotel/reports/pages/HotelReportsPage'));
@@ -567,6 +568,13 @@ function App() {
               <BusinessRoute>
                 <FeatureGuard feature="has_hotel_gst_compliance">
                   <GstConfigPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/hotel/settings/billing" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_hotel_gst_compliance">
+                  <HotelBillingSettingsPage />
                 </FeatureGuard>
               </BusinessRoute>
             } />

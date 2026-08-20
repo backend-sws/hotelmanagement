@@ -9,8 +9,8 @@ class CustomerService
     public function getCustomers($perPage = 15, $search = null, $hasUdhar = null)
     {
         $query = Customer::with('priceList')
-            ->withSum('sales', 'final_amount')
-            ->withSum('sales', 'paid_amount')
+            ->withSum(['sales' => fn($q) => $q->whereNotIn('status', ['cancelled', 'draft'])->where('invoice_number', 'not like', 'UDH-%')], 'final_amount')
+            ->withSum(['sales' => fn($q) => $q->whereNotIn('status', ['cancelled', 'draft'])->where('invoice_number', 'not like', 'UDH-%')], 'paid_amount')
             ->orderBy('name');
 
         if ($search) {

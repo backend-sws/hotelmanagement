@@ -86,6 +86,7 @@ Route::prefix('v1')->group(function () {
             Route::get('sales/{sale}/invoice-pdf', [\App\Http\Controllers\Api\SaleController::class, 'generatePdf']);
             Route::get('invoices/stats', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'stats']);
             Route::post('invoices/{invoice}/convert', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'convert']);
+            Route::post('invoices/{invoice}/cancel', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'cancel']);
             Route::get('invoices/{invoice}/pdf', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'generatePdf']);
             Route::get('invoices/{invoice}/whatsapp', [\App\Http\Controllers\Api\Business\InvoiceController::class, 'sendWhatsapp']);
             Route::apiResource('invoices', \App\Http\Controllers\Api\Business\InvoiceController::class);
@@ -400,10 +401,12 @@ Route::prefix('v1')->group(function () {
                 Route::get('night-audit/preview', [\App\Http\Controllers\Api\Business\HotelNightAuditController::class, 'previewTotals']);
             });
 
-            // GST Config & Compliance
+            // GST Config, Compliance & Billing/Invoice Settings
             Route::middleware(['feature:has_hotel_gst_compliance'])->prefix('hotel')->group(function () {
                 Route::get('tax-config', [\App\Http\Controllers\Api\Business\HotelGstController::class, 'show']);
                 Route::post('tax-config', [\App\Http\Controllers\Api\Business\HotelGstController::class, 'update']);
+                Route::get('invoice-settings', [\App\Http\Controllers\Api\Business\HotelInvoiceSettingController::class, 'show']);
+                Route::post('invoice-settings', [\App\Http\Controllers\Api\Business\HotelInvoiceSettingController::class, 'update']);
             });
 
             // Reports & Analytics

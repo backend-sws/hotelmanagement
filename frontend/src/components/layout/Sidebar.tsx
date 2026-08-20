@@ -188,10 +188,11 @@ export const hotelMenuGroups = [
     ]
   },
   {
-    title: "📊 HOTEL ANALYTICS",
+    title: "📊 HOTEL ANALYTICS & BILLING",
     items: [
       { name: "NIGHT AUDIT",        href: "/hotel/night-audit", icon: Moon,            feature: 'has_hotel_night_audit' },
       { name: "REVENUE REPORTS",    href: "/hotel/reports",     icon: BarChart3,       feature: 'has_hotel_reports' },
+      { name: "INVOICE & BILLING SETUP", href: "/hotel/settings/billing", icon: FileText, feature: 'has_hotel_gst_compliance' },
       { name: "GST & TAX CONFIG",   href: "/hotel/settings/gst",icon: Receipt,         feature: 'has_hotel_gst_compliance' },
     ]
   },

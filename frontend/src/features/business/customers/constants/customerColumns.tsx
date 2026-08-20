@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@/components/ui/data-table';
 import type { Customer } from '../schemas/customerSchema';
 import { Button } from '@/components/ui/button';
-import { Phone, MapPin, ChevronRight, Edit2 } from 'lucide-react';
+import { Phone, MapPin, ChevronRight, Edit2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/formatters';
 
@@ -9,9 +9,10 @@ interface CustomerColumnsProps {
   onEdit: (customer: Customer) => void;
   onView: (customer: Customer) => void;
   onCollectPayment: (customer: Customer) => void;
+  onDelete: (customer: Customer) => void;
 }
 
-export const getCustomerColumns = ({ onEdit, onView, onCollectPayment }: CustomerColumnsProps): ColumnDef<Customer>[] => [
+export const getCustomerColumns = ({ onEdit, onView, onCollectPayment, onDelete }: CustomerColumnsProps): ColumnDef<Customer>[] => [
   {
     header: 'Customer',
     accessorKey: 'name',
@@ -71,7 +72,7 @@ export const getCustomerColumns = ({ onEdit, onView, onCollectPayment }: Custome
       const paid = customer.sales_sum_paid_amount || 0;
       const outstanding = billed - paid;
       return (
-        <div className="flex justify-end gap-1.5 items-center">
+        <div className="flex justify-end gap-1 items-center">
           {outstanding > 0 && (
             <Button
               variant="ghost"
@@ -88,6 +89,7 @@ export const getCustomerColumns = ({ onEdit, onView, onCollectPayment }: Custome
           <Button 
             variant="ghost" 
             size="icon" 
+            title="Edit Customer"
             onClick={(e) => {
               e.stopPropagation();
               onEdit(customer);
@@ -98,6 +100,19 @@ export const getCustomerColumns = ({ onEdit, onView, onCollectPayment }: Custome
           <Button 
             variant="ghost" 
             size="icon" 
+            className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+            title="Delete Customer"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(customer);
+            }}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            title="View Details"
             onClick={(e) => {
               e.stopPropagation();
               onView(customer);

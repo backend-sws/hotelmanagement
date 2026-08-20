@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { invoiceService } from '../api/invoiceService';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, FileText, CheckCircle2, AlertCircle, Eye, Download, Printer, MessageSquare, ChevronLeft, ChevronRight, FileSpreadsheet, Pencil, HelpCircle, Sparkles, ChevronDown, ChevronUp, Receipt } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, AlertCircle, Eye, Download, Printer, MessageSquare, ChevronLeft, ChevronRight, FileSpreadsheet, Pencil, HelpCircle, Sparkles, ChevronDown, ChevronUp, Receipt, Ban, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { FilterContainer, FilterSearch, FilterSelect, FilterReset } from '@/components/ui/filter-controls';
+import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 import { formatCurrency } from '@/lib/formatters';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
@@ -21,16 +22,32 @@ const WhatsappIcon = ({ className }: { className?: string }) => (
 
 export default function InvoicesListPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [type, setType] = useState('all');
   const [status, setStatus] = useState('all');
   const [search, setSearch] = useState('');
   const [showGuide, setShowGuide] = useState(false);
+  const [deletingInvoice, setDeletingInvoice] = useState<any | null>(null);
   const debouncedSearch = useDebounce(search, 400);
 
   const { data: stats } = useQuery({
     queryKey: ['invoices-stats'],
     queryFn: () => invoiceService.stats()
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => invoiceService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      toast.success('Invoice deleted successfully');
+      setDeletingInvoice(null);
+    },
+    onError: (e: any) => {
+      toast.error(e.response?.data?.message || 'Failed to delete invoice');
+    }
   });
 
   const { data, isLoading } = useQuery({
@@ -450,6 +467,15 @@ export default function InvoicesListPage() {
                           >
                             <WhatsappIcon className="h-4 w-4 text-green-500" />
                           </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={(e) => { e.stopPropagation(); setDeletingInvoice(invoice); }}
+                            title="Delete Invoice"
+                            className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 rounded-lg"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -489,6 +515,17 @@ export default function InvoicesListPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Invoice Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deletingInvoice}
+        onClose={() => setDeletingInvoice(null)}
+        onConfirm={() => deletingInvoice && deleteMutation.mutate(deletingInvoice.id)}
+        title="Delete Invoice"
+        description={`Are you sure you want to delete invoice #${deletingInvoice?.invoice_number}? It will be removed and excluded from all revenue reports and statistics.`}
+        confirmText="Delete"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

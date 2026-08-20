@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceService } from '../api/invoiceService';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Printer, Send, ArrowLeft, ArrowRightLeft, Pencil } from 'lucide-react';
+import { Printer, Send, ArrowLeft, ArrowRightLeft, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 import { toast } from 'sonner';
 import { GST_STATES } from '@/features/business/customers/constants/gstStates';
 import { useInvoiceSettings } from '@/features/business/settings/api/useInvoiceSettings';
@@ -15,6 +17,8 @@ import { numberToIndianWords } from '@/lib/formatters';
 export default function InvoiceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const { data: invoice, isLoading, refetch } = useQuery({
     queryKey: ['invoice', id],
@@ -22,6 +26,18 @@ export default function InvoiceDetailPage() {
   });
 
   const { data: settings, isLoading: isSettingsLoading } = useInvoiceSettings();
+
+  const deleteMutation = useMutation({
+    mutationFn: () => invoiceService.delete(Number(id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices-stats'] });
+      toast.success('Invoice deleted successfully');
+      setIsDeleteModalOpen(false);
+      navigate('/invoices');
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to delete invoice')
+  });
 
   const handlePdf = async () => {
     if (!invoice.uuid) {
@@ -108,7 +124,7 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-14">
-      <div className="flex gap-4 items-center">
+      <div className="flex flex-wrap gap-4 items-center">
         <Button variant="ghost" size="icon" onClick={() => navigate('/invoices')}><ArrowLeft className="h-4 w-4" /></Button>
         <h1 className="text-2xl font-bold">{formatType(invoice.invoice_type)} #{invoice.invoice_number}</h1>
         {(invoice.status === 'completed' || invoice.status === 'paid') && <Badge className="bg-emerald-500">Paid</Badge>}
@@ -118,7 +134,7 @@ export default function InvoiceDetailPage() {
         {invoice.status === 'cancelled' && <Badge className="bg-red-600">Cancelled</Badge>}
         {(invoice.status === 'draft' && !invoice.converted_at) && <Badge variant="outline">Draft</Badge>}
 
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex flex-wrap gap-2">
           {['proforma', 'quotation', 'delivery_challan'].includes(invoice.invoice_type) && !invoice.converted_at && (
             <Button onClick={handleConvert} className="bg-indigo-600 hover:bg-indigo-700 text-white">
               <ArrowRightLeft className="h-4 w-4 mr-2" /> Convert to Invoice
@@ -130,6 +146,13 @@ export default function InvoiceDetailPage() {
           <Button variant="outline" onClick={handlePdf}><Printer className="h-4 w-4 mr-2" /> Print</Button>
           <Button onClick={handleWhatsapp} className="bg-green-100 text-green-700 hover:bg-green-200 border-0">
             <Send className="h-4 w-4 mr-2" /> WhatsApp
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setIsDeleteModalOpen(true)} 
+            className="border-rose-600/30 text-rose-600 hover:bg-rose-500/10"
+          >
+            <Trash2 className="h-4 w-4 mr-2" /> Delete
           </Button>
         </div>
       </div>
@@ -151,6 +174,17 @@ export default function InvoiceDetailPage() {
           />
         </div>
       </div>
+
+      {/* Delete Invoice Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => deleteMutation.mutate()}
+        title="Delete Invoice"
+        description={`Are you sure you want to delete invoice #${invoice.invoice_number}? It will be removed and excluded from all revenue reports and statistics.`}
+        confirmText="Delete"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

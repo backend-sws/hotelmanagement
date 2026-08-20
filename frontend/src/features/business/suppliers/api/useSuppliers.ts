@@ -82,3 +82,17 @@ export const useCreateSupplierPayment = () => {
     },
   });
 };
+
+export const useDeleteSupplier = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.delete(`/business/suppliers/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+    },
+  });
+};

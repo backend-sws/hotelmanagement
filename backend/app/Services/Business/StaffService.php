@@ -224,15 +224,17 @@ class StaffService
         }
 
         // Sales stats
-        $totalSales = \App\Models\Sale::where('user_id', $userId)->count();
-        $totalSalesAmount = \App\Models\Sale::where('user_id', $userId)->sum('final_amount');
+        $totalSales = \App\Models\Sale::where('user_id', $userId)->whereNotIn('status', ['cancelled', 'draft'])->count();
+        $totalSalesAmount = \App\Models\Sale::where('user_id', $userId)->whereNotIn('status', ['cancelled', 'draft'])->sum('final_amount');
         $totalCommission = SaleCommission::where('user_id', $userId)->sum('commission_amount');
 
         // This month stats
         $thisMonth = now()->startOfMonth();
         $thisMonthSales = \App\Models\Sale::where('user_id', $userId)
+            ->whereNotIn('status', ['cancelled', 'draft'])
             ->where('date', '>=', $thisMonth)->count();
         $thisMonthSalesAmount = \App\Models\Sale::where('user_id', $userId)
+            ->whereNotIn('status', ['cancelled', 'draft'])
             ->where('date', '>=', $thisMonth)->sum('final_amount');
         $thisMonthCommission = SaleCommission::where('user_id', $userId)
             ->where('created_at', '>=', $thisMonth)->sum('commission_amount');

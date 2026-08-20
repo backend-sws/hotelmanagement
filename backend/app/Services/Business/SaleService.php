@@ -49,6 +49,7 @@ class SaleService
         }
 
         $aggregatesQuery = clone $query;
+        $aggregatesQuery->whereNotIn('status', ['cancelled', 'draft']);
         
         $totalRevenue = (clone $aggregatesQuery)->sum('final_amount');
         

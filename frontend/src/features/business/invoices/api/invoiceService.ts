@@ -57,6 +57,11 @@ export const invoiceService = {
     const response = await api.delete(`/business/invoices/${id}`);
     return response.data;
   },
+
+  cancel: async (id: number) => {
+    const response = await api.post(`/business/invoices/${id}/cancel`);
+    return response.data;
+  },
   
   getPdf: async (id: number) => {
     const response = await api.get(`/business/invoices/${id}/pdf`, { responseType: 'blob' });

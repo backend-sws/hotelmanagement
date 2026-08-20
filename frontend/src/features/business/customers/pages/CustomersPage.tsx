@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCustomers } from '../api/useCustomers';
+import { useCustomers, useDeleteCustomer } from '../api/useCustomers';
 import { getCustomerColumns } from '../constants/customerColumns';
 import { AddCustomerModal } from '../components/AddCustomerModal';
 import { EditCustomerModal } from '../components/EditCustomerModal';
 import { CollectPaymentModal } from '../components/CollectPaymentModal';
 import { SendCampaignModal } from '../components/SendCampaignModal';
+import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 import type { Customer } from '../schemas/customerSchema';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -17,15 +18,19 @@ import { TableSkeleton } from '@/components/ui/skeleton-loaders';
 import { Plus, UserPlus, Users, Search, X, HelpCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { toast } from 'sonner';
 
 export default function CustomersPage() {
   const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
   const [collectPaymentCustomer, setCollectPaymentCustomer] = useState<any | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
   const navigate = useNavigate();
+
+  const deleteCustomerMutation = useDeleteCustomer();
 
   // Filters state
   const [search, setSearch] = useState('');
@@ -63,10 +68,22 @@ export default function CustomersPage() {
     return sum + (billed - paid);
   }, 0) || 0;
 
+  const handleDeleteCustomer = async () => {
+    if (!deletingCustomer?.id) return;
+    try {
+      await deleteCustomerMutation.mutateAsync(deletingCustomer.id);
+      toast.success('Customer deleted successfully');
+      setDeletingCustomer(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete customer');
+    }
+  };
+
   const columns = useMemo(() => getCustomerColumns({
     onEdit: (customer) => setEditingCustomer(customer),
     onView: (customer) => navigate(`/customers/${customer.id}`),
     onCollectPayment: (customer) => setCollectPaymentCustomer(customer),
+    onDelete: (customer) => setDeletingCustomer(customer),
   }), [navigate]);
 
   const handleClearFilters = () => {
@@ -294,6 +311,15 @@ export default function CustomersPage() {
       <SendCampaignModal
         isOpen={isCampaignModalOpen}
         onClose={() => setIsCampaignModalOpen(false)}
+      />
+
+      <DeleteConfirmModal
+        isOpen={!!deletingCustomer}
+        onClose={() => setDeletingCustomer(null)}
+        onConfirm={handleDeleteCustomer}
+        title="Delete Customer"
+        description={`Are you sure you want to delete customer "${deletingCustomer?.name}"? All past transaction history and ledgers will be safely preserved in soft-delete.`}
+        isLoading={deleteCustomerMutation.isPending}
       />
     </div>
   );
