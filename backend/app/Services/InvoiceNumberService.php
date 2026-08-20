@@ -18,7 +18,14 @@ class InvoiceNumberService
             $settings = is_string($business->settings) ? json_decode($business->settings, true) : ($business->settings ?? []);
             
             $prefixKey = 'invoice_prefix_' . $type;
-            
+            if ($type === 'sales_invoice' && !empty($settings['sale_invoice_prefix'])) {
+                $rawPattern = $settings['sale_invoice_prefix'];
+            } elseif ($type === 'purchase_bill' && !empty($settings['purchase_invoice_prefix'])) {
+                $rawPattern = $settings['purchase_invoice_prefix'];
+            } else {
+                $rawPattern = $settings[$prefixKey] ?? null;
+            }
+
             $defaultPrefixes = [
                 'sales_invoice' => 'INV-',
                 'purchase_bill' => 'PUR-',
@@ -29,20 +36,43 @@ class InvoiceNumberService
                 'debit_note' => 'DN-',
             ];
             
-            $prefix = $settings[$prefixKey] ?? ($defaultPrefixes[$type] ?? 'DOC-');
+            $pattern = $rawPattern ?? ($defaultPrefixes[$type] ?? 'DOC-');
             
-            // Get the last number of this type for the business using lockForUpdate
+            // Replace date placeholders
+            $date = now();
+            $pattern = str_replace('{YYYY}', $date->format('Y'), $pattern);
+            $pattern = str_replace('{YY}', $date->format('y'), $pattern);
+            $pattern = str_replace('{MM}', $date->format('m'), $pattern);
+            
+            // Find {SEQ:n} or default sequence length
+            $seqLength = 4;
+            if (preg_match('/\{SEQ:(\d+)\}/', $pattern, $matches)) {
+                $seqLength = (int) $matches[1];
+                $pattern = str_replace($matches[0], '{SEQ}', $pattern);
+            } elseif (str_contains($pattern, '{SEQ}')) {
+                $seqLength = 4;
+            } else {
+                // If it's a simple prefix like "INV-", append {SEQ}
+                $pattern .= '{SEQ}';
+            }
+            
+            $parts = explode('{SEQ}', $pattern);
+            $prefix = $parts[0];
+            $suffix = $parts[1] ?? '';
+
+            // Get the last number of this type for the business using lockForUpdate and withTrashed
             if ($type === 'purchase_bill') {
                 $lastDoc = \App\Models\SupplierPurchase::where('business_id', $businessId)
-                    ->where('purchase_number', 'LIKE', $prefix . '%')
+                    ->where('purchase_number', 'LIKE', $prefix . '%' . $suffix)
                     ->orderBy('id', 'desc')
                     ->lockForUpdate()
                     ->first();
                 $lastNumberValue = $lastDoc ? $lastDoc->purchase_number : null;
             } else {
-                $lastDoc = Sale::where('business_id', $businessId)
-                    ->where('invoice_type', $type)
-                    ->where('invoice_number', 'LIKE', $prefix . '%')
+                $lastDoc = Sale::withTrashed()
+                    ->where('business_id', $businessId)
+                    ->where('invoice_number', 'LIKE', $prefix . '%' . $suffix)
+                    ->where('invoice_number', 'not like', 'UDH-%')
                     ->orderBy('id', 'desc')
                     ->lockForUpdate()
                     ->first();
@@ -52,20 +82,46 @@ class InvoiceNumberService
             $nextNumber = 1;
             
             if ($lastNumberValue) {
-                // Extract number from the end of the string
-                $lastNumberString = str_replace($prefix, '', $lastNumberValue);
-                if (is_numeric($lastNumberString)) {
-                    $nextNumber = intval($lastNumberString) + 1;
+                // Extract sequence between prefix and suffix
+                $seqStr = substr($lastNumberValue, strlen($prefix));
+                if ($suffix !== '') {
+                    $seqStr = substr($seqStr, 0, -strlen($suffix));
+                }
+                if (is_numeric($seqStr)) {
+                    $nextNumber = intval($seqStr) + 1;
                 } else {
-                    // Try to parse if there's a suffix
-                    preg_match('/\d+$/', $lastNumberValue, $matches);
+                    preg_match('/(\d+)/', $seqStr, $matches);
                     if (!empty($matches)) {
-                        $nextNumber = intval($matches[0]) + 1;
+                        $nextNumber = intval($matches[1]) + 1;
                     }
                 }
             }
 
-            return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            // Loop to guarantee no collision with any existing records (including soft-deleted)
+            if ($type === 'purchase_bill') {
+                do {
+                    $candidate = $prefix . str_pad($nextNumber, $seqLength, '0', STR_PAD_LEFT) . $suffix;
+                    $exists = \App\Models\SupplierPurchase::where('business_id', $businessId)
+                        ->where('purchase_number', $candidate)
+                        ->exists();
+                    if ($exists) {
+                        $nextNumber++;
+                    }
+                } while ($exists);
+            } else {
+                do {
+                    $candidate = $prefix . str_pad($nextNumber, $seqLength, '0', STR_PAD_LEFT) . $suffix;
+                    $exists = Sale::withTrashed()
+                        ->where('business_id', $businessId)
+                        ->where('invoice_number', $candidate)
+                        ->exists();
+                    if ($exists) {
+                        $nextNumber++;
+                    }
+                } while ($exists);
+            }
+
+            return $candidate;
         });
     }
 }

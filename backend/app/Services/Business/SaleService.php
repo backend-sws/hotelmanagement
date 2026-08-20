@@ -96,7 +96,8 @@ class SaleService
             $prefix = $parts[0];
             $suffix = $parts[1] ?? '';
             
-            $lastSale = Sale::where('business_id', $businessId)
+            $lastSale = Sale::withTrashed()
+                ->where('business_id', $businessId)
                 ->where('invoice_number', 'like', $prefix . '%' . $suffix)
                 ->where('invoice_number', 'not like', 'UDH-%')
                 ->orderBy('id', 'desc')
@@ -119,7 +120,17 @@ class SaleService
                     }
                 }
             }
-            $invoiceNumber = $prefix . str_pad($nextNumber, $seqLength, '0', STR_PAD_LEFT) . $suffix;
+
+            do {
+                $invoiceNumber = $prefix . str_pad($nextNumber, $seqLength, '0', STR_PAD_LEFT) . $suffix;
+                $exists = Sale::withTrashed()
+                    ->where('business_id', $businessId)
+                    ->where('invoice_number', $invoiceNumber)
+                    ->exists();
+                if ($exists) {
+                    $nextNumber++;
+                }
+            } while ($exists);
 
             // Calculate totals
             $totalAmount = 0;
