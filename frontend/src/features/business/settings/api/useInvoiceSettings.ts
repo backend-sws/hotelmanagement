@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 
 export interface InvoiceSettings {
-  template: 'default' | 'modern' | 'classic' | 'premium';
+  template: 'default' | 'modern' | 'classic' | 'premium' | 'pos';
   header_image: string | null;
   footer_image: string | null;
   signature_image: string | null;

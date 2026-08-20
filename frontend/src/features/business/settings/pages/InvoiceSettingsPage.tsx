@@ -151,33 +151,40 @@ export const InvoiceSettingsTab = () => {
               <span className="font-semibold text-yellow-600">Tip:</span> 
               Select a template that matches your brand style.
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               <InvoiceTemplateCard
                 id="default"
                 name="Default"
-                description=""
+                description="Clean standard GST layout"
                 selected={settings.template === 'default'}
                 onSelect={(id) => setSettings({ ...settings, template: id })}
               />
               <InvoiceTemplateCard
                 id="modern"
                 name="Modern"
-                description=""
+                description="Contemporary minimalist design"
                 selected={settings.template === 'modern'}
                 onSelect={(id) => setSettings({ ...settings, template: id })}
               />
               <InvoiceTemplateCard
                 id="classic"
                 name="Classic"
-                description=""
+                description="Traditional boxed bill"
                 selected={settings.template === 'classic'}
                 onSelect={(id) => setSettings({ ...settings, template: id })}
               />
               <InvoiceTemplateCard
                 id="premium"
                 name="Premium"
-                description=""
+                description="Dark-header luxury layout"
                 selected={settings.template === 'premium'}
+                onSelect={(id) => setSettings({ ...settings, template: id })}
+              />
+              <InvoiceTemplateCard
+                id="pos"
+                name="POS Thermal (80mm)"
+                description="Compact receipt for roll printers"
+                selected={settings.template === 'pos'}
                 onSelect={(id) => setSettings({ ...settings, template: id })}
               />
             </div>

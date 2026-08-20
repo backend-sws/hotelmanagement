@@ -125,18 +125,20 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
     return Object.entries(summary).map(([rate, vals]) => ({ rate, ...vals })).sort((a, b) => Number(a.rate) - Number(b.rate));
   }, [currentRawInvoice]);
 
+  const isPos = settings.template === 'pos';
+
   // Convert mm/px to a scale so it fits nicely
-  // We'll render a fixed 800px width container, and use CSS transform to scale it down to fit the parent.
   const previewStyle = {
-    fontFamily: settings.styles.font_family || "'Helvetica', 'Arial', sans-serif",
-    fontSize: `${settings.styles.font_size}px`,
-    lineHeight: settings.styles.line_spacing || 1.5,
-    color: settings.template === 'modern' ? '#334155' : '#000',
+    fontFamily: settings.styles.font_family || (isPos ? "'Courier New', Courier, monospace, 'Inter', sans-serif" : "'Helvetica', 'Arial', sans-serif"),
+    fontSize: `${settings.styles.font_size || 12}px`,
+    lineHeight: settings.styles.line_spacing || (isPos ? 1.35 : 1.5),
+    color: isPos ? '#111827' : (settings.template === 'modern' ? '#334155' : '#000'),
     backgroundColor: '#fff',
-    width: '800px',
-    minHeight: '1131px', // A4 aspect ratio at 800px width
+    width: isPos ? (isPrintView ? '80mm' : '380px') : '800px',
+    maxWidth: isPos ? (isPrintView ? '80mm' : '380px') : '800px',
+    minHeight: isPos ? 'auto' : '1131px',
     boxSizing: 'border-box' as const,
-    transformOrigin: 'top left',
+    transformOrigin: isPos ? 'top center' : 'top left',
     display: 'flex',
     flexDirection: 'column' as const,
     position: 'relative' as const,
@@ -144,10 +146,10 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
 
   const contentStyle = {
     flex: 1,
-    paddingTop: settings.header_image ? '15px' : `${settings.styles.margin_top}px`,
-    paddingBottom: settings.footer_image ? '15px' : `${settings.styles.margin_bottom}px`,
-    paddingLeft: `${settings.styles.margin_left}px`,
-    paddingRight: `${settings.styles.margin_right}px`,
+    paddingTop: isPos ? `${settings.styles.margin_top || 8}px` : (settings.header_image ? '15px' : `${settings.styles.margin_top}px`),
+    paddingBottom: isPos ? `${settings.styles.margin_bottom || 8}px` : (settings.footer_image ? '15px' : `${settings.styles.margin_bottom}px`),
+    paddingLeft: isPos ? `${settings.styles.margin_left || 8}px` : `${settings.styles.margin_left}px`,
+    paddingRight: isPos ? `${settings.styles.margin_right || 8}px` : `${settings.styles.margin_right}px`,
     boxSizing: 'border-box' as const,
   };
 
@@ -1182,12 +1184,272 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
     );
   };
 
+  const renderPosTemplate = () => {
+    const baseSize = settings.styles.font_size || 12;
+    const lHeight = settings.styles.line_spacing || 1.35;
+    const fontFam = settings.styles.font_family || "'Courier New', Courier, monospace, 'Inter', sans-serif";
+
+    return (
+      <div 
+        style={{ 
+          maxWidth: isPrintView ? '80mm' : '100%', 
+          margin: '0 auto', 
+          color: '#111827', 
+          width: '100%', 
+          fontFamily: fontFam,
+          fontSize: `${baseSize}px`,
+          lineHeight: lHeight,
+          backgroundColor: '#fff',
+          padding: isPrintView ? '0' : '4px 0',
+        }}
+      >
+        {/* Business Header */}
+        <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+          {settings.fields.show_logo !== false && business.logo && (
+            <img 
+              src={business.logo} 
+              style={{ maxHeight: settings.fields.logo_size ? `${settings.fields.logo_size}px` : '45px', maxWidth: '140px', margin: '0 auto 6px auto', display: 'block', objectFit: 'contain' }} 
+              alt="Logo" 
+            />
+          )}
+          <h2 style={{ fontSize: `${baseSize + 4}px`, fontWeight: '900', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px', color: primaryColor }}>
+            {business.name}
+          </h2>
+          {business.address && <p style={{ margin: '0 0 2px 0', fontSize: `${Math.max(baseSize - 1, 9)}px`, color: secondaryColor }}>{business.address}</p>}
+          {business.phone && <p style={{ margin: '0 0 2px 0', fontSize: `${Math.max(baseSize - 1, 9)}px`, color: secondaryColor }}>Ph: {business.phone}</p>}
+          {settings.fields.show_gstin !== false && business.gstin && (
+            <p style={{ margin: '0 0 2px 0', fontSize: `${Math.max(baseSize - 1, 9)}px`, fontWeight: 'bold' }}>GSTIN: {business.gstin}</p>
+          )}
+          {renderCustomFields(primaryColor)}
+        </div>
+
+        {/* Separator */}
+        <div style={{ borderTop: `1px dashed ${primaryColor}80`, margin: '6px 0' }}></div>
+
+        {/* Receipt / Invoice Meta */}
+        <div style={{ fontSize: `${Math.max(baseSize - 1, 9.5)}px`, lineHeight: lHeight }}>
+          <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: `${baseSize}px`, letterSpacing: '1px', margin: '3px 0', color: primaryColor }}>
+            *** {invoice.type || 'RETAIL INVOICE'} ***
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', margin: '2px 0' }}>
+            <span>Bill No: <strong>{invoice.invoice_number}</strong></span>
+            <span>Date: {invoice.date}</span>
+          </div>
+          {settings.fields.show_reference_number !== false && invoice.reference_number && String(invoice.reference_number).trim() !== '' && (
+            <div style={{ margin: '1px 0' }}>Ref No: {invoice.reference_number}</div>
+          )}
+          {settings.fields.show_due_date !== false && invoice.due_date && (
+            <div style={{ margin: '1px 0' }}>Due Date: {invoice.due_date}</div>
+          )}
+          {invoice.customer_name && (
+            <div style={{ marginTop: '3px', borderTop: '1px dotted #9ca3af', paddingTop: '3px' }}>
+              <div>Customer: <strong>{invoice.customer_name}</strong></div>
+              {settings.fields.show_customer_phone !== false && invoice.customer_phone && (
+                <div>Ph: {invoice.customer_phone}</div>
+              )}
+              {settings.fields.show_gstin !== false && invoice.customer_gstin && (
+                <div>GSTIN: {invoice.customer_gstin}</div>
+              )}
+              {settings.fields.show_place_of_supply !== false && invoice.place_of_supply && (
+                <div>State: {invoice.place_of_supply}</div>
+              )}
+            </div>
+          )}
+          {settings.fields.show_vehicle_info !== false && (invoice.vehicle_number || invoice.driver_name) && (
+            <div style={{ marginTop: '3px', borderTop: '1px dotted #9ca3af', paddingTop: '3px' }}>
+              {invoice.vehicle_number && <div>Veh: {invoice.vehicle_number}</div>}
+              {invoice.driver_name && <div>Driver: {invoice.driver_name}</div>}
+            </div>
+          )}
+        </div>
+
+        {/* Separator */}
+        <div style={{ borderTop: `1px dashed ${primaryColor}80`, margin: '6px 0' }}></div>
+
+        {/* Items Table */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: `${Math.max(baseSize - 1, 9.5)}px`, tableLayout: 'fixed' }}>
+          <thead>
+            <tr style={{ borderBottom: `1px dashed ${primaryColor}80` }}>
+              <th style={{ textAlign: 'left', padding: '4px 0', fontWeight: 'bold', width: '42%' }}>ITEM</th>
+              {settings.fields.show_qty !== false && (
+                <th style={{ textAlign: 'center', padding: '4px 2px', fontWeight: 'bold', width: '18%' }}>QTY</th>
+              )}
+              {settings.fields.show_rate !== false && (
+                <th style={{ textAlign: 'right', padding: '4px 2px', fontWeight: 'bold', width: '20%' }}>RATE</th>
+              )}
+              <th style={{ textAlign: 'right', padding: '4px 0', fontWeight: 'bold', width: '20%' }}>TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            {invoice.items.map((item: any, idx: number) => (
+              <tr key={idx} style={{ borderBottom: '1px dotted #e5e7eb' }}>
+                <td style={{ padding: '4px 0', verticalAlign: 'top', wordBreak: 'break-word' }}>
+                  <div style={{ fontWeight: '600', lineHeight: 1.25 }}>{item.name}</div>
+                  {settings.fields.show_hsn !== false && item.hsn && (
+                    <div style={{ fontSize: `${Math.max(baseSize - 3, 8)}px`, color: secondaryColor }}>HSN: {item.hsn}</div>
+                  )}
+                  {settings.fields.show_tax_amount !== false && settings.fields.show_tax_breakdown !== false && item.tax && Number(item.tax) > 0 && (
+                    <div style={{ fontSize: `${Math.max(baseSize - 3, 8)}px`, color: secondaryColor }}>Tax: ₹{item.tax}</div>
+                  )}
+                </td>
+                {settings.fields.show_qty !== false && (
+                  <td style={{ textAlign: 'center', padding: '4px 2px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                    {item.qty} <span style={{ fontSize: `${Math.max(baseSize - 3, 8)}px` }}>{item.unit}</span>
+                  </td>
+                )}
+                {settings.fields.show_rate !== false && (
+                  <td style={{ textAlign: 'right', padding: '4px 2px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                    {item.rate}
+                  </td>
+                )}
+                <td style={{ textAlign: 'right', padding: '4px 0', verticalAlign: 'top', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                  {item.amount}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Separator */}
+        <div style={{ borderTop: `1px dashed ${primaryColor}80`, margin: '6px 0' }}></div>
+
+        {/* Totals Summary */}
+        <div style={{ fontSize: `${Math.max(baseSize - 1, 9.5)}px`, lineHeight: lHeight }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0' }}>
+            <span>Subtotal (Taxable):</span>
+            <span style={{ fontWeight: '600' }}>₹ {invoice.subtotal}</span>
+          </div>
+
+          {settings.fields.show_tax_amount !== false && (
+            settings.fields.show_tax_breakdown !== false && currentRawInvoice && currentRawInvoice.tax_type !== 'exempt' ? (
+              <>
+                {currentRawInvoice.tax_type === 'gst' ? (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0' }}>
+                      <span>CGST:</span>
+                      <span>₹ {Number(currentRawInvoice.cgst_amount || 0).toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0' }}>
+                      <span>SGST:</span>
+                      <span>₹ {Number(currentRawInvoice.sgst_amount || 0).toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0' }}>
+                    <span>IGST:</span>
+                    <span>₹ {Number(currentRawInvoice.igst_amount || 0).toFixed(2)}</span>
+                  </div>
+                )}
+                {Number(currentRawInvoice.cess_amount || 0) > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0' }}>
+                    <span>CESS:</span>
+                    <span>₹ {Number(currentRawInvoice.cess_amount || 0).toFixed(2)}</span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0' }}>
+                <span>Tax Amount:</span>
+                <span>₹ {invoice.tax}</span>
+              </div>
+            )
+          )}
+
+          {settings.fields.show_discount !== false && Number(invoice.discount || 0) > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0', color: '#dc2626' }}>
+              <span>Discount:</span>
+              <span>- ₹ {invoice.discount}</span>
+            </div>
+          )}
+
+          {/* Grand Total */}
+          <div style={{ borderTop: `2px dashed ${primaryColor}`, borderBottom: `2px dashed ${primaryColor}`, padding: '6px 0', margin: '6px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: primaryColor }}>
+            <span style={{ fontSize: `${baseSize + 1}px`, fontWeight: '900', textTransform: 'uppercase' }}>GRAND TOTAL:</span>
+            <span style={{ fontSize: `${baseSize + 3}px`, fontWeight: '900' }}>₹ {invoice.total}</span>
+          </div>
+
+          {/* Payment breakdown */}
+          {settings.fields.show_payment_breakdown !== false && currentRawInvoice && (
+            <div style={{ marginTop: '3px' }}>
+              {currentRawInvoice.payment_mode === 'Split' && currentRawInvoice.payments?.length > 0 ? (
+                <>
+                  {currentRawInvoice.payments.map((p: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: `${Math.max(baseSize - 2, 8.5)}px` }}>
+                      <span>Paid ({p.payment_mode}):</span>
+                      <span>₹ {Number(p.amount).toFixed(2)}</span>
+                    </div>
+                  ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                    <span>Total Paid:</span>
+                    <span>₹ {Number(currentRawInvoice.paid_amount || 0).toFixed(2)}</span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Paid ({currentRawInvoice.payment_mode || 'Cash'}):</span>
+                  <span style={{ fontWeight: 'bold' }}>₹ {Number(currentRawInvoice.paid_amount || 0).toFixed(2)}</span>
+                </div>
+              )}
+              {Number((currentRawInvoice.final_amount || 0) - (currentRawInvoice.paid_amount || 0)) > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#b91c1c', fontWeight: 'bold' }}>
+                  <span>Balance Due:</span>
+                  <span>₹ {Number((currentRawInvoice.final_amount || 0) - (currentRawInvoice.paid_amount || 0)).toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {settings.fields.show_amount_in_words !== false && (
+            <div style={{ marginTop: '5px', fontSize: `${Math.max(baseSize - 2, 8.5)}px`, fontStyle: 'italic', textTransform: 'capitalize', color: secondaryColor }}>
+              ({invoice.amount_in_words || numberToIndianWords(invoice.total || invoice.final_amount || 0)})
+            </div>
+          )}
+        </div>
+
+        {/* QR Code */}
+        {settings.fields.show_qr_code !== false && invoice.uuid && (
+          <div style={{ textAlign: 'center', margin: '12px 0 6px 0' }}>
+            <div style={{ display: 'inline-block', padding: '4px', background: '#fff', border: `1px solid ${borderColor}`, borderRadius: `${borderRadius || 4}px` }}>
+              <QRCode value={`${window.location.origin}/invoice/${invoice.uuid}`} size={95} level="M" />
+            </div>
+            <p style={{ fontSize: `${Math.max(baseSize - 2.5, 8.5)}px`, margin: '3px 0 0 0', fontWeight: 'bold', color: secondaryColor }}>Scan to Verify / Pay Online</p>
+          </div>
+        )}
+
+        {/* Bank & Terms */}
+        {settings.fields.show_bank_details !== false && invoice.bank_details && (
+          <div style={{ marginTop: '6px', fontSize: `${Math.max(baseSize - 2, 8.5)}px`, borderTop: '1px dotted #9ca3af', paddingTop: '4px' }}>
+            <strong>Bank Details:</strong>
+            <div style={{ whiteSpace: 'pre-wrap' }}>{invoice.bank_details}</div>
+          </div>
+        )}
+
+        {settings.fields.show_terms !== false && invoice.terms && !settings.fields.terms_on_new_page && (
+          <div style={{ marginTop: '6px', fontSize: `${Math.max(baseSize - 2.5, 8)}px`, color: secondaryColor, borderTop: '1px dotted #9ca3af', paddingTop: '4px', whiteSpace: 'pre-wrap' }}>
+            {invoice.terms}
+          </div>
+        )}
+
+        {/* Footer Greetings */}
+        <div style={{ textAlign: 'center', marginTop: '10px', borderTop: `1px dashed ${primaryColor}80`, paddingTop: '6px' }}>
+          <p style={{ fontSize: `${baseSize}px`, fontWeight: 'bold', margin: '0 0 2px 0', color: primaryColor }}>*** THANK YOU! VISIT AGAIN ***</p>
+          {settings.fields.show_signature !== false && (
+            <p style={{ fontSize: `${Math.max(baseSize - 2.5, 8.5)}px`, color: secondaryColor, margin: '4px 0 0 0' }}>
+              {settings.signature_label || 'Authorized Signatory'} - For {business.name}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderInnerContent = () => (
     <div style={{ ...contentStyle, position: 'relative', zIndex: 10 }}>
       {settings.template === 'modern' && renderModernTemplate()}
       {settings.template === 'classic' && renderClassicTemplate()}
       {settings.template === 'default' && renderDefaultTemplate()}
       {settings.template === 'premium' && renderPremiumTemplate()}
+      {settings.template === 'pos' && renderPosTemplate()}
       
       {settings.fields.show_terms !== false && settings.fields.terms_on_new_page && (
         <div style={{ pageBreakBefore: 'always', marginTop: '30px', paddingTop: '30px', borderTop: `2px solid ${primaryColor}` }}>
@@ -1267,21 +1529,22 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
     </>
   ) : (
     <div 
-      className="bg-white shadow-xl origin-top"
+      className={isPos ? "bg-white shadow-2xl origin-top rounded-xl border border-slate-300" : "bg-white shadow-xl origin-top"}
       style={{
         ...previewStyle,
-        transform: 'scale(0.8)',
-        marginBottom: '-20%',
-        border: frameBorder,
-        padding: framePadding,
-        backgroundImage: frameBgImage !== 'none' ? frameBgImage : undefined,
+        transform: isPos ? 'scale(1)' : 'scale(0.8)',
+        marginBottom: isPos ? '20px' : '-20%',
+        border: isPos ? `1px dashed ${borderColor}` : frameBorder,
+        borderRadius: isPos ? `${borderRadius || 8}px` : undefined,
+        padding: isPos ? '6px' : framePadding,
+        backgroundImage: !isPos && frameBgImage !== 'none' ? frameBgImage : undefined,
         backgroundPosition: frameBgPos,
         backgroundSize: frameBgSize,
         backgroundRepeat: frameBgRepeat as any
       }}
     >
       {renderHeaderImage()}
-      {renderWatermark()}
+      {!isPos && renderWatermark()}
       {renderInnerContent()}
       <div style={{ marginTop: 'auto', position: 'relative', zIndex: 10 }}>
         {renderFooterImage()}

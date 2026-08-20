@@ -3,11 +3,11 @@ import { cn } from '@/lib/utils';
 import { CheckCircle2 } from 'lucide-react';
 
 interface InvoiceTemplateCardProps {
-  id: 'default' | 'modern' | 'classic' | 'premium';
+  id: 'default' | 'modern' | 'classic' | 'premium' | 'pos';
   name: string;
   description: string;
   selected: boolean;
-  onSelect: (id: 'default' | 'modern' | 'classic' | 'premium') => void;
+  onSelect: (id: 'default' | 'modern' | 'classic' | 'premium' | 'pos') => void;
 }
 
 export const InvoiceTemplateCard: React.FC<InvoiceTemplateCardProps> = ({
@@ -97,6 +97,23 @@ export const InvoiceTemplateCard: React.FC<InvoiceTemplateCardProps> = ({
               </div>
               <div className="w-1/2 h-1 bg-slate-700 rounded mt-auto self-end"></div>
             </div>
+          </div>
+        )}
+        {id === 'pos' && (
+          <div className="h-full bg-amber-50/40 border border-dashed border-slate-400 p-[3px] flex flex-col justify-between items-center text-slate-800">
+            <div className="w-7 h-1.5 bg-slate-700 rounded-sm mb-0.5"></div>
+            <div className="w-9 h-0.5 bg-slate-400 rounded-sm mb-1"></div>
+            <div className="w-full border-t border-dashed border-slate-400 my-0.5"></div>
+            <div className="w-full flex justify-between px-0.5">
+              <div className="w-4 h-1 bg-slate-500 rounded-sm"></div>
+              <div className="w-3 h-1 bg-slate-500 rounded-sm"></div>
+            </div>
+            <div className="w-full flex justify-between px-0.5">
+              <div className="w-5 h-1 bg-slate-500 rounded-sm"></div>
+              <div className="w-2 h-1 bg-slate-500 rounded-sm"></div>
+            </div>
+            <div className="w-full border-t border-dashed border-slate-400 my-0.5"></div>
+            <div className="w-7 h-1.5 bg-slate-800 rounded-sm mt-0.5"></div>
           </div>
         )}
       </div>

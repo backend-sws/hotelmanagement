@@ -34,7 +34,7 @@ class InvoiceSettingController extends Controller
         $business = app('tenant');
 
         $validator = Validator::make($request->all(), [
-            'template' => 'nullable|string|in:default,modern,classic,premium',
+            'template' => 'nullable|string|in:default,modern,classic,premium,pos',
             'signature_label' => 'nullable|string|max:100',
             'custom_fields' => 'nullable|array',
             'fields' => 'nullable|array',

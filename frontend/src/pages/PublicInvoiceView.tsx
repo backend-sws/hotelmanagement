@@ -147,8 +147,8 @@ const PublicInvoiceView = () => {
         </button>
       </div>
 
-      <div className="max-w-4xl mx-auto bg-white shadow-xl border border-slate-200 print:shadow-none print:border-none print:max-w-none print:w-full print:m-0">
-        <div ref={componentRef} className="w-full mx-auto bg-white p-8 print:p-0">
+      <div className={settings?.template === 'pos' ? "max-w-md mx-auto bg-white shadow-xl border border-slate-200 print:shadow-none print:border-none print:max-w-none print:w-full print:m-0" : "max-w-4xl mx-auto bg-white shadow-xl border border-slate-200 print:shadow-none print:border-none print:max-w-none print:w-full print:m-0"}>
+        <div ref={componentRef} className={settings?.template === 'pos' ? "w-full mx-auto bg-white p-4 print:p-0" : "w-full mx-auto bg-white p-8 print:p-0"}>
           <InvoiceLivePreview
             settings={settings}
             business={formattedBusiness}
