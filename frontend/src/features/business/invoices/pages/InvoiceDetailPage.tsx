@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceService } from '../api/invoiceService';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Printer, Send, ArrowLeft, ArrowRightLeft, Pencil, Trash2 } from 'lucide-react';
+import { Printer, Send, ArrowLeft, ArrowRightLeft, Pencil, Trash2, Ban } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
@@ -19,6 +19,7 @@ export default function InvoiceDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   const { data: invoice, isLoading, refetch } = useQuery({
     queryKey: ['invoice', id],
@@ -37,6 +38,19 @@ export default function InvoiceDetailPage() {
       navigate('/invoices');
     },
     onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to delete invoice')
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: () => invoiceService.cancel(Number(id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+      toast.success('Invoice cancelled successfully. Stock & ledger reverted.');
+      setIsCancelModalOpen(false);
+      refetch();
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to cancel invoice')
   });
 
   const handlePdf = async () => {
@@ -135,27 +149,57 @@ export default function InvoiceDetailPage() {
         {(invoice.status === 'draft' && !invoice.converted_at) && <Badge variant="outline">Draft</Badge>}
 
         <div className="ml-auto flex flex-wrap gap-2">
-          {['proforma', 'quotation', 'delivery_challan'].includes(invoice.invoice_type) && !invoice.converted_at && (
-            <Button onClick={handleConvert} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+          {['proforma', 'quotation', 'delivery_challan'].includes(invoice.invoice_type) && !invoice.converted_at && invoice.status !== 'cancelled' && (
+            <Button onClick={handleConvert} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
               <ArrowRightLeft className="h-4 w-4 mr-2" /> Convert to Invoice
             </Button>
           )}
-          <Button variant="outline" onClick={() => navigate(`/invoices/new?edit=${invoice.id}`)} className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10">
-            <Pencil className="h-4 w-4 mr-2" /> Edit
-          </Button>
-          <Button variant="outline" onClick={handlePdf}><Printer className="h-4 w-4 mr-2" /> Print</Button>
-          <Button onClick={handleWhatsapp} className="bg-green-100 text-green-700 hover:bg-green-200 border-0">
+          {invoice.status !== 'cancelled' && (
+            <Button variant="outline" onClick={() => navigate(`/invoices/new?edit=${invoice.id}`)} className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10 font-bold">
+              <Pencil className="h-4 w-4 mr-2" /> Edit
+            </Button>
+          )}
+          <Button variant="outline" onClick={handlePdf} className="font-bold"><Printer className="h-4 w-4 mr-2" /> Print</Button>
+          <Button onClick={handleWhatsapp} className="bg-green-100 text-green-700 hover:bg-green-200 border-0 font-bold">
             <Send className="h-4 w-4 mr-2" /> WhatsApp
           </Button>
+          {invoice.status !== 'cancelled' && (
+            <Button 
+              variant="outline" 
+              onClick={() => setIsCancelModalOpen(true)} 
+              className="border-red-600/30 text-red-600 hover:bg-red-500/10 font-bold"
+            >
+              <Ban className="h-4 w-4 mr-2" /> Cancel Invoice
+            </Button>
+          )}
           <Button 
             variant="outline" 
             onClick={() => setIsDeleteModalOpen(true)} 
-            className="border-rose-600/30 text-rose-600 hover:bg-rose-500/10"
+            className="border-rose-600/30 text-rose-600 hover:bg-rose-500/10 font-bold"
           >
             <Trash2 className="h-4 w-4 mr-2" /> Delete
           </Button>
         </div>
       </div>
+
+      {invoice.status === 'cancelled' && (
+        <div className="bg-red-50 dark:bg-red-950/40 border-2 border-red-500/40 text-red-700 dark:text-red-400 p-4 rounded-2xl flex items-center justify-between font-bold text-sm shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-red-100 dark:bg-red-900/40 text-red-600">
+              <Ban className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-black text-base text-red-800 dark:text-red-300">Invoice Cancelled</div>
+              <div className="text-xs text-red-600/90 dark:text-red-400/90 font-medium">
+                Deducted stock has been restored to inventory and customer ledger entries have been reverted.
+              </div>
+            </div>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-red-600 text-white text-xs uppercase tracking-wider font-extrabold shadow-sm">
+            CANCELLED
+          </span>
+        </div>
+      )}
 
       <div className="relative">
         {invoice.converted_at && (
@@ -174,6 +218,17 @@ export default function InvoiceDetailPage() {
           />
         </div>
       </div>
+
+      {/* Cancel Invoice Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onConfirm={() => cancelMutation.mutate()}
+        title="Cancel Invoice"
+        description={`Are you sure you want to cancel invoice #${invoice.invoice_number}? Deducted inventory stock will be restored, customer ledger balance will be reverted, and this invoice will be marked as CANCELLED.`}
+        confirmText="Confirm Cancel"
+        isLoading={cancelMutation.isPending}
+      />
 
       {/* Delete Invoice Confirmation Modal */}
       <DeleteConfirmModal

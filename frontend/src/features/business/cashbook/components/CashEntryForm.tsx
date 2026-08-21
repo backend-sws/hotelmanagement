@@ -35,7 +35,7 @@ export const CashEntryForm: React.FC<CashEntryFormProps> = ({
 
   // Load Customers & Suppliers when partyType changes
   const { data: customersResponse } = useCustomers(1, 100);
-  const { data: suppliersResponse } = useSuppliers(1);
+  const { data: suppliersResponse } = useSuppliers(1, 500);
   const customers = customersResponse?.data || [];
   const suppliers = suppliersResponse?.data || [];
 

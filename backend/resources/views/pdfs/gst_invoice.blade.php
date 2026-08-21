@@ -26,7 +26,10 @@
         
         @php
             $balanceDue = $invoice->final_amount - $invoice->paid_amount;
-            if ($balanceDue <= 0.01) {
+            if ($invoice->status === 'cancelled') {
+                $statusText = 'CANCELLED';
+                $statusColor = '#dc2626';
+            } elseif ($balanceDue <= 0.01) {
                 $statusText = 'PAID';
                 $statusColor = '#22c55e';
             } elseif ($invoice->paid_amount > 0) {

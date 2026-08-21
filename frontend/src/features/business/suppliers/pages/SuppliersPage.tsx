@@ -57,9 +57,21 @@ export default function SuppliersPage() {
           <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 flex items-center justify-center font-bold font-display uppercase shrink-0">
             {supplier.name.charAt(0)}
           </div>
-          <div className="ml-3">
-            <p className="font-semibold text-slate-900 dark:text-white">{supplier.name}</p>
-            <p className="text-xs text-slate-500">{supplier.custom_id || `ID: ${supplier.id}`}</p>
+          <div className="ml-3 space-y-0.5">
+            <p className="font-semibold text-slate-900 dark:text-white leading-tight">{supplier.name}</p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] font-mono text-slate-500">{supplier.custom_id || `ID: ${supplier.id}`}</span>
+              {supplier.gstin && (
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-500/20">
+                  GST
+                </span>
+              )}
+              {supplier.pan && !supplier.gstin && (
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20">
+                  PAN
+                </span>
+              )}
+            </div>
           </div>
         </div>
       )
@@ -74,21 +86,39 @@ export default function SuppliersPage() {
               {supplier.phone}
             </div>
           )}
+          {supplier.email && (
+            <div className="flex items-center text-slate-500 dark:text-slate-400 text-xs">
+              <span className="truncate max-w-[140px]">{supplier.email}</span>
+            </div>
+          )}
           {supplier.address && (
             <div className="flex items-center text-slate-600 dark:text-slate-400 text-xs">
               <MapPin className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-              <span className="truncate max-w-[150px]">{supplier.address}</span>
+              <span className="truncate max-w-[140px]">{supplier.address}</span>
             </div>
+          )}
+          {!supplier.phone && !supplier.email && !supplier.address && (
+            <span className="text-xs text-slate-400">-</span>
           )}
         </div>
       )
     },
     {
-      header: 'Items Supplied',
+      header: 'Supplies & Bank',
       cell: (supplier) => (
-        <div className="flex items-center text-slate-600 dark:text-slate-400">
-          <Package className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-          <span className="truncate max-w-[150px]">{supplier.items_supplied || '-'}</span>
+        <div className="space-y-1">
+          <div className="flex items-center text-slate-700 dark:text-slate-300 text-xs">
+            <Package className="w-3.5 h-3.5 mr-1.5 shrink-0 text-slate-400" />
+            <span className="truncate max-w-[140px]">{supplier.items_supplied || 'General Supplies'}</span>
+          </div>
+          {(supplier.bank_name || supplier.account_number || supplier.upi_id) && (
+            <div className="flex items-center text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 shrink-0" />
+              <span className="truncate max-w-[140px]">
+                {supplier.bank_name ? supplier.bank_name : supplier.upi_id ? 'UPI Configured' : 'Bank Added'}
+              </span>
+            </div>
+          )}
         </div>
       )
     },

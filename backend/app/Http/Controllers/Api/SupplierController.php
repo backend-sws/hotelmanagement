@@ -33,7 +33,8 @@ class SupplierController extends BaseController
     {
         try {
             $perPage = $request->input('per_page', 15);
-            $paginator = $this->supplierService->getSuppliers($perPage);
+            $search = $request->input('search');
+            $paginator = $this->supplierService->getSuppliers($perPage, $search);
             return $this->paginated($paginator, 'Suppliers retrieved successfully');
         } catch (\Throwable $e) {
             return $this->error($e->getMessage(), 500);
@@ -88,11 +89,18 @@ class SupplierController extends BaseController
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
             'items_supplied' => 'nullable|string',
             'gstin' => 'nullable|string|max:15',
+            'pan' => 'nullable|string|max:10',
             'state_code' => 'nullable|string|max:2',
             'state_name' => 'nullable|string|max:50',
+            'bank_name' => 'nullable|string|max:100',
+            'account_number' => 'nullable|string|max:50',
+            'ifsc_code' => 'nullable|string|max:20',
+            'branch_name' => 'nullable|string|max:100',
+            'upi_id' => 'nullable|string|max:100',
             'opening_balance' => 'nullable|numeric|min:0',
             'balance_type' => 'nullable|string|in:debit,credit'
         ]);
@@ -135,11 +143,18 @@ class SupplierController extends BaseController
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
             'items_supplied' => 'nullable|string',
             'gstin' => 'nullable|string|max:15',
+            'pan' => 'nullable|string|max:10',
             'state_code' => 'nullable|string|max:2',
             'state_name' => 'nullable|string|max:50',
+            'bank_name' => 'nullable|string|max:100',
+            'account_number' => 'nullable|string|max:50',
+            'ifsc_code' => 'nullable|string|max:20',
+            'branch_name' => 'nullable|string|max:100',
+            'upi_id' => 'nullable|string|max:100',
             'opening_balance' => 'nullable|numeric|min:0',
             'balance_type' => 'nullable|string|in:debit,credit'
         ]);

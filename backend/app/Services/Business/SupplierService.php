@@ -10,15 +10,26 @@ use Illuminate\Support\Facades\DB;
 
 class SupplierService
 {
-    public function getSuppliers($perPage = 15)
+    public function getSuppliers($perPage = 15, $search = null)
     {
-        $paginator = Supplier::withSum('purchases', 'bill_amount')
+        $query = Supplier::withSum('purchases', 'bill_amount')
             ->withSum('purchases', 'paid_amount')
             ->withSum(['payments as general_payments_sum' => function ($query) {
                 $query->whereNull('supplier_purchase_id');
-            }], 'amount')
-            ->orderBy('name')
-            ->paginate($perPage);
+            }], 'amount');
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('gstin', 'like', "%{$search}%")
+                  ->orWhere('pan', 'like', "%{$search}%")
+                  ->orWhere('custom_id', 'like', "%{$search}%");
+            });
+        }
+
+        $paginator = $query->orderBy('name')->paginate($perPage);
 
         $ledgerService = app(\App\Services\LedgerService::class);
         $paginator->getCollection()->transform(function($supplier) use ($ledgerService) {

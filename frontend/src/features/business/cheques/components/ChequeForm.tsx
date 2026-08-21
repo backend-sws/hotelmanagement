@@ -37,7 +37,7 @@ export const ChequeForm: React.FC<ChequeFormProps> = ({
 
   // Load Parties
   const { data: customersResponse } = useCustomers(1, 100);
-  const { data: suppliersResponse } = useSuppliers(1);
+  const { data: suppliersResponse } = useSuppliers(1, 500);
   const customers = customersResponse?.data || [];
   const suppliers = suppliersResponse?.data || [];
 

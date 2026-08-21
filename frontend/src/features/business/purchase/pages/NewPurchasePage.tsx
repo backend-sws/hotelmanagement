@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useSuppliers } from '@/features/business/suppliers/api/useSuppliers';
+import { AddSupplierModal } from '@/features/business/suppliers/components/AddSupplierModal';
 import { useInventory } from '@/features/business/inventory/api/useInventory';
 import { useLocations } from '@/features/business/profile/api/useLocations';
 import { purchaseService, type PurchaseItemPayload } from '../api/purchaseService';
@@ -31,7 +32,7 @@ export default function NewPurchasePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: suppliersData, isLoading: loadingSuppliers } = useSuppliers(1);
+  const { data: suppliersData, isLoading: loadingSuppliers } = useSuppliers(1, 500);
   const { data: inventoryData, isLoading: loadingInventory } = useInventory({ per_page: 100 } as any);
   const { data: locations, isLoading: loadingLocations } = useLocations();
 
@@ -46,6 +47,7 @@ export default function NewPurchasePage() {
   const [searchParams] = useSearchParams();
   const initialSupplierId = id || searchParams.get('supplier_id');
   const [supplierId, setSupplierId] = useState<number>(initialSupplierId ? parseInt(initialSupplierId, 10) : 0);
+  const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
   const [billNumber, setBillNumber] = useState('');
   const [billDate, setBillDate] = useState(new Date().toISOString().split('T')[0]);
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
@@ -77,6 +79,19 @@ export default function NewPurchasePage() {
   const paidAmount = useMemo(() => payments.reduce((sum, p) => sum + (parseFloat(p.amount.toString()) || 0), 0), [payments]);
 
   // Calculation logic
+  const supplierOptions = useMemo(() => {
+    return suppliers.map((sup: any) => ({
+      value: sup.id,
+      label: sup.name,
+      description: `${sup.phone ? `📞 ${sup.phone}` : 'No phone'}${sup.gstin ? ` | GST: ${sup.gstin}` : ''}${sup.items_supplied ? ` | 📦 ${sup.items_supplied}` : ''}`,
+      searchString: `${sup.name} ${sup.phone || ''} ${sup.gstin || ''} ${sup.pan || ''} ${sup.custom_id || ''} ${sup.email || ''}`
+    }));
+  }, [suppliers]);
+
+  const selectedSupplier = useMemo(() => {
+    return suppliers.find((s: any) => s.id === supplierId);
+  }, [suppliers, supplierId]);
+
   const totals = useMemo(() => {
     let taxable = 0;
     let totalTax = 0;
@@ -244,23 +259,45 @@ export default function NewPurchasePage() {
           </CardHeader>
 
           <CardContent className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Select Vendor / Supplier <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={supplierId}
-                onChange={(e) => setSupplierId(Number(e.target.value))}
-                required
-                className="w-full h-10 px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg font-medium text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value={0}>-- Choose Supplier --</option>
-                {suppliers.map((sup: any) => (
-                  <option key={sup.id} value={sup.id}>
-                    {sup.name} ({sup.phone ? sup.phone : 'No Phone'}) {sup.gstin ? `[GSTIN: ${sup.gstin}]` : ''}
-                  </option>
-                ))}
-              </select>
+            <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Select Vendor / Supplier <span className="text-rose-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsAddSupplierModalOpen(true)}
+                  className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-1 hover:underline transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ New Supplier</span>
+                </button>
+              </div>
+
+              <SearchableSelect
+                options={supplierOptions}
+                value={supplierId || ''}
+                onChange={(val) => setSupplierId(Number(val))}
+                placeholder="Search vendor by name, phone, GSTIN..."
+                creatable={true}
+                onCreate={() => {
+                  setIsAddSupplierModalOpen(true);
+                }}
+                className="w-full bg-slate-50 dark:bg-slate-800/50"
+              />
+
+              {selectedSupplier && (
+                <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  {selectedSupplier.phone && <span>📞 {selectedSupplier.phone}</span>}
+                  {selectedSupplier.gstin && (
+                    <span className="px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 font-mono text-[10px] font-bold border border-violet-200/50 dark:border-violet-800/30">
+                      GSTIN: {selectedSupplier.gstin}
+                    </span>
+                  )}
+                  {selectedSupplier.state_name && <span>📍 {selectedSupplier.state_name}</span>}
+                  {selectedSupplier.items_supplied && <span>📦 {selectedSupplier.items_supplied}</span>}
+                </div>
+              )}
             </div>
 
             <div>
@@ -575,6 +612,17 @@ export default function NewPurchasePage() {
           </Card>
         </div>
       </form>
+
+      <AddSupplierModal
+        isOpen={isAddSupplierModalOpen}
+        onClose={() => setIsAddSupplierModalOpen(false)}
+        onSuccess={(newSupplier) => {
+          queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+          if (newSupplier?.id) {
+            setSupplierId(newSupplier.id);
+          }
+        }}
+      />
     </div>
   );
 }

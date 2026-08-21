@@ -2,11 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { Supplier } from '../schemas/supplierSchema';
 
-export const useSuppliers = (page: number = 1) => {
+export const useSuppliers = (page: number = 1, perPage: number = 15, search?: string) => {
   return useQuery({
-    queryKey: ['suppliers', page],
+    queryKey: ['suppliers', page, perPage, search],
     queryFn: async () => {
-      const { data } = await api.get(`/business/suppliers?page=${page}`);
+      let url = `/business/suppliers?page=${page}&per_page=${perPage}`;
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+      const { data } = await api.get(url);
       return data;
     },
   });

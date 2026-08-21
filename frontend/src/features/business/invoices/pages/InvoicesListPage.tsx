@@ -29,6 +29,7 @@ export default function InvoicesListPage() {
   const [search, setSearch] = useState('');
   const [showGuide, setShowGuide] = useState(false);
   const [deletingInvoice, setDeletingInvoice] = useState<any | null>(null);
+  const [cancellingInvoice, setCancellingInvoice] = useState<any | null>(null);
   const debouncedSearch = useDebounce(search, 400);
 
   const { data: stats } = useQuery({
@@ -47,6 +48,20 @@ export default function InvoicesListPage() {
     },
     onError: (e: any) => {
       toast.error(e.response?.data?.message || 'Failed to delete invoice');
+    }
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: (id: number) => invoiceService.cancel(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      toast.success('Invoice cancelled successfully. Deducted inventory stock and customer balance have been restored.');
+      setCancellingInvoice(null);
+    },
+    onError: (e: any) => {
+      toast.error(e.response?.data?.message || 'Failed to cancel invoice');
     }
   });
 
@@ -440,15 +455,17 @@ export default function InvoicesListPage() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={(e) => { e.stopPropagation(); navigate(`/invoices/new?edit=${invoice.id}`); }}
-                            title="Edit Document"
-                            className="h-8 w-8 text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10 rounded-lg"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
+                          {invoice.status !== 'cancelled' && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={(e) => { e.stopPropagation(); navigate(`/invoices/new?edit=${invoice.id}`); }}
+                              title="Edit Document"
+                              className="h-8 w-8 text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10 rounded-lg"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -467,6 +484,17 @@ export default function InvoicesListPage() {
                           >
                             <WhatsappIcon className="h-4 w-4 text-green-500" />
                           </Button>
+                          {invoice.status !== 'cancelled' && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={(e) => { e.stopPropagation(); setCancellingInvoice(invoice); }}
+                              title="Cancel Invoice"
+                              className="h-8 w-8 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-lg"
+                            >
+                              <Ban className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -515,6 +543,17 @@ export default function InvoicesListPage() {
           )}
         </div>
       </div>
+
+      {/* Cancel Invoice Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!cancellingInvoice}
+        onClose={() => setCancellingInvoice(null)}
+        onConfirm={() => cancellingInvoice && cancelMutation.mutate(cancellingInvoice.id)}
+        title="Cancel Invoice"
+        description={`Are you sure you want to cancel invoice #${cancellingInvoice?.invoice_number}? Deducted inventory stock will be restored, customer ledger balance will be reverted, and this invoice will be marked as CANCELLED.`}
+        confirmText="Confirm Cancel"
+        isLoading={cancelMutation.isPending}
+      />
 
       {/* Delete Invoice Confirmation Modal */}
       <DeleteConfirmModal

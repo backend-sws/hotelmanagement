@@ -18,7 +18,7 @@ export default function SupplierLedgerPage() {
   const [toDate, setToDate] = useState<string>('');
   const [showGuide, setShowGuide] = useState<boolean>(false);
 
-  const { data: suppliersResponse, isLoading: loadingSuppliers } = useSuppliers(1);
+  const { data: suppliersResponse, isLoading: loadingSuppliers } = useSuppliers(1, 500);
   const suppliers = (suppliersResponse?.data || []).filter((s: any) => 
     !searchQuery || s.name?.toLowerCase().includes(searchQuery.toLowerCase()) || s.phone?.includes(searchQuery)
   );

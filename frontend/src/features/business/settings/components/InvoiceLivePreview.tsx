@@ -1141,9 +1141,37 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
     </div>
   );
 
+  const isCancelled = rawInvoice?.status === 'cancelled' || invoice?.status === 'cancelled';
+
   const renderWatermark = () => {
     return (
       <>
+        {isCancelled && (
+          <div 
+            className="print:!fixed"
+            style={{
+              position: 'absolute',
+              top: isPos ? '30%' : '45%',
+              left: '50%',
+              transform: 'translate(-50%, -50%) rotate(-35deg)',
+              fontSize: isPos ? '36px' : '88px',
+              fontWeight: 900,
+              color: 'rgba(239, 68, 68, 0.22)',
+              border: isPos ? '4px dashed rgba(239, 68, 68, 0.35)' : '8px dashed rgba(239, 68, 68, 0.35)',
+              padding: isPos ? '6px 20px' : '16px 48px',
+              borderRadius: '16px',
+              letterSpacing: isPos ? '6px' : '12px',
+              pointerEvents: 'none',
+              zIndex: 9999,
+              userSelect: 'none',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            CANCELLED
+          </div>
+        )}
+
         {settings.background_image && (
           <div className="print:!fixed" style={{
             position: 'absolute',
@@ -1159,7 +1187,7 @@ export default function InvoiceLivePreview({ settings: propSettings, business: p
           </div>
         )}
         
-        {settings.fields.show_watermark && (
+        {!isCancelled && settings.fields.show_watermark && (
           <div className="print:!fixed" style={{
             position: 'absolute',
             top: '50%',
