@@ -22,9 +22,10 @@ interface InventoryFormModalProps {
   onClose: () => void;
   productToEdit?: Product | null;
   onSuccess?: (product: any) => void;
+  initialName?: string;
 }
 
-export function InventoryFormModal({ isOpen, onClose, productToEdit, onSuccess }: InventoryFormModalProps) {
+export function InventoryFormModal({ isOpen, onClose, productToEdit, onSuccess, initialName }: InventoryFormModalProps) {
   const { data: categoriesData } = useCategories();
   const { data: brandsData } = useBrands();
   const { data: unitsData } = useUnits();
@@ -42,7 +43,7 @@ export function InventoryFormModal({ isOpen, onClose, productToEdit, onSuccess }
     defaultValues: {
       category_id: '' as any,
       brand_id: '',
-      model_name: '',
+      model_name: initialName || '',
       item_code: '',
       unit: 'nos',
       hsn_code: '',
@@ -82,7 +83,7 @@ export function InventoryFormModal({ isOpen, onClose, productToEdit, onSuccess }
       reset({
         category_id: '' as any,
         brand_id: '',
-        model_name: '',
+        model_name: initialName || '',
         item_code: '',
         unit: 'nos',
         hsn_code: gstSettings?.data?.default_hsn || '',
@@ -95,7 +96,7 @@ export function InventoryFormModal({ isOpen, onClose, productToEdit, onSuccess }
         status: 'in_stock'
       });
     }
-  }, [productToEdit, reset, isOpen, gstSettings]);
+  }, [productToEdit, reset, isOpen, gstSettings, initialName]);
 
   const onSubmit: SubmitHandler<ProductFormValues> = async (data) => {
     try {

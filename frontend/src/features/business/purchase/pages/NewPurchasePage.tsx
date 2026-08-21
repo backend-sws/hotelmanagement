@@ -12,6 +12,7 @@ import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useSuppliers } from '@/features/business/suppliers/api/useSuppliers';
 import { AddSupplierModal } from '@/features/business/suppliers/components/AddSupplierModal';
 import { useInventory } from '@/features/business/inventory/api/useInventory';
+import { InventoryFormModal } from '@/features/business/inventory/components/InventoryFormModal';
 import { useLocations } from '@/features/business/profile/api/useLocations';
 import { purchaseService, type PurchaseItemPayload } from '../api/purchaseService';
 import { useUnits, useCreateUnit } from '@/features/business/inventory/api/useUnits';
@@ -33,7 +34,7 @@ export default function NewPurchasePage() {
   const queryClient = useQueryClient();
 
   const { data: suppliersData, isLoading: loadingSuppliers } = useSuppliers(1, 500);
-  const { data: inventoryData, isLoading: loadingInventory } = useInventory({ per_page: 100 } as any);
+  const { data: inventoryData, isLoading: loadingInventory } = useInventory({ per_page: 500 } as any);
   const { data: locations, isLoading: loadingLocations } = useLocations();
 
   const suppliers = suppliersData?.data || [];
@@ -41,6 +42,11 @@ export default function NewPurchasePage() {
   const { data: unitsData } = useUnits();
   const createUnitMutation = useCreateUnit();
   const units = unitsData || [];
+
+  // Product Selection & Inline Creation State
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [activeItemIndexForNewProduct, setActiveItemIndexForNewProduct] = useState<number | null>(null);
+  const [newProductName, setNewProductName] = useState('');
 
   // Basic Details State
   const { id } = useParams<{ id?: string }>();
@@ -77,6 +83,23 @@ export default function NewPurchasePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const paidAmount = useMemo(() => payments.reduce((sum, p) => sum + (parseFloat(p.amount.toString()) || 0), 0), [payments]);
+
+  const productOptions = useMemo(() => {
+    return products.map((prod: any) => {
+      const displayName = prod.model_name || prod.name || prod.item_code || 'Unnamed Product';
+      const brand = prod.brand?.name || prod.brand_name || (typeof prod.brand === 'string' ? prod.brand : '') || '';
+      const price = prod.purchase_price || (prod.selling_price ? prod.selling_price * 0.7 : 0) || prod.sale_rate || prod.mrp || 0;
+      const stock = prod.quantity ?? prod.stock ?? 0;
+      const unit = prod.unit || 'pcs';
+      const hsn = prod.hsn_code ? ` | HSN: ${prod.hsn_code}` : '';
+      return {
+        value: prod.id,
+        label: `${displayName}${brand ? ` [${brand}]` : ''}`,
+        description: `Rate: ₹${price} | Stock: ${stock} ${unit}${hsn}`,
+        searchString: `${displayName} ${brand} ${prod.item_code || ''} ${prod.hsn_code || ''}`
+      };
+    });
+  }, [products]);
 
   // Calculation logic
   const supplierOptions = useMemo(() => {
@@ -120,8 +143,8 @@ export default function NewPurchasePage() {
     };
   }, [items, paidAmount]);
 
-  const handleProductSelect = (index: number, prodId: number) => {
-    const selectedProd = products.find((p: any) => p.id === prodId);
+  const handleProductSelect = (index: number, prodId: number, directProd?: any) => {
+    const selectedProd = directProd || products.find((p: any) => p.id === prodId);
     if (!selectedProd) return;
 
     const p = selectedProd as any;
@@ -131,10 +154,10 @@ export default function NewPurchasePage() {
       ...updated[index],
       product_id: p.id,
       name: displayName,
-      hsn_code: p.hsn_code || '9983',
-      unit: p.unit || 'Pcs',
-      purchase_price: Number(p.purchase_price || p.selling_price * 0.7 || p.sale_rate || p.mrp || 100),
-      gst_rate: Number(p.gst_rate || 18),
+      hsn_code: p.hsn_code || updated[index]?.hsn_code || '9983',
+      unit: p.unit || updated[index]?.unit || 'Pcs',
+      purchase_price: Number(p.purchase_price || (p.selling_price ? p.selling_price * 0.7 : 0) || p.sale_rate || p.mrp || 0),
+      gst_rate: Number(p.gst_rate ?? 18),
     };
     setItems(updated);
   };
@@ -371,9 +394,28 @@ export default function NewPurchasePage() {
         <Card className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
           <CardHeader className="p-6 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <span className="text-purple-600 dark:text-purple-400 font-bold text-sm">2. Purchased Items & Stock Allocation</span>
-            <Button type="button" size="sm" onClick={addItemRow} className="bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-xs font-bold px-3">
-              <Plus className="w-3.5 h-3.5 mr-1" /> Add Product Row
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                type="button" 
+                size="sm" 
+                onClick={() => {
+                  const targetIndex = items.length > 0 && items[items.length - 1].product_id === 0 ? items.length - 1 : items.length;
+                  if (items.length === 0 || items[items.length - 1].product_id !== 0) {
+                    addItemRow();
+                  }
+                  setActiveItemIndexForNewProduct(targetIndex);
+                  setNewProductName('');
+                  setIsAddProductModalOpen(true);
+                }} 
+                variant="outline"
+                className="border-purple-300 text-purple-700 dark:border-purple-800 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950 text-xs font-bold px-2.5 h-8"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" /> + New Item
+              </Button>
+              <Button type="button" size="sm" onClick={addItemRow} className="bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-xs font-bold px-3 h-8">
+                <Plus className="w-3.5 h-3.5 mr-1" /> Add Product Row
+              </Button>
+            </div>
           </CardHeader>
 
           <CardContent className="p-0 overflow-x-auto">
@@ -396,25 +438,22 @@ export default function NewPurchasePage() {
                   return (
                     <tr key={it.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-800/30">
                       <td className="p-3">
-                        <select
-                          value={it.product_id}
-                          onChange={(e) => handleProductSelect(index, Number(e.target.value))}
-                          className="w-full h-10 px-3 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        >
-                          <option value={0}>-- Select Inventory Product --</option>
-                          {products.map((prod: any) => {
-                            const displayName = prod.model_name || prod.name || prod.item_code || 'Unnamed Product';
-                            const brand = prod.brand?.name || prod.brand_name || (typeof prod.brand === 'string' ? prod.brand : '') || '';
-                            const price = prod.purchase_price || prod.selling_price || prod.mrp || 0;
-                            const stock = prod.quantity ?? prod.stock ?? 0;
-                            const unit = prod.unit || 'pcs';
-                            return (
-                              <option key={prod.id} value={prod.id}>
-                                {displayName} {brand ? `[${brand}]` : ''} | Rate: ₹{price} | Stock: {stock} {unit}
-                              </option>
-                            );
-                          })}
-                        </select>
+                        <SearchableSelect
+                          value={it.product_id || ''}
+                          onChange={(val) => handleProductSelect(index, Number(val))}
+                          options={productOptions}
+                          placeholder="Search product / item name..."
+                          creatable={true}
+                          onCreate={(val) => {
+                            setActiveItemIndexForNewProduct(index);
+                            setNewProductName(val);
+                            setIsAddProductModalOpen(true);
+                          }}
+                          controlSize="sm"
+                          menuPosition="fixed"
+                          dropdownPlacement="bottom"
+                          className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                        />
                       </td>
                       <td className="p-3 flex gap-1">
                         <Input
@@ -621,6 +660,29 @@ export default function NewPurchasePage() {
           if (newSupplier?.id) {
             setSupplierId(newSupplier.id);
           }
+        }}
+      />
+
+      {/* Add Product / Item Modal */}
+      <InventoryFormModal
+        isOpen={isAddProductModalOpen}
+        initialName={newProductName}
+        onClose={() => {
+          setIsAddProductModalOpen(false);
+          setActiveItemIndexForNewProduct(null);
+          setNewProductName('');
+        }}
+        onSuccess={(created) => {
+          queryClient.invalidateQueries({ queryKey: ['inventory'] });
+          const targetIndex = activeItemIndexForNewProduct !== null 
+            ? activeItemIndexForNewProduct 
+            : (items.length - 1);
+          if (created && created.id) {
+            handleProductSelect(targetIndex, created.id, created);
+          }
+          setIsAddProductModalOpen(false);
+          setActiveItemIndexForNewProduct(null);
+          setNewProductName('');
         }}
       />
     </div>
