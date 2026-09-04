@@ -497,15 +497,17 @@ export function Sidebar({ className }: { className?: string }) {
     ].filter(Boolean) as any[]
   });
 
-  // Hotel: show groups/items that the tenant has enabled via feature flags
+  // Hotel: show groups/items that the tenant has enabled via feature flags and not hidden
   const filteredHotelGroups = hotelMenuGroups
     .map(group => ({
       ...group,
-      items: group.items.filter(item => !item.feature || hasFeature(item.feature as string)),
+      items: group.items
+        .filter(item => !hiddenSidebarItems.includes(item.href))
+        .filter(item => !item.feature || hasFeature(item.feature as string)),
     }))
     .filter(group => group.items.length > 0);
 
-  // Staff Hotel Groups: granular filtering based on staff permissions
+  // Staff Hotel Groups: granular filtering based on staff permissions and not hidden
   const filteredStaffHotelGroups = hotelMenuGroups
     .map(group => {
       let allowed = false;
@@ -529,7 +531,9 @@ export function Sidebar({ className }: { className?: string }) {
 
       return {
         ...group,
-        items: group.items.filter(item => !item.feature || hasFeature(item.feature as string)),
+        items: group.items
+          .filter(item => !hiddenSidebarItems.includes(item.href))
+          .filter(item => !item.feature || hasFeature(item.feature as string)),
       };
     })
     .filter((g): g is typeof hotelMenuGroups[number] => g !== null && g.items.length > 0);
@@ -544,8 +548,15 @@ export function Sidebar({ className }: { className?: string }) {
     ...businessAdminGroup,
   ];
 
-  const staffSelfServiceGroup = filteredStaffGroups.filter(g => g.title === "SELF SERVICE");
-  const staffOtherGroups = filteredStaffGroups.filter(g => g.title !== "SELF SERVICE");
+  const cleanedStaffGroups = filteredStaffGroups
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => !hiddenSidebarItems.includes(item.href))
+    }))
+    .filter(group => group.items.length > 0);
+
+  const staffSelfServiceGroup = cleanedStaffGroups.filter(g => g.title === "SELF SERVICE");
+  const staffOtherGroups = cleanedStaffGroups.filter(g => g.title !== "SELF SERVICE");
 
   const combinedStaffGroups = [
     ...staffOtherGroups,

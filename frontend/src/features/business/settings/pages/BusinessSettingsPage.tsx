@@ -111,7 +111,9 @@ export default function BusinessSettingsPage() {
         settings: {
           ...activeBusiness.settings,
           whatsapp_message_format: activeBusiness.settings?.whatsapp_message_format || 'Hello {customer_name}! Here is your invoice {invoice_number} for Rs.{amount}.\n\nYou can view and download your original PDF receipt here:\n{link}',
-          sidebar_group_order: activeBusiness.settings?.sidebar_group_order || []
+          hidden_sidebar_items: activeBusiness.settings?.hidden_sidebar_items || [],
+          sidebar_group_order: activeBusiness.settings?.sidebar_group_order || [],
+          default_login_redirect: activeBusiness.settings?.default_login_redirect || '/dashboard'
         }
       });
       setWlLogoUrl(activeBusiness.settings?.whitelabel_logo || null);
