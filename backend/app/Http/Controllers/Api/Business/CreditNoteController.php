@@ -72,7 +72,8 @@ class CreditNoteController extends Controller
             'parent_id' => 'required|exists:sales,id',
             'reason' => 'required|in:damaged,wrong_item,rate_correction,partial_return,other',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => 'nullable|exists:products,id',
+            'items.*.name' => 'nullable|string|max:255',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.rate' => 'required|numeric|min:0',
             'items.*.gst_rate' => 'required|numeric|min:0',
@@ -134,7 +135,8 @@ class CreditNoteController extends Controller
             foreach ($itemsPayload as $ip) {
                 SaleItem::create([
                     'sale_id' => $cn->id,
-                    'product_id' => $ip['product_id'],
+                    'product_id' => $ip['product_id'] ?? null,
+                    'name' => $ip['name'] ?? null,
                     'quantity' => $ip['quantity'],
                     'rate' => $ip['rate'],
                     'hsn_code' => $ip['hsn_code'] ?? null,
@@ -148,11 +150,12 @@ class CreditNoteController extends Controller
                 ]);
 
                 // Restore stock for returned items
-                $product = Product::find($ip['product_id']);
-                if ($product) {
-                    $product->increment('quantity', $ip['quantity']);
-                    InventoryMovement::create([
-                        'product_id' => $product->id,
+                if (!empty($ip['product_id'])) {
+                    $product = Product::find($ip['product_id']);
+                    if ($product) {
+                        $product->increment('quantity', $ip['quantity']);
+                        InventoryMovement::create([
+                            'product_id' => $product->id,
                         'type' => 'in',
                         'quantity' => $ip['quantity'],
                         'reference_type' => 'credit_note',

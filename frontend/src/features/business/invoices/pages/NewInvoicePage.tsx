@@ -206,7 +206,7 @@ export default function NewInvoicePage() {
         terms_conditions: store.termsConditions,
         bank_details: store.bankDetails,
         items: calculatedItems.map(i => ({
-          product_id: i.product_id || null,
+          product_id: i.product_id ? Number(i.product_id) : null,
           name: i.name || 'Service / Item',
           quantity: Number(i.quantity),
           rate: Number(i.exclusive_rate !== undefined ? i.exclusive_rate : i.rate),

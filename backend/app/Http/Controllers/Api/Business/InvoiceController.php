@@ -130,6 +130,7 @@ class InvoiceController extends Controller
             'payments.*.amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
             'terms_conditions' => 'nullable|string',
+            'bank_details' => 'nullable|string',
         ]);
 
         $businessId = app('current_business_id');
@@ -344,8 +345,13 @@ class InvoiceController extends Controller
             'due_date' => 'nullable|date',
             'place_of_supply' => 'nullable|string|max:2',
             'tax_type' => 'nullable|in:gst,custom_vat,exempt',
+            'reference_number' => 'nullable|string|max:100',
+            'vehicle_number' => 'nullable|string|max:50',
+            'driver_name' => 'nullable|string|max:100',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => 'nullable|exists:products,id',
+            'items.*.name' => 'nullable|string|max:255',
+            'items.*.description' => 'nullable|string',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.rate' => 'required|numeric|min:0',
             'items.*.gst_rate' => 'required|numeric|min:0',
@@ -360,6 +366,7 @@ class InvoiceController extends Controller
             'payments.*.amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
             'terms_conditions' => 'nullable|string',
+            'bank_details' => 'nullable|string',
         ]);
 
         $businessId = app('current_business_id');
