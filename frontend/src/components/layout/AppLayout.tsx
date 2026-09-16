@@ -33,12 +33,18 @@ export function AppLayout() {
 
   useEffect(() => {
     if (hasFetched && activeBusiness && isReady) {
-      const defaultRedirect = activeBusiness.settings?.default_login_redirect;
-      if (location.pathname === '/dashboard' && defaultRedirect && defaultRedirect !== '/dashboard') {
-        // Also check if the redirect target isn't hidden (just in case they configure it wrongly)
-        const hiddenItems = activeBusiness.settings?.hidden_sidebar_items || [];
-        if (!hiddenItems.includes(defaultRedirect)) {
-           navigate(defaultRedirect, { replace: true });
+      const redirectKey = `login_redirect_done_${activeBusiness.id}`;
+      const hasRedirected = sessionStorage.getItem(redirectKey);
+
+      if (!hasRedirected) {
+        sessionStorage.setItem(redirectKey, 'true');
+        const defaultRedirect = activeBusiness.settings?.default_login_redirect;
+        if (location.pathname === '/dashboard' && defaultRedirect && defaultRedirect !== '/dashboard') {
+          // Also check if the redirect target isn't hidden (just in case they configure it wrongly)
+          const hiddenItems = activeBusiness.settings?.hidden_sidebar_items || [];
+          if (!hiddenItems.includes(defaultRedirect)) {
+            navigate(defaultRedirect, { replace: true });
+          }
         }
       }
     }

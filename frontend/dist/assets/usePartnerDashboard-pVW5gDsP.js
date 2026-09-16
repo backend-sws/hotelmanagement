@@ -1,1 +1,0 @@
-import{t as e}from"./useQuery-Bp9ZIWZD.js";import{r as t}from"./authStore-BhMeA7rZ.js";var n=()=>e({queryKey:[`partner`,`dashboard`],queryFn:async()=>{let{data:e}=await t.get(`/partner/dashboard`);return e.data}});export{n as t};

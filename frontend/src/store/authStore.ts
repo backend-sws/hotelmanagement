@@ -39,6 +39,7 @@ export const useAuthStore = create<AuthState>()(
       isProfileLoading: !!localStorage.getItem('auth_token'),
       setAuth: (user, token) => {
         localStorage.setItem('auth_token', token);
+        sessionStorage.clear();
         set({ user, token, isAuthenticated: true, isProfileLoading: false });
       },
       updateUser: (updates) => set((state) => ({ user: state.user ? { ...state.user, ...updates } : null })),
@@ -70,6 +71,7 @@ export const useAuthStore = create<AuthState>()(
       },
       logout: () => {
         localStorage.removeItem('auth_token');
+        sessionStorage.clear();
         set({ user: null, token: null, originalUser: null, originalToken: null, isAuthenticated: false, isProfileLoading: false });
         // Static import since there is no circular dependency
         useTenantStore.getState().reset();
