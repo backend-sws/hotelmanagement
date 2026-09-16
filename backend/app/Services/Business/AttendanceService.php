@@ -9,6 +9,7 @@ use App\Models\BusinessWorkSetting;
 use App\Models\LeaveRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class AttendanceService
@@ -763,10 +764,32 @@ class AttendanceService
 
     /**
      * Get the effective standard hours for a staff member:
-     * Uses per-staff override if set, else falls back to business work setting.
+     * 1. If date specified, check assigned shift in hotel_shift_roster
+     * 2. Per-staff override in business_user
+     * 3. Falls back to business work setting (standard_hours_per_day, default 8.0)
      */
-    public function getStandardHoursForStaff(int $businessId, int $userId): float
+    public function getStandardHoursForStaff(int $businessId, int $userId, ?string $date = null): float
     {
+        if ($date && Schema::hasTable('hotel_shift_roster') && Schema::hasTable('hotel_shifts')) {
+            $rosterShift = DB::table('hotel_shift_roster')
+                ->join('hotel_shifts', 'hotel_shifts.id', '=', 'hotel_shift_roster.shift_id')
+                ->where('hotel_shift_roster.business_id', $businessId)
+                ->where('hotel_shift_roster.user_id', $userId)
+                ->where('hotel_shift_roster.roster_date', $date)
+                ->whereNotIn('hotel_shift_roster.status', ['off', 'cancelled', 'week_off'])
+                ->select('hotel_shifts.start_time', 'hotel_shifts.end_time', 'hotel_shifts.is_overnight')
+                ->first();
+
+            if ($rosterShift) {
+                $start = Carbon::parse($rosterShift->start_time);
+                $end   = Carbon::parse($rosterShift->end_time);
+                if ($rosterShift->is_overnight && $end->lt($start)) {
+                    $end->addDay();
+                }
+                return round($start->diffInMinutes($end) / 60, 1);
+            }
+        }
+
         $staffData = DB::table('business_user')
             ->where('business_id', $businessId)
             ->where('user_id', $userId)
@@ -782,11 +805,27 @@ class AttendanceService
 
     /**
      * Calculate late mark minutes for a check-in.
-     * Uses per-staff override if set, else business work setting.
+     * Priority:
+     * 1. Assigned shift in hotel_shift_roster for that day (if roster enabled)
+     * 2. Per-staff override (custom_work_start_time)
+     * 3. Business work setting start time
      * Returns 0 if within grace period.
      */
     public function calculateLateMarkMinutes(int $businessId, int $userId, Carbon $checkInTime): int
     {
+        // 1. Check assigned shift on the roster for today (if table exists)
+        $rosterShift = null;
+        if (Schema::hasTable('hotel_shift_roster') && Schema::hasTable('hotel_shifts')) {
+            $rosterShift = DB::table('hotel_shift_roster')
+                ->join('hotel_shifts', 'hotel_shifts.id', '=', 'hotel_shift_roster.shift_id')
+                ->where('hotel_shift_roster.business_id', $businessId)
+                ->where('hotel_shift_roster.user_id', $userId)
+                ->where('hotel_shift_roster.roster_date', $checkInTime->toDateString())
+                ->whereNotIn('hotel_shift_roster.status', ['off', 'cancelled', 'on_leave', 'week_off'])
+                ->select('hotel_shifts.start_time', 'hotel_shifts.end_time')
+                ->first();
+        }
+
         $staffData = DB::table('business_user')
             ->where('business_id', $businessId)
             ->where('user_id', $userId)
@@ -794,8 +833,9 @@ class AttendanceService
 
         $workSetting = BusinessWorkSetting::where('business_id', $businessId)->first();
 
-        // Determine start time (per-staff override > business setting > default 09:00)
-        $startTimeStr = $staffData?->custom_work_start_time
+        // Determine start time: Roster Shift > Per-Staff Custom > Business Setting > Default 09:00
+        $startTimeStr = $rosterShift?->start_time
+            ?? $staffData?->custom_work_start_time
             ?? $workSetting?->work_start_time
             ?? '09:00:00';
 
@@ -809,7 +849,9 @@ class AttendanceService
 
     /**
      * Get working hours summary for monthly report.
-     * Returns total_standard_hours (excl. Sundays & holidays), total_actual_hours, efficiency_pct.
+     * Takes into account shift roster assignments if present,
+     * else falls back to standard working days and hours.
+     * Returns total_standard_hours, total_actual_hours, efficiency_pct.
      */
     public function getWorkingHoursSummary(int $businessId, int $userId, string $month, array $holidayDates = []): array
     {
@@ -817,20 +859,53 @@ class AttendanceService
         $startOfMonth = Carbon::createFromDate($year, $mon, 1)->startOfMonth();
         $endOfMonth   = $startOfMonth->copy()->endOfMonth();
 
-        $standardHours = $this->getStandardHoursForStaff($businessId, $userId);
-
-        // Count working days (exclude Sundays and holidays)
-        $totalWorkingDays = 0;
-        $current = $startOfMonth->copy();
-        while ($current->lte($endOfMonth)) {
-            if ($current->dayOfWeek !== Carbon::SUNDAY
-                && !in_array($current->format('Y-m-d'), $holidayDates)) {
-                $totalWorkingDays++;
-            }
-            $current->addDay();
+        // Check if staff has roster entries for this month (if shift roster is enabled)
+        $rosterEntries = collect();
+        if (Schema::hasTable('hotel_shift_roster') && Schema::hasTable('hotel_shifts')) {
+            $rosterEntries = DB::table('hotel_shift_roster')
+                ->join('hotel_shifts', 'hotel_shifts.id', '=', 'hotel_shift_roster.shift_id')
+                ->where('hotel_shift_roster.business_id', $businessId)
+                ->where('hotel_shift_roster.user_id', $userId)
+                ->whereBetween('hotel_shift_roster.roster_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+                ->whereNotIn('hotel_shift_roster.status', ['off', 'cancelled', 'week_off'])
+                ->select('hotel_shift_roster.roster_date', 'hotel_shifts.start_time', 'hotel_shifts.end_time', 'hotel_shifts.is_overnight')
+                ->get();
         }
 
-        $totalStandardHours = round($totalWorkingDays * $standardHours, 2);
+        $standardHoursPerDay = $this->getStandardHoursForStaff($businessId, $userId);
+
+        if ($rosterEntries->isNotEmpty()) {
+            $totalWorkingDays = 0;
+            $totalStandardHours = 0.0;
+
+            foreach ($rosterEntries as $entry) {
+                // If this day is an official company holiday, skip from required hours
+                if (in_array($entry->roster_date, $holidayDates)) {
+                    continue;
+                }
+                $start = Carbon::parse($entry->start_time);
+                $end   = Carbon::parse($entry->end_time);
+                if ($entry->is_overnight && $end->lt($start)) {
+                    $end->addDay();
+                }
+                $shiftDuration = round($start->diffInMinutes($end) / 60, 2);
+                $totalStandardHours += $shiftDuration;
+                $totalWorkingDays++;
+            }
+        } else {
+            // Count working days (exclude Sundays and holidays)
+            $totalWorkingDays = 0;
+            $current = $startOfMonth->copy();
+            while ($current->lte($endOfMonth)) {
+                if ($current->dayOfWeek !== Carbon::SUNDAY
+                    && !in_array($current->format('Y-m-d'), $holidayDates)) {
+                    $totalWorkingDays++;
+                }
+                $current->addDay();
+            }
+
+            $totalStandardHours = round($totalWorkingDays * $standardHoursPerDay, 2);
+        }
 
         // Sum actual hours from attendance records
         $totalActualHours = (float) Attendance::where('business_id', $businessId)
@@ -845,11 +920,12 @@ class AttendanceService
             : 0.0;
 
         return [
-            'total_working_days'    => $totalWorkingDays,
-            'standard_hours_per_day' => $standardHours,
-            'total_standard_hours'  => $totalStandardHours,
-            'total_actual_hours'    => round($totalActualHours, 2),
-            'efficiency_pct'        => $efficiencyPct,
+            'total_working_days'     => $totalWorkingDays,
+            'standard_hours_per_day' => $standardHoursPerDay,
+            'total_standard_hours'   => round($totalStandardHours, 2),
+            'total_actual_hours'     => round($totalActualHours, 2),
+            'efficiency_pct'         => $efficiencyPct,
         ];
     }
+
 }

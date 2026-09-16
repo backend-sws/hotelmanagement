@@ -36,7 +36,10 @@ class StaffService
                 'business_user.salary_components',
                 'business_user.commission_rate',
                 'business_user.join_date',
-                'business_user.status'
+                'business_user.status',
+                'business_user.custom_work_start_time',
+                'business_user.custom_work_end_time',
+                'business_user.custom_standard_hours'
             )
             ->orderBy('users.name')
             ->get();
@@ -95,6 +98,9 @@ class StaffService
                 'commission_rate' => $data['commission_rate'] ?? 0,
                 'join_date' => $data['join_date'] ?? now()->toDateString(),
                 'status' => 'active',
+                'custom_work_start_time' => $data['custom_work_start_time'] ?? null,
+                'custom_work_end_time'   => $data['custom_work_end_time'] ?? null,
+                'custom_standard_hours'  => $data['custom_standard_hours'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -123,6 +129,9 @@ class StaffService
                 'commission_rate' => $data['commission_rate'] ?? 0,
                 'join_date' => $data['join_date'] ?? now()->toDateString(),
                 'status' => 'active',
+                'custom_work_start_time' => $data['custom_work_start_time'] ?? null,
+                'custom_work_end_time'   => $data['custom_work_end_time'] ?? null,
+                'custom_standard_hours'  => $data['custom_standard_hours'] ?? null,
                 'permissions' => $data['permissions'] ?? [],
             ];
         });
@@ -166,6 +175,9 @@ class StaffService
         }
         if (isset($data['role'])) $pivotData['role'] = $data['role'];
         if (array_key_exists('department', $data)) $pivotData['department'] = $data['department'];
+        if (array_key_exists('custom_work_start_time', $data)) $pivotData['custom_work_start_time'] = $data['custom_work_start_time'];
+        if (array_key_exists('custom_work_end_time', $data)) $pivotData['custom_work_end_time'] = $data['custom_work_end_time'];
+        if (array_key_exists('custom_standard_hours', $data)) $pivotData['custom_standard_hours'] = $data['custom_standard_hours'];
 
         if (!empty($pivotData)) {
             $pivotData['updated_at'] = now();
@@ -218,7 +230,8 @@ class StaffService
                 'users.id', 'users.name', 'users.email', 'users.phone', 'users.avatar',
                 'business_user.role', 'business_user.department', 'business_user.salary_type', 'business_user.monthly_salary',
                 'business_user.daily_salary', 'business_user.salary_components',
-                'business_user.commission_rate', 'business_user.join_date', 'business_user.status'
+                'business_user.commission_rate', 'business_user.join_date', 'business_user.status',
+                'business_user.custom_work_start_time', 'business_user.custom_work_end_time', 'business_user.custom_standard_hours'
             )
             ->first();
 

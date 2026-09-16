@@ -14,7 +14,7 @@ import { formatCurrency } from '@/lib/formatters';
 
 import { staffSchema, type StaffFormData } from '../schemas/staffSchema';
 import { ALL_STAFF_PERMISSIONS, ROLE_PRESETS } from './PermissionsModal';
-import { ShieldCheck, ChevronDown, ChevronUp, CheckSquare, Plus, Trash2, Sparkles } from 'lucide-react';
+import { ShieldCheck, ChevronDown, ChevronUp, CheckSquare, Plus, Trash2, Sparkles, Clock } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 
 const DEFAULT_PAYROLL_COMPONENTS = [
@@ -48,6 +48,7 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
   const [showPermissions, setShowPermissions] = useState(false);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [activePreset, setActivePreset] = useState<string>('front_desk');
+  const [useCustomTimings, setUseCustomTimings] = useState<boolean>(false);
 
   const { register, handleSubmit, control, reset, setValue, watch, formState: { errors } } = useForm<StaffFormData>({
     resolver: zodResolver(staffSchema),
@@ -62,6 +63,9 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
       join_date: new Date().toISOString().split('T')[0],
       salary_components: [],
       permissions: [],
+      custom_work_start_time: '',
+      custom_work_end_time: '',
+      custom_standard_hours: null,
     }
   });
 
@@ -164,6 +168,9 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
         : (staff?.role === 'manager' ? ROLE_PRESETS.all.perms : ROLE_PRESETS.front_desk.perms);
       setSelectedPermissions(initialPermissions);
 
+      const hasCustom = !!(staff?.custom_work_start_time || staff?.custom_standard_hours);
+      setUseCustomTimings(hasCustom);
+
       reset({
         name: staff?.name || '',
         phone: staff?.phone || '',
@@ -178,6 +185,9 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
         join_date: staff?.join_date || new Date().toISOString().split('T')[0],
         salary_components: initialComponents,
         permissions: initialPermissions,
+        custom_work_start_time: staff?.custom_work_start_time || '',
+        custom_work_end_time: staff?.custom_work_end_time || '',
+        custom_standard_hours: staff?.custom_standard_hours ? Number(staff.custom_standard_hours) : null,
       });
     }
   }, [staff, isOpen, activeComponents, reset]);
@@ -191,6 +201,16 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
       data.monthly_salary = calculatedSalary;
     }
     data.permissions = selectedPermissions;
+
+    if (!useCustomTimings) {
+      data.custom_work_start_time = null;
+      data.custom_work_end_time = null;
+      data.custom_standard_hours = null;
+    } else {
+      if (data.custom_standard_hours) {
+        data.custom_standard_hours = Number(data.custom_standard_hours);
+      }
+    }
     
     if (isEditing) {
       updateMutation.mutate(
@@ -358,6 +378,103 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
                       />
                     )}
                   />
+              </div>
+            )}
+          </div>
+
+          {/* Work Timings & Daily Hours Section */}
+          <div className="border-t border-slate-200 dark:border-white/10 pt-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-primary-500" />
+                  Work Timings & Target Hours (स्टाफ शिफ्ट व वर्किंग आवर्स)
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Configure individual staff shift timings for accurate late-mark & efficiency tracking.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Custom Timings:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !useCustomTimings;
+                    setUseCustomTimings(next);
+                    if (!next) {
+                      setValue('custom_work_start_time', null);
+                      setValue('custom_work_end_time', null);
+                      setValue('custom_standard_hours', null);
+                    } else {
+                      setValue('custom_work_start_time', '09:30');
+                      setValue('custom_work_end_time', '18:30');
+                      setValue('custom_standard_hours', 8);
+                    }
+                  }}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    useCustomTimings ? 'bg-primary-600' : 'bg-slate-200 dark:bg-zinc-700'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      useCustomTimings ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {!useCustomTimings ? (
+              <div className="p-3 bg-slate-50 dark:bg-zinc-900/40 rounded-xl border border-slate-200/80 dark:border-white/5 flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                <InfoTooltip text="Using business default work settings" />
+                <span>Using <strong>Company Default Work Settings</strong> (Standard 8.0 hrs/day, 09:00 AM - 06:00 PM).</span>
+              </div>
+            ) : (
+              <div className="p-4 bg-primary-500/5 rounded-2xl border border-primary-500/20 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Work Start Time
+                    </label>
+                    <Input
+                      type="time"
+                      {...register('custom_work_start_time')}
+                      placeholder="09:30"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">Arrival time (for late marks)</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Work End Time
+                    </label>
+                    <Input
+                      type="time"
+                      {...register('custom_work_end_time')}
+                      placeholder="18:30"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">Departure time</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Standard Daily Hours
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.5"
+                      min="1"
+                      max="24"
+                      {...register('custom_standard_hours', { valueAsNumber: true })}
+                      placeholder="e.g. 8 or 4 or 12"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">Target hrs/day (e.g. 4h, 8h, 12h)</p>
+                  </div>
+                </div>
+                <div className="text-[11px] text-primary-700 dark:text-primary-300 font-medium bg-primary-500/10 p-2.5 rounded-xl flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    Monthly Target = <code>(Working Days × {watch('custom_standard_hours') || 8}h)</code>. Monthly Efficiency % = <code>(Actual Hours Worked / Target Hours) × 100</code>.
+                  </span>
+                </div>
               </div>
             )}
           </div>

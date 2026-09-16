@@ -39,6 +39,9 @@ class StaffController extends BaseController
             'salary_components' => 'nullable|array',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string',
+            'custom_work_start_time' => 'nullable|string',
+            'custom_work_end_time' => 'nullable|string',
+            'custom_standard_hours' => 'nullable|numeric|min:1|max:24',
         ]);
 
         // Check if phone or email already exists as staff in this business
@@ -96,6 +99,9 @@ class StaffController extends BaseController
             'salary_components' => 'nullable|array',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string',
+            'custom_work_start_time' => 'nullable|string',
+            'custom_work_end_time' => 'nullable|string',
+            'custom_standard_hours' => 'nullable|numeric|min:1|max:24',
         ]);
 
         try {

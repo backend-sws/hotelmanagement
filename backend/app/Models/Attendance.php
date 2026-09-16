@@ -88,6 +88,7 @@ class Attendance extends Model
     /**
      * Calculate actual working hours from check_in and check_out.
      * Returns decimal hours (e.g., 8.5 for 8h 30m).
+     * Handles overnight shifts (check-out on the next calendar day).
      */
     public function computeActualHours(): ?float
     {
@@ -97,10 +98,17 @@ class Attendance extends Model
         $in  = \Carbon\Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->check_in_time);
         $out = \Carbon\Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->check_out_time);
         if ($out->lessThanOrEqualTo($in)) {
+            // Check-out is next morning / overnight shift
+            $out->addDay();
+        }
+        $diffMinutes = $in->diffInMinutes($out);
+        // Guard against impossible durations (> 24 hours)
+        if ($diffMinutes <= 0 || $diffMinutes > 24 * 60) {
             return null;
         }
-        return round($in->diffInMinutes($out) / 60, 2);
+        return round($diffMinutes / 60, 2);
     }
+
 
     /**
      * Efficiency percentage: actual_hours / standard_hours * 100.

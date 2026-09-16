@@ -20,6 +20,9 @@ export const staffSchema = z.object({
     amount: z.number().min(0),
   })).optional(),
   permissions: z.array(z.string()).optional(),
+  custom_work_start_time: z.string().optional().nullable(),
+  custom_work_end_time: z.string().optional().nullable(),
+  custom_standard_hours: z.number().min(1).max(24).optional().nullable(),
 });
 
 export type StaffFormData = z.infer<typeof staffSchema>;
