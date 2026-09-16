@@ -75,11 +75,27 @@ export const useDashboardStats = () => {
   });
 };
 
+export interface StaffShiftInfo {
+  name: string;
+  start_time: string;
+  end_time: string;
+  start_time_fmt: string;
+  end_time_fmt: string;
+  timing_label: string;
+  duration_hours: number;
+  is_overnight: boolean;
+  color: string;
+  late_after: string;
+  grace_minutes: number;
+  source: string;
+}
+
 export interface StaffEarnings {
   today_earnings: number;
   monthly_earnings: number;
   advance_taken: number;
   total_dues: number;
+  shift?: StaffShiftInfo;
 }
 
 export const useStaffEarnings = () => {

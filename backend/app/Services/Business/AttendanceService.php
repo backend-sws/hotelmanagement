@@ -928,4 +928,114 @@ class AttendanceService
         ];
     }
 
+    /**
+     * Get the active shift and working hours info for a staff member on a given date.
+     * Priority:
+     * 1. hotel_shift_roster for that date
+     * 2. Per-staff custom work timings (custom_work_start_time, custom_work_end_time, custom_standard_hours)
+     * 3. Business work settings (fallback)
+     */
+    public function getStaffShiftInfo(int $businessId, int $userId, ?string $date = null): array
+    {
+        $date = $date ?? now()->toDateString();
+        $workSetting = BusinessWorkSetting::where('business_id', $businessId)->first();
+        $graceMinutes = $workSetting?->late_mark_grace_minutes ?? 15;
+
+        // 1. Check if assigned on shift roster for this date
+        if (Schema::hasTable('hotel_shift_roster') && Schema::hasTable('hotel_shifts')) {
+            $rosterEntry = DB::table('hotel_shift_roster')
+                ->join('hotel_shifts', 'hotel_shifts.id', '=', 'hotel_shift_roster.shift_id')
+                ->where('hotel_shift_roster.business_id', $businessId)
+                ->where('hotel_shift_roster.user_id', $userId)
+                ->where('hotel_shift_roster.roster_date', $date)
+                ->whereNotIn('hotel_shift_roster.status', ['off', 'cancelled', 'week_off'])
+                ->select(
+                    'hotel_shifts.name',
+                    'hotel_shifts.start_time',
+                    'hotel_shifts.end_time',
+                    'hotel_shifts.is_overnight',
+                    'hotel_shifts.color'
+                )
+                ->first();
+
+            if ($rosterEntry) {
+                $start = Carbon::parse($rosterEntry->start_time);
+                $end   = Carbon::parse($rosterEntry->end_time);
+                if ($rosterEntry->is_overnight && $end->lt($start)) {
+                    $end->addDay();
+                }
+                $duration = round($start->diffInMinutes($end) / 60, 1);
+                $lateAfter = $start->copy()->addMinutes($graceMinutes)->format('h:i A');
+
+                return [
+                    'name'           => $rosterEntry->name,
+                    'start_time'     => substr($rosterEntry->start_time, 0, 5),
+                    'end_time'       => substr($rosterEntry->end_time, 0, 5),
+                    'start_time_fmt' => Carbon::parse($rosterEntry->start_time)->format('h:i A'),
+                    'end_time_fmt'   => Carbon::parse($rosterEntry->end_time)->format('h:i A'),
+                    'timing_label'   => Carbon::parse($rosterEntry->start_time)->format('h:i A') . ' - ' . Carbon::parse($rosterEntry->end_time)->format('h:i A'),
+                    'duration_hours' => $duration,
+                    'is_overnight'   => (bool) $rosterEntry->is_overnight,
+                    'color'          => $rosterEntry->color ?? '#3b82f6',
+                    'late_after'     => $lateAfter,
+                    'grace_minutes'  => $graceMinutes,
+                    'source'         => 'roster_shift',
+                ];
+            }
+        }
+
+        // 2. Check per-staff custom work timings
+        $staffData = DB::table('business_user')
+            ->where('business_id', $businessId)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($staffData && (!empty($staffData->custom_work_start_time) || !empty($staffData->custom_standard_hours))) {
+            $startTime = $staffData->custom_work_start_time ?? '09:00:00';
+            $endTime   = $staffData->custom_work_end_time ?? '18:00:00';
+            $duration  = $staffData->custom_standard_hours ? (float) $staffData->custom_standard_hours : 8.0;
+
+            $start = Carbon::parse($startTime);
+            $lateAfter = $start->copy()->addMinutes($graceMinutes)->format('h:i A');
+
+            return [
+                'name'           => 'Custom Staff Shift',
+                'start_time'     => substr($startTime, 0, 5),
+                'end_time'       => substr($endTime, 0, 5),
+                'start_time_fmt' => Carbon::parse($startTime)->format('h:i A'),
+                'end_time_fmt'   => Carbon::parse($endTime)->format('h:i A'),
+                'timing_label'   => Carbon::parse($startTime)->format('h:i A') . ' - ' . Carbon::parse($endTime)->format('h:i A'),
+                'duration_hours' => $duration,
+                'is_overnight'   => false,
+                'color'          => '#6366f1',
+                'late_after'     => $lateAfter,
+                'grace_minutes'  => $graceMinutes,
+                'source'         => 'custom_profile',
+            ];
+        }
+
+        // 3. Fallback to general company work settings
+        $startTime = $workSetting?->work_start_time ?? '09:00:00';
+        $endTime   = $workSetting?->work_end_time ?? '18:00:00';
+        $duration  = $workSetting ? (float) $workSetting->standard_hours_per_day : 8.0;
+
+        $start = Carbon::parse($startTime);
+        $lateAfter = $start->copy()->addMinutes($graceMinutes)->format('h:i A');
+
+        return [
+            'name'           => 'General Company Shift',
+            'start_time'     => substr($startTime, 0, 5),
+            'end_time'       => substr($endTime, 0, 5),
+            'start_time_fmt' => Carbon::parse($startTime)->format('h:i A'),
+            'end_time_fmt'   => Carbon::parse($endTime)->format('h:i A'),
+            'timing_label'   => Carbon::parse($startTime)->format('h:i A') . ' - ' . Carbon::parse($endTime)->format('h:i A'),
+            'duration_hours' => $duration,
+            'is_overnight'   => false,
+            'color'          => '#10b981',
+            'late_after'     => $lateAfter,
+            'grace_minutes'  => $graceMinutes,
+            'source'         => 'company_default',
+        ];
+    }
+
 }

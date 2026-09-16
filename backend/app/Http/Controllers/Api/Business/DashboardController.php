@@ -347,13 +347,17 @@ class DashboardController extends Controller
 
         $totalDues = $unpaidPayrolls + $draftDues;
 
+        $attendanceService = app(\App\Services\Business\AttendanceService::class);
+        $shiftInfo = $attendanceService->getStaffShiftInfo($businessId, $user->id);
+
         return response()->json([
             'success' => true,
             'data' => [
-                'today_earnings' => round($todayEarnings, 2),
+                'today_earnings'   => round($todayEarnings, 2),
                 'monthly_earnings' => round($monthlyEarnings, 2),
-                'advance_taken' => round($advanceTaken, 2),
-                'total_dues' => round($totalDues, 2),
+                'advance_taken'    => round($advanceTaken, 2),
+                'total_dues'       => round($totalDues, 2),
+                'shift'            => $shiftInfo,
             ]
         ]);
     }

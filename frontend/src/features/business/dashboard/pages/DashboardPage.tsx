@@ -203,8 +203,67 @@ export default function DashboardPage() {
         )}
         
         {showStaffDashboard && (
-          <div>
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-300 mb-3 ml-1 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-xl p-2 rounded-xl inline-block shadow-sm">
+          <div className="space-y-4">
+            {/* ── Today's Scheduled Shift Banner ── */}
+            {staffEarnings?.shift && (
+              <div className="relative overflow-hidden bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 dark:from-violet-950 dark:via-indigo-950 dark:to-blue-950 rounded-3xl p-6 border border-white/20 dark:border-white/10 shadow-xl shadow-indigo-500/10 backdrop-blur-xl text-white">
+                <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-white/20 rounded-full backdrop-blur-md border border-white/25 flex items-center gap-1.5">
+                        <Clock className="w-3 h-3 text-amber-300" />
+                        Today's Assigned Shift
+                      </span>
+                      {staffEarnings.shift.is_overnight && (
+                        <span className="px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-purple-400/30 text-purple-200 rounded-full border border-purple-300/30">
+                          Overnight Shift
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline gap-3 flex-wrap">
+                      <h2 className="text-2xl sm:text-3xl font-black tracking-tight drop-shadow-sm">
+                        {staffEarnings.shift.name}
+                      </h2>
+                      <span className="text-xl sm:text-2xl font-mono font-bold text-amber-300 bg-black/25 px-3 py-0.5 rounded-xl border border-white/10">
+                        {staffEarnings.shift.timing_label}
+                      </span>
+                      <span className="text-xs font-semibold text-white/90 bg-white/15 px-2.5 py-1 rounded-lg">
+                        {staffEarnings.shift.duration_hours} hrs standard
+                      </span>
+                    </div>
+                    <p className="text-xs text-white/80 flex items-center gap-1.5 font-medium">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                      Grace period: {staffEarnings.shift.grace_minutes || 15} mins · Late mark applies after <strong className="text-white font-bold">{staffEarnings.shift.late_after}</strong>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    {todayAttendance?.check_in_time ? (
+                      <div className="bg-emerald-500/20 border border-emerald-400/40 rounded-2xl px-5 py-3 text-right">
+                        <div className="text-[10px] uppercase font-black tracking-widest text-emerald-300">Checked In Today</div>
+                        <div className="text-xl font-black text-white font-mono">{todayAttendance.check_in_time.substring(0, 5)}</div>
+                        {todayAttendance.late_mark_minutes ? (
+                          <div className="text-[10px] text-rose-300 font-bold">Late by {todayAttendance.late_mark_minutes}m</div>
+                        ) : (
+                          <div className="text-[10px] text-emerald-300 font-bold">On Time ✓</div>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => navigate('/attendance')}
+                        className="h-12 px-6 bg-white text-indigo-700 hover:bg-white/90 font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-black/20 hover:scale-105 active:scale-100 transition-all duration-200 flex items-center cursor-pointer"
+                      >
+                        <Clock className="w-4 h-4 mr-2" />
+                        Mark Attendance
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-300 ml-1 bg-white/80 dark:bg-[#111118]/80 backdrop-blur-xl p-2 rounded-xl inline-block shadow-sm">
               My Employee Dashboard
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
