@@ -2,10 +2,11 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStaffDetail, useStaffSales, useStaffEarningsById, useImpersonateStaff } from '../api/useStaff';
 import { usePayrolls } from '../../payroll/api/usePayroll';
+import { useLeaveBalances } from '../../hr/api/useLeavePolicies';
 import { useAuthStore } from '@/store/authStore';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { ArrowLeft, User, Mail, Phone, Calendar, IndianRupee, TrendingUp, Percent, Award, ShieldAlert, LogIn, Clock, Wallet } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Calendar, IndianRupee, TrendingUp, Percent, Award, ShieldAlert, LogIn, Clock, Wallet, Umbrella, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataTable } from '@/components/ui/data-table';
@@ -21,7 +22,34 @@ export default function StaffDetailsPage() {
   const { data: salesData, isLoading: isSalesLoading } = useStaffSales(Number(id));
   const { data: payrollData, isLoading: isPayrollLoading } = usePayrolls({ user_id: Number(id) });
   const { data: staffEarnings } = useStaffEarningsById(Number(id));
+  const { data: staffLeaveBalances } = useLeaveBalances(Number(id));
   const impersonateMutation = useImpersonateStaff();
+
+  const rawSalaryComponents = data?.staff?.salary_components;
+  const { parsedComponents, earningsList, deductionsList, totalEarnings, totalDeductions } = React.useMemo(() => {
+    let comps: Array<{ name: string; type: 'earning' | 'deduction'; amount: number }> = [];
+    if (rawSalaryComponents) {
+      if (Array.isArray(rawSalaryComponents)) {
+        comps = rawSalaryComponents;
+      } else if (typeof rawSalaryComponents === 'string') {
+        try {
+          const parsed = JSON.parse(rawSalaryComponents);
+          if (Array.isArray(parsed)) comps = parsed;
+        } catch {}
+      }
+    }
+    const earnings = comps.filter(c => c.type === 'earning');
+    const deductions = comps.filter(c => c.type === 'deduction');
+    const totE = earnings.reduce((acc, c) => acc + (Number(c.amount) || 0), 0);
+    const totD = deductions.reduce((acc, c) => acc + (Number(c.amount) || 0), 0);
+    return {
+      parsedComponents: comps,
+      earningsList: earnings,
+      deductionsList: deductions,
+      totalEarnings: totE,
+      totalDeductions: totD,
+    };
+  }, [rawSalaryComponents]);
 
   const handleImpersonate = () => {
     impersonateMutation.mutate(Number(id), {
@@ -315,6 +343,107 @@ export default function StaffDetailsPage() {
                 </div>
               </div>
             </div>
+
+            {/* Detailed Salary Breakdown Card (if components defined) */}
+            {parsedComponents.length > 0 && (
+              <div className="bg-white/80 dark:bg-[#111115]/80 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-2xl p-5 shadow-lg shadow-slate-200/50 dark:shadow-none space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-2.5">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
+                    Salary Structure Breakdown
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-400">Fixed Monthly</span>
+                </div>
+
+                {/* Earnings List */}
+                {earningsList.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                      <span>Earnings (Gross)</span>
+                      <span>+{formatCurrency(totalEarnings)}</span>
+                    </div>
+                    <div className="space-y-1 bg-emerald-50/40 dark:bg-emerald-950/10 rounded-xl p-2.5 border border-emerald-100/60 dark:border-emerald-900/20">
+                      {earningsList.map((comp, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          <span>{comp.name}</span>
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(comp.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Deductions List */}
+                {deductionsList.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-rose-600 dark:text-rose-400">
+                      <span>Component Deductions</span>
+                      <span>-{formatCurrency(totalDeductions)}</span>
+                    </div>
+                    <div className="space-y-1 bg-rose-50/40 dark:bg-rose-950/10 rounded-xl p-2.5 border border-rose-100/60 dark:border-rose-900/20">
+                      {deductionsList.map((comp, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          <span>{comp.name}</span>
+                          <span className="font-mono font-bold text-rose-500">-{formatCurrency(comp.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Net In-Hand Line */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800">
+                  <span className="text-xs font-black text-slate-800 dark:text-white">Net In-Hand Pay</span>
+                  <span className="text-sm font-black text-indigo-600 dark:text-indigo-400 font-mono">
+                    {formatCurrency(totalEarnings - totalDeductions)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Leave Quotas & Balances Card */}
+            {staffLeaveBalances && (
+              <div className="bg-white/80 dark:bg-[#111115]/80 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-2xl p-5 shadow-lg shadow-slate-200/50 dark:shadow-none space-y-3.5">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-2.5">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Umbrella className="w-3.5 h-3.5 text-indigo-500" />
+                    Annual Leave Quota ({staffLeaveBalances.year})
+                  </span>
+                  <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                    {staffLeaveBalances.total_remaining_paid}d Remaining
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-zinc-800">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Allocated</span>
+                    <span className="text-sm font-black text-slate-900 dark:text-white">{staffLeaveBalances.total_allocated_paid}d</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                    <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest block">Used</span>
+                    <span className="text-sm font-black text-amber-600 dark:text-amber-400">{staffLeaveBalances.total_used_paid}d</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                    <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest block">In-Hand</span>
+                    <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{staffLeaveBalances.total_remaining_paid}d</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  {staffLeaveBalances.balances?.map(b => (
+                    <div key={b.id} className="p-2 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800 text-xs flex items-center justify-between">
+                      <div>
+                        <span className="font-bold text-slate-800 dark:text-zinc-200 capitalize block">{b.leave_type.replace('_', ' ')}</span>
+                        <span className="text-[10px] text-slate-400">{b.used_days} used / {b.is_paid ? `${b.annual_quota}d quota` : 'unlimited'}</span>
+                      </div>
+                      <span className={`text-xs font-black ${b.is_paid ? (b.remaining_days > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500') : 'text-slate-400'}`}>
+                        {b.is_paid ? `${b.remaining_days}d left` : 'Unpaid'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* RIGHT CONTENT */}

@@ -10,6 +10,20 @@ class PayrollComponentController extends BaseController
 {
     public function index()
     {
+        if (PayrollComponent::count() === 0) {
+            $defaults = [
+                ['name' => 'Basic Salary', 'type' => 'earning', 'is_default' => true],
+                ['name' => 'House Rent Allowance (HRA)', 'type' => 'earning', 'is_default' => true],
+                ['name' => 'Special Allowance', 'type' => 'earning', 'is_default' => true],
+                ['name' => 'Provident Fund (PF)', 'type' => 'deduction', 'is_default' => true],
+                ['name' => 'Employee State Insurance (ESI)', 'type' => 'deduction', 'is_default' => true],
+                ['name' => 'Professional Tax (PT)', 'type' => 'deduction', 'is_default' => true],
+            ];
+            foreach ($defaults as $d) {
+                PayrollComponent::create($d);
+            }
+        }
+
         $components = PayrollComponent::all();
         return $this->success($components, 'Payroll components retrieved successfully');
     }

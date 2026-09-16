@@ -34,7 +34,7 @@ import { useLayoutStore } from "@/store/layoutStore";
 import { useAuthStore } from "@/store/authStore";
 import { useAppStore } from "@/store/appStore";
 import { useTenantStore } from "@/store/tenantStore";
-import { ShieldAlert, Settings, Database, Briefcase, Coins, UserCircle, LogOut, MessageSquare, Calendar, Calculator, Tag, ShoppingBag, BookOpen, Clock, PieChart, HardHat } from "lucide-react";
+import { ShieldAlert, Settings, Database, Briefcase, Coins, UserCircle, LogOut, MessageSquare, Calendar, Calculator, Tag, ShoppingBag, BookOpen, Clock, PieChart, HardHat, Bell } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useFeature } from "@/hooks/useFeature";
 import { FeatureLockModal } from "@/features/business/core/components/FeatureLockModal";
@@ -113,6 +113,9 @@ export const businessMenuGroups = [
     items: [
       { name: "STAFF", href: "/staff", icon: Users },
       { name: "ATTENDANCE", href: "/attendance", icon: ClipboardList, feature: 'has_payroll' },
+      { name: "HOLIDAY CALENDAR", href: "/attendance/holidays", icon: Calendar, feature: 'has_payroll' },
+      { name: "WORK SETTINGS", href: "/setup/work-settings", icon: Clock, feature: 'has_payroll' },
+      { name: "NOTICE BOARD", href: "/notices", icon: Bell, feature: 'has_payroll' },
       { name: "PAYROLL", href: "/payroll", icon: Wallet, feature: 'has_payroll' },
       { name: "LEAVE REQUESTS", href: "/hr/leave-requests", icon: Calendar, feature: 'has_payroll' },
       { name: "SALARY ADVANCES", href: "/hr/advances", icon: Coins, feature: 'has_payroll' },
@@ -491,9 +494,11 @@ export function Sidebar({ className }: { className?: string }) {
     items: [
       { name: "DASHBOARD", href: "/dashboard", icon: LayoutDashboard },
       hasFeature('has_payroll') ? { name: "MY ATTENDANCE", href: "/attendance", icon: ClipboardList, feature: 'has_payroll' } : null,
+      hasFeature('has_payroll') ? { name: "NOTICE BOARD", href: "/notices", icon: Bell, feature: 'has_payroll' } : null,
+      hasFeature('has_payroll') ? { name: "HOLIDAY CALENDAR", href: "/attendance/holidays", icon: Calendar, feature: 'has_payroll' } : null,
+      hasFeature('has_payroll') ? { name: "REQUEST LEAVE / WFH", href: "/hr/leave-requests", icon: Calendar, feature: 'has_payroll' } : null,
       hasFeature('has_payroll') ? { name: "MY SALARY SLIPS", href: "/payroll", icon: Wallet, feature: 'has_payroll' } : null,
-      hasFeature('has_payroll') ? { name: "REQUEST LEAVE", href: "/hr/leave-requests", icon: Calendar, feature: 'has_payroll' } : null,
-      hasFeature('has_payroll') ? { name: "SALARY ADVANCE", href: "/hr/advances", icon: Wallet, feature: 'has_payroll' } : null,
+      hasFeature('has_payroll') ? { name: "SALARY ADVANCE", href: "/hr/advances", icon: Coins, feature: 'has_payroll' } : null,
     ].filter(Boolean) as any[]
   });
 

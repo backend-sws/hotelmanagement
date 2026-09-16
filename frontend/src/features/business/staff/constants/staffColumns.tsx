@@ -39,12 +39,19 @@ export const getStaffColumns = ({ handleEdit, handleToggleStatus, handlePermissi
     accessorKey: 'phone',
   },
   {
-    header: 'Role',
+    header: 'Role / Dept',
     accessorKey: 'role',
     cell: (item: StaffMember) => (
-      <Badge variant="outline" className="capitalize">
-        {item.is_owner ? 'Owner' : item.role}
-      </Badge>
+      <div className="space-y-0.5">
+        <Badge variant="outline" className="capitalize">
+          {item.is_owner ? 'Owner' : item.role}
+        </Badge>
+        {item.department && (
+          <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[140px]">
+            {item.department}
+          </p>
+        )}
+      </div>
     )
   },
   {

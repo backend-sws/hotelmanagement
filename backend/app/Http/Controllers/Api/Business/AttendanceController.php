@@ -166,4 +166,130 @@ class AttendanceController extends BaseController
             return $this->error($e->getMessage(), 500);
         }
     }
+
+    // ── REGULARIZATION ────────────────────────────────────────────────────────
+
+    /**
+     * POST /api/business/attendance/regularize
+     * Staff submits a backdated time-correction request.
+     */
+    public function requestRegularization(Request $request)
+    {
+        $request->validate([
+            'date'               => 'required|date',
+            'user_id'            => 'nullable|integer',
+            'requested_checkin'  => 'nullable|date_format:H:i,H:i:s',
+            'requested_checkout' => 'nullable|date_format:H:i,H:i:s',
+            'reason'             => 'required|string|max:500',
+        ]);
+
+        try {
+            $attendance = $this->attendanceService->requestRegularization($request->all());
+            return $this->success($attendance, 'Regularization request submitted successfully.');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * GET /api/business/attendance/regularization-requests
+     * Admin sees all pending regularization requests.
+     */
+    public function regularizationRequests(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+            return $this->forbidden('Unauthorized');
+        }
+
+        try {
+            $requests = $this->attendanceService->getPendingRegularizations();
+            return $this->success($requests, 'Regularization requests retrieved.');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * POST /api/business/attendance/{id}/regularize/approve
+     * Admin approves a regularization request → updates actual times.
+     */
+    public function approveRegularization(Request $request, int $id)
+    {
+        $user = $request->user();
+        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+            return $this->forbidden('Unauthorized');
+        }
+
+        try {
+            $attendance = $this->attendanceService->approveRegularization($id);
+            return $this->success($attendance, 'Regularization approved. Times updated.');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * POST /api/business/attendance/{id}/regularize/reject
+     * Admin rejects a regularization request.
+     */
+    public function rejectRegularization(Request $request, int $id)
+    {
+        $user = $request->user();
+        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+            return $this->forbidden('Unauthorized');
+        }
+
+        try {
+            $attendance = $this->attendanceService->rejectRegularization($id);
+            return $this->success($attendance, 'Regularization request rejected.');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * PATCH /api/business/attendance/{id}/edit-time
+     * Admin directly edits check-in/out time without a request.
+     */
+    public function adminEditTime(Request $request, int $id)
+    {
+        $user = $request->user();
+        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+            return $this->forbidden('Unauthorized to edit attendance time');
+        }
+
+        $request->validate([
+            'check_in_time'  => 'nullable|date_format:H:i,H:i:s',
+            'check_out_time' => 'nullable|date_format:H:i,H:i:s',
+            'notes'          => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $attendance = $this->attendanceService->adminEditTime($id, $request->all());
+            return $this->success($attendance, 'Attendance time updated successfully.');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * POST /api/business/attendance/wfh-mark/{leaveRequestId}
+     * Admin marks WFH attendance after approving a WFH leave request.
+     */
+    public function markWfhAttendance(Request $request, int $leaveRequestId)
+    {
+        $user = $request->user();
+        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+            return $this->forbidden('Unauthorized');
+        }
+
+        try {
+            $attendance = $this->attendanceService->markWfhAttendance($leaveRequestId);
+            return $this->success($attendance, 'WFH attendance marked successfully.');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
 }
+

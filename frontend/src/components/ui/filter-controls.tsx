@@ -9,7 +9,7 @@ export function FilterContainer({ className, children, ...props }: FilterContain
   return (
     <div
       className={cn(
-        "bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl p-2 md:p-3 shadow-sm mb-6 flex flex-wrap items-center gap-2 lg:gap-3 w-fit",
+        "relative z-30 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl p-2 md:p-3 shadow-sm mb-6 flex flex-wrap items-center gap-2 lg:gap-3 w-fit",
         className
       )}
       {...props}
@@ -114,7 +114,7 @@ export function FilterSelect({
   return (
     <div
       ref={containerRef}
-      className={cn("relative w-full shrink-0 select-none", wrapperClassName)}
+      className={cn("relative w-full shrink-0 select-none", isOpen ? "z-50" : "z-10", wrapperClassName)}
     >
       {/* Trigger Button */}
       <button
@@ -138,7 +138,7 @@ export function FilterSelect({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-hidden rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-lg flex flex-col animate-in fade-in-50 slide-in-from-top-1 duration-100">
+        <div className="absolute left-0 z-50 mt-1 min-w-full w-max max-w-sm max-h-64 overflow-hidden rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-2xl flex flex-col animate-in fade-in-50 slide-in-from-top-1 duration-100">
           {/* Search Box */}
           {searchable && (
             <div className="flex items-center border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-2.5 py-2 shrink-0">

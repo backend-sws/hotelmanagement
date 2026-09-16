@@ -3,6 +3,8 @@
 namespace App\Services\Business;
 
 use App\Models\Attendance;
+use App\Models\BusinessHoliday;
+use App\Models\LeaveRequest;
 use App\Models\Payroll;
 use App\Models\SaleCommission;
 use App\Models\SalaryAdvance;
@@ -68,14 +70,43 @@ class PayrollService
             $halfDays = $attendances->where('status', 'half_day')->count();
             $leaveDays = $attendances->where('status', 'leave')->count();
             $weekOffs = $attendances->where('status', 'week_off')->count();
-            $holidays = $attendances->where('status', 'holiday')->count();
+            
+            // Holidays: combine records in attendance table + defined in BusinessHoliday table
+            $definedHolidays = BusinessHoliday::where('business_id', $businessId)
+                ->whereBetween('date', [$startOfMonth, $endOfMonth])
+                ->count();
+            $holidays = max($attendances->where('status', 'holiday')->count(), $definedHolidays);
+
+            // Calculate paid leaves with admin override support
+            $approvedLeaveRequests = LeaveRequest::where('business_id', $businessId)
+                ->where('user_id', $userId)
+                ->where('request_type', 'leave')
+                ->where('status', 'approved')
+                ->where(function ($q) use ($startOfMonth, $endOfMonth) {
+                    $q->whereBetween('from_date', [$startOfMonth, $endOfMonth])
+                      ->orWhereBetween('to_date', [$startOfMonth, $endOfMonth]);
+                })
+                ->get();
+
+            $forcedPaid = 0;
+            $forcedUnpaid = 0;
+            foreach ($approvedLeaveRequests as $lr) {
+                $days = Carbon::parse($lr->from_date)->diffInDays(Carbon::parse($lr->to_date)) + 1;
+                if ($lr->admin_override_category === 'paid') {
+                    $forcedPaid += $days;
+                } elseif ($lr->admin_override_category === 'unpaid') {
+                    $forcedUnpaid += $days;
+                }
+            }
 
             // Calculate paid leaves quota — explicitly scoped to this business
             $paidLeaveQuota = LeavePolicy::withoutGlobalScopes()
                 ->where('business_id', $businessId)
                 ->where('is_paid', true)
                 ->sum('monthly_quota');
-            $paidLeaves = min($leaveDays, (int) $paidLeaveQuota);
+            $remainingLeaveDays = max(0, $leaveDays - $forcedPaid - $forcedUnpaid);
+            $quotaPaid = min($remainingLeaveDays, (int) $paidLeaveQuota);
+            $paidLeaves = min($leaveDays, $forcedPaid + $quotaPaid);
             $unpaidLeaves = max(0, $leaveDays - $paidLeaves);
 
             // Commission for this month (use sale relationship date for accuracy)
@@ -189,7 +220,10 @@ class PayrollService
                 return Carbon::parse($a->date)->lessThanOrEqualTo($effectiveEndDate);
             });
             $elapsedWeekOffs = $elapsedAttendances->where('status', 'week_off')->count();
-            $elapsedHolidays = $elapsedAttendances->where('status', 'holiday')->count();
+            $elapsedDefinedHolidays = BusinessHoliday::where('business_id', $businessId)
+                ->whereBetween('date', [$startOfMonth, $effectiveEndDate])
+                ->count();
+            $elapsedHolidays = max($elapsedAttendances->where('status', 'holiday')->count(), $elapsedDefinedHolidays);
             $elapsedWorkingDays = $elapsedDays - $elapsedWeekOffs - $elapsedHolidays;
             if ($elapsedWorkingDays <= 0) $elapsedWorkingDays = $elapsedDays;
 

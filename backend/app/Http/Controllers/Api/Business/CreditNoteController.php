@@ -156,11 +156,12 @@ class CreditNoteController extends Controller
                         $product->increment('quantity', $ip['quantity']);
                         InventoryMovement::create([
                             'product_id' => $product->id,
-                        'type' => 'in',
-                        'quantity' => $ip['quantity'],
-                        'reference_type' => 'credit_note',
-                        'reference_id' => $cn->id,
-                    ]);
+                            'type' => 'in',
+                            'quantity' => $ip['quantity'],
+                            'reference_type' => 'credit_note',
+                            'reference_id' => $cn->id,
+                        ]);
+                    }
                 }
             }
 

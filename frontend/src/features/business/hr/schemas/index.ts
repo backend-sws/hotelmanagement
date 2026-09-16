@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
 export const leaveSchema = z.object({
+  request_type: z.enum(['leave', 'wfh']).default('leave'),
   leave_type: z.string().min(1, 'Leave type is required'),
+  leave_category: z.enum(['paid', 'unpaid', 'sick', 'casual', 'earned', 'comp_off']).default('paid'),
   from_date: z.string().min(1, 'From date is required'),
   to_date: z.string().min(1, 'To date is required'),
   reason: z.string().min(1, 'Reason is required'),

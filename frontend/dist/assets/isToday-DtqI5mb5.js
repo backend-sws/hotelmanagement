@@ -1,0 +1,1 @@
+import{b as e,m as t,p as n}from"./format-DoPNESdd.js";import{t as r}from"./constructNow-BGuDs82_.js";function i(e,r,i){let[a,o]=t(i?.in,e,r);return+n(a)==+n(o)}function a(t,n){return i(e(n?.in||t,t),r(n?.in||t))}export{a as t};

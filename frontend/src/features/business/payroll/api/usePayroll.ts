@@ -25,7 +25,15 @@ export interface PayrollRecord {
   status: string;
   paid_date: string | null;
   created_at?: string;
-  user?: { id: number; name: string; role?: string; email?: string };
+  user?: { 
+    id: number; 
+    name: string; 
+    role?: string; 
+    email?: string; 
+    department?: string | null;
+    designation?: string | null;
+    join_date?: string | null;
+  };
   salary_components?: any;
 }
 

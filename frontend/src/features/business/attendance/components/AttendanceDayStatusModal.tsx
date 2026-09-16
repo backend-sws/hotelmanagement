@@ -1,29 +1,47 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { useImportAttendance } from '../api/useAttendance';
+import { useImportAttendance, type BusinessHoliday } from '../api/useAttendance';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/button';
 import { FilterSelect } from '@/components/ui/filter-controls';
 import { format } from 'date-fns';
+import { Gift } from 'lucide-react';
 
 interface AttendanceDayStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
   staffList: any[];
+  holidays?: BusinessHoliday[];
 }
 
-export const AttendanceDayStatusModal = ({ isOpen, onClose, staffList }: AttendanceDayStatusModalProps) => {
+export const AttendanceDayStatusModal = ({ isOpen, onClose, staffList, holidays = [] }: AttendanceDayStatusModalProps) => {
   const importMutation = useImportAttendance();
 
-  const { register, handleSubmit, control, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, control, reset, watch, setValue, formState: { errors } } = useForm({
     defaultValues: {
       date: format(new Date(), 'yyyy-MM-dd'),
       status: 'holiday',
       notes: ''
     }
   });
+
+  const selectedDate = watch('date');
+  const holiday = React.useMemo(() => {
+    if (!selectedDate || !holidays) return null;
+    return holidays.find(h => {
+      const d = h.date.includes('T') ? h.date.split('T')[0] : h.date;
+      return d === selectedDate;
+    });
+  }, [holidays, selectedDate]);
+
+  React.useEffect(() => {
+    if (holiday) {
+      setValue('status', 'holiday');
+      setValue('notes', holiday.name);
+    }
+  }, [holiday, setValue]);
 
   const onSubmit = (data: any) => {
     // Apply to all active staff
@@ -64,6 +82,18 @@ export const AttendanceDayStatusModal = ({ isOpen, onClose, staffList }: Attenda
             )}
           />
         </div>
+
+        {holiday && (
+          <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 p-3 rounded-xl flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-bold">
+              <Gift className="w-4 h-4 text-purple-500 shrink-0" />
+              <span>Designated Company Holiday: {holiday.name}</span>
+            </div>
+            <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-600 dark:text-purple-300">
+              {holiday.type}
+            </span>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium mb-1">Day Status</label>

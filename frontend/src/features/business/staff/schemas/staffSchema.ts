@@ -6,6 +6,7 @@ export const staffSchema = z.object({
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   password: z.string().optional(),
   role: z.string(),
+  department: z.string().optional().nullable(),
   salary_type: z.enum(['monthly', 'daily']),
   monthly_salary: z.number().min(0),
   daily_salary: z.number().min(0).optional().nullable(),

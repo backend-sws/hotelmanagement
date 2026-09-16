@@ -6,7 +6,9 @@ use App\Http\Controllers\BaseController;
 use App\Services\Business\PayrollService;
 use App\Models\Payroll;
 use App\Models\LeavePolicy;
+use App\Models\LeaveRequest;
 use App\Models\SalaryAdvance;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class PayrollController extends BaseController
@@ -71,7 +73,19 @@ class PayrollController extends BaseController
                 }
             }
 
-            $payroll->load('user');
+            $payroll->load(['user', 'business']);
+
+            $staffPivot = \Illuminate\Support\Facades\DB::table('business_user')
+                ->where('business_id', $payroll->business_id)
+                ->where('user_id', $payroll->user_id)
+                ->first();
+
+            if ($staffPivot && $payroll->user) {
+                $payroll->user->designation = $staffPivot->role ?? 'Staff Member';
+                $payroll->user->department = $staffPivot->department ?? null;
+                $payroll->user->join_date = $staffPivot->join_date ?? null;
+            }
+
             return $this->success($payroll, 'Payroll detail retrieved successfully');
         } catch (\Throwable $e) {
             return $this->error($e->getMessage(), 500);
@@ -150,6 +164,114 @@ class PayrollController extends BaseController
         try {
             $policies = LeavePolicy::orderBy('leave_type')->get();
             return $this->success($policies, 'Leave policies retrieved');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    public function leaveBalances(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $targetUserId = $request->input('user_id', $user->id);
+
+            // Non-managers can only view their own balances
+            $isManager = $user->hasRole(['admin', 'manager', 'Business Admin', 'Superadmin']);
+            if (!$isManager && (int) $targetUserId !== $user->id) {
+                $targetUserId = $user->id;
+            }
+
+            $year = $request->input('year', date('Y'));
+            $startOfYear = Carbon::createFromDate((int) $year, 1, 1)->startOfDay();
+            $endOfYear = Carbon::createFromDate((int) $year, 12, 31)->endOfDay();
+
+            $businessId = app('current_business_id');
+            $policies = LeavePolicy::where('business_id', $businessId)->get();
+
+            // If no policies defined yet, auto-seed standard enterprise defaults
+            if ($policies->isEmpty()) {
+                $defaultPolicies = [
+                    ['leave_type' => 'Casual Leave (CL)', 'monthly_quota' => 1.0, 'is_paid' => true],
+                    ['leave_type' => 'Sick Leave (SL)', 'monthly_quota' => 0.5, 'is_paid' => true],
+                    ['leave_type' => 'Paid / Earned Leave (PL)', 'monthly_quota' => 1.5, 'is_paid' => true],
+                    ['leave_type' => 'Unpaid Leave (LWP)', 'monthly_quota' => 0.0, 'is_paid' => false],
+                ];
+                foreach ($defaultPolicies as $dp) {
+                    LeavePolicy::create(array_merge($dp, ['business_id' => $businessId]));
+                }
+                $policies = LeavePolicy::where('business_id', $businessId)->get();
+            }
+
+            // Get approved leaves for this user in this year
+            $approvedLeaves = LeaveRequest::where('business_id', $businessId)
+                ->where('user_id', $targetUserId)
+                ->where('request_type', 'leave')
+                ->where('status', 'approved')
+                ->where(function ($q) use ($startOfYear, $endOfYear) {
+                    $q->whereBetween('from_date', [$startOfYear, $endOfYear])
+                      ->orWhereBetween('to_date', [$startOfYear, $endOfYear]);
+                })
+                ->get();
+
+            $pendingCount = LeaveRequest::where('business_id', $businessId)
+                ->where('user_id', $targetUserId)
+                ->where('status', 'pending')
+                ->count();
+
+            $balances = [];
+            $totalAllocatedPaid = 0;
+            $totalUsedPaid = 0;
+
+            foreach ($policies as $policy) {
+                $annualQuota = round((float) $policy->monthly_quota * 12, 1);
+                if ($policy->is_paid) {
+                    $totalAllocatedPaid += $annualQuota;
+                }
+
+                $usedDays = 0;
+                foreach ($approvedLeaves as $lr) {
+                    $matchesType = (
+                        strcasecmp($lr->leave_type, $policy->leave_type) === 0 ||
+                        str_contains(strtolower($policy->leave_type), strtolower($lr->leave_type)) ||
+                        str_contains(strtolower($lr->leave_type), strtolower($policy->leave_type)) ||
+                        (strtolower($lr->leave_category ?? '') === 'sick' && str_contains(strtolower($policy->leave_type), 'sick')) ||
+                        (strtolower($lr->leave_category ?? '') === 'casual' && str_contains(strtolower($policy->leave_type), 'casual')) ||
+                        (strtolower($lr->leave_category ?? '') === 'earned' && str_contains(strtolower($policy->leave_type), 'earned'))
+                    );
+
+                    if ($matchesType) {
+                        $from = Carbon::parse($lr->from_date);
+                        $to = Carbon::parse($lr->to_date);
+                        $usedDays += ($from->diffInDays($to) + 1);
+                    }
+                }
+
+                if ($policy->is_paid) {
+                    $totalUsedPaid += $usedDays;
+                }
+
+                $remaining = max(0, $annualQuota - $usedDays);
+
+                $balances[] = [
+                    'id' => $policy->id,
+                    'leave_type' => $policy->leave_type,
+                    'is_paid' => (bool) $policy->is_paid,
+                    'monthly_quota' => (float) $policy->monthly_quota,
+                    'annual_quota' => $annualQuota,
+                    'used_days' => $usedDays,
+                    'remaining_days' => $remaining,
+                ];
+            }
+
+            return $this->success([
+                'user_id' => (int) $targetUserId,
+                'year' => (int) $year,
+                'balances' => $balances,
+                'total_allocated_paid' => $totalAllocatedPaid,
+                'total_used_paid' => $totalUsedPaid,
+                'total_remaining_paid' => max(0, $totalAllocatedPaid - $totalUsedPaid),
+                'pending_requests_count' => $pendingCount,
+            ], 'Leave balances retrieved successfully');
         } catch (\Throwable $e) {
             return $this->error($e->getMessage(), 500);
         }

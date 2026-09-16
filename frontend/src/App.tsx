@@ -65,6 +65,9 @@ const GodownsPage = lazy(() => import('@/features/business/stock/pages/GodownsPa
 const StaffPage = lazy(() => import('@/features/business/staff/pages/StaffPage'));
 const StaffDetailsPage = lazy(() => import('@/features/business/staff/pages/StaffDetailsPage'));
 const AttendancePage = lazy(() => import('@/features/business/attendance/pages/AttendancePage'));
+const HolidayCalendarPage = lazy(() => import('@/features/business/attendance/pages/HolidayCalendarPage'));
+const WorkSettingsPage = lazy(() => import('@/features/business/attendance/pages/WorkSettingsPage'));
+const NoticeBoardPage = lazy(() => import('@/features/business/hr/pages/NoticeBoardPage'));
 const PayrollPage = lazy(() => import('@/features/business/payroll/pages/PayrollPage'));
 const PayrollComponentsPage = lazy(() => import('@/features/business/payroll/pages/PayrollComponentsPage'));
 const PayrollDetailsPage = lazy(() => import('@/features/business/payroll/pages/PayrollDetailsPage'));
@@ -368,6 +371,11 @@ function App() {
             <Route path="/staff" element={<BusinessRoute><StaffPage /></BusinessRoute>} />
             <Route path="/staff/:id" element={<BusinessRoute><StaffDetailsPage /></BusinessRoute>} />
             <Route path="/attendance" element={<BusinessRoute><AttendancePage /></BusinessRoute>} />
+            <Route path="/attendance/holidays" element={<BusinessRoute><HolidayCalendarPage /></BusinessRoute>} />
+            <Route path="/setup/work-settings" element={<BusinessRoute><WorkSettingsPage /></BusinessRoute>} />
+            <Route path="/attendance/work-settings" element={<Navigate to="/setup/work-settings" replace />} />
+            <Route path="/notices" element={<BusinessRoute><NoticeBoardPage /></BusinessRoute>} />
+            <Route path="/hr/notices" element={<Navigate to="/notices" replace />} />
             <Route path="/payroll" element={<BusinessRoute><PayrollPage /></BusinessRoute>} />
             <Route path="/payroll/components" element={<BusinessRoute><PayrollComponentsPage /></BusinessRoute>} />
             <Route path="/payroll/:id" element={<BusinessRoute><PayrollDetailsPage /></BusinessRoute>} />

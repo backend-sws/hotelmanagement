@@ -241,6 +241,29 @@ Route::prefix('v1')->group(function () {
                 Route::put('attendance/{id}/approve', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'approve']);
                 Route::put('attendance/{id}/unapprove', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'unapprove']);
                 Route::apiResource('attendance', \App\Http\Controllers\Api\Business\AttendanceController::class)->only(['index']);
+
+                // ── Regularization (Backdated time correction) ──────────────
+                Route::post('attendance/regularize', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'requestRegularization']);
+                Route::get('attendance/regularization-requests', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'regularizationRequests']);
+                Route::post('attendance/{id}/regularize/approve', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'approveRegularization']);
+                Route::post('attendance/{id}/regularize/reject', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'rejectRegularization']);
+                Route::patch('attendance/{id}/edit-time', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'adminEditTime']);
+
+                // ── WFH Attendance Mark ─────────────────────────────────────
+                Route::post('attendance/wfh-mark/{leaveRequestId}', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'markWfhAttendance']);
+
+                // ── Work Settings ───────────────────────────────────────────
+                Route::get('work-settings', [\App\Http\Controllers\Api\Business\WorkSettingController::class, 'show']);
+                Route::post('work-settings', [\App\Http\Controllers\Api\Business\WorkSettingController::class, 'upsert']);
+
+                // ── Holiday Calendar ────────────────────────────────────────
+                Route::get('holidays', [\App\Http\Controllers\Api\Business\BusinessHolidayController::class, 'index']);
+                Route::post('holidays', [\App\Http\Controllers\Api\Business\BusinessHolidayController::class, 'store']);
+                Route::post('holidays/bulk', [\App\Http\Controllers\Api\Business\BusinessHolidayController::class, 'bulkStore']);
+                Route::delete('holidays/{id}', [\App\Http\Controllers\Api\Business\BusinessHolidayController::class, 'destroy']);
+                Route::post('holidays/auto-apply', [\App\Http\Controllers\Api\Business\BusinessHolidayController::class, 'autoApply']);
+
+                // ── Payroll ─────────────────────────────────────────────────
                 Route::post('payroll/generate', [\App\Http\Controllers\Api\Business\PayrollController::class, 'generate']);
                 Route::post('payroll/{payroll}/confirm', [\App\Http\Controllers\Api\Business\PayrollController::class, 'confirm']);
                 Route::post('payroll/{payroll}/mark-paid', [\App\Http\Controllers\Api\Business\PayrollController::class, 'markPaid']);
@@ -249,6 +272,7 @@ Route::prefix('v1')->group(function () {
                 Route::put('payroll/{payroll}', [\App\Http\Controllers\Api\Business\PayrollController::class, 'update']);
                 Route::apiResource('payroll-components', \App\Http\Controllers\Api\Business\PayrollComponentController::class);
                 Route::get('leave-policies', [\App\Http\Controllers\Api\Business\PayrollController::class, 'leavePolicies']);
+                Route::get('leave-policies/balances', [\App\Http\Controllers\Api\Business\PayrollController::class, 'leaveBalances']);
                 Route::post('leave-policies', [\App\Http\Controllers\Api\Business\PayrollController::class, 'storeLeavePolicy']);
                 Route::put('leave-policies/{leavePolicy}', [\App\Http\Controllers\Api\Business\PayrollController::class, 'updateLeavePolicy']);
                 Route::delete('leave-policies/{leavePolicy}', [\App\Http\Controllers\Api\Business\PayrollController::class, 'deleteLeavePolicy']);
@@ -257,7 +281,17 @@ Route::prefix('v1')->group(function () {
                 Route::patch('salary-advances/{salaryAdvance}/status', [\App\Http\Controllers\Api\Business\PayrollController::class, 'updateSalaryAdvanceStatus']);
                 Route::apiResource('leave-requests', \App\Http\Controllers\Api\Business\LeaveRequestController::class);
                 Route::patch('leave-requests/{leave_request}/status', [\App\Http\Controllers\Api\Business\LeaveRequestController::class, 'updateStatus']);
+
+                // ── WFH Leave Override ──────────────────────────────────────
+                Route::patch('leave-requests/{leave_request}/override-category', [\App\Http\Controllers\Api\Business\LeaveRequestController::class, 'overrideCategory']);
+
+                // ── Notice Board ────────────────────────────────────────────
+                Route::get('notices/unread-count', [\App\Http\Controllers\Api\Business\NoticeBoardController::class, 'unreadCount']);
+                Route::post('notices/{id}/read', [\App\Http\Controllers\Api\Business\NoticeBoardController::class, 'markRead']);
+                Route::post('notices/{id}/pin', [\App\Http\Controllers\Api\Business\NoticeBoardController::class, 'togglePin']);
+                Route::apiResource('notices', \App\Http\Controllers\Api\Business\NoticeBoardController::class)->only(['index', 'store', 'destroy']);
             });
+
 
             // 🔒 System Audit Logs (Professional+)
             Route::middleware(['feature:has_activity_logs'])->group(function () {

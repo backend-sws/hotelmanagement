@@ -28,6 +28,18 @@ class Attendance extends Model
         'location_id',
         'notes',
         'approved_by',
+        // WFH & Hours tracking
+        'work_type',
+        'actual_hours',
+        'late_mark_minutes',
+        // Regularization (backdated correction)
+        'regularization_requested_at',
+        'regularization_requested_checkin',
+        'regularization_requested_checkout',
+        'regularization_reason',
+        'regularization_status',
+        'regularization_approved_by',
+        'regularization_actioned_at',
     ];
 
     protected $casts = [
@@ -37,6 +49,9 @@ class Attendance extends Model
         'check_in_longitude' => 'float',
         'check_out_latitude' => 'float',
         'check_out_longitude' => 'float',
+        'actual_hours' => 'float',
+        'regularization_requested_at' => 'datetime',
+        'regularization_actioned_at' => 'datetime',
     ];
 
     public function user()
@@ -47,6 +62,11 @@ class Attendance extends Model
     public function location()
     {
         return $this->belongsTo(BusinessLocation::class, 'location_id');
+    }
+
+    public function regularizationApprovedBy()
+    {
+        return $this->belongsTo(User::class, 'regularization_approved_by');
     }
 
     public function approvedBy()
@@ -63,6 +83,43 @@ class Attendance extends Model
             return \Illuminate\Support\Facades\Storage::disk('s3')->url($value);
         }
         return null;
+    }
+
+    /**
+     * Calculate actual working hours from check_in and check_out.
+     * Returns decimal hours (e.g., 8.5 for 8h 30m).
+     */
+    public function computeActualHours(): ?float
+    {
+        if (!$this->check_in_time || !$this->check_out_time) {
+            return null;
+        }
+        $in  = \Carbon\Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->check_in_time);
+        $out = \Carbon\Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->check_out_time);
+        if ($out->lessThanOrEqualTo($in)) {
+            return null;
+        }
+        return round($in->diffInMinutes($out) / 60, 2);
+    }
+
+    /**
+     * Efficiency percentage: actual_hours / standard_hours * 100.
+     * Standard hours passed as parameter (from BusinessWorkSetting or staff override).
+     */
+    public function efficiencyPercentage(float $standardHours): float
+    {
+        if ($standardHours <= 0 || !$this->actual_hours) {
+            return 0.0;
+        }
+        return round(($this->actual_hours / $standardHours) * 100, 1);
+    }
+
+    /**
+     * Has a pending regularization request.
+     */
+    public function hasPendingRegularization(): bool
+    {
+        return $this->regularization_status === 'pending';
     }
 
     public function getCheckOutPhotoAttribute($value)

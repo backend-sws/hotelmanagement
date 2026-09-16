@@ -165,7 +165,7 @@ export default function PayrollPage() {
         )}
         
         {/* Analytics Section (Full Width Grid) */}
-        {isManager && (
+        {isManager ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="transition-transform hover:-translate-y-1 duration-300">
               <CustomKpiCard
@@ -204,6 +204,48 @@ export default function PayrollPage() {
                 icon={<ShieldAlert size={18} />}
                 glowColor="primary"
                 subtitle="Confirmed, unpaid records"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="transition-transform hover:-translate-y-1 duration-300">
+              <CustomKpiCard
+                title="Total In-Hand Salary"
+                value={formatCurrency(stats.totalExpense)}
+                icon={<IndianRupee size={18} />}
+                glowColor="emerald"
+                subtitle="Sum of recorded payslips"
+              />
+            </div>
+
+            <div className="transition-transform hover:-translate-y-1 duration-300">
+              <CustomKpiCard
+                title="Disbursed Payslips"
+                value={stats.paidCount}
+                icon={<CheckCircle size={18} />}
+                glowColor="primary"
+                subtitle="Completed salary payouts"
+              />
+            </div>
+
+            <div className="transition-transform hover:-translate-y-1 duration-300">
+              <CustomKpiCard
+                title="Processing / In Review"
+                value={stats.draftCount}
+                icon={<Clock size={18} />}
+                glowColor="amber"
+                subtitle="Draft status payslips"
+              />
+            </div>
+
+            <div className="transition-transform hover:-translate-y-1 duration-300">
+              <CustomKpiCard
+                title="Confirmed Payouts"
+                value={stats.confirmedCount}
+                icon={<ShieldAlert size={18} />}
+                glowColor="indigo"
+                subtitle="Approved and ready"
               />
             </div>
           </div>

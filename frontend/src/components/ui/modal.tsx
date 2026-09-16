@@ -4,14 +4,16 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 
 interface ModalProps {
-  isOpen: boolean;
+  isOpen?: boolean;
+  open?: boolean;
   onClose: () => void;
   title: ReactNode;
   description?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
   overflowVisible?: boolean;
+  className?: string;
 }
 
 const maxWidthClasses = {
@@ -23,10 +25,12 @@ const maxWidthClasses = {
   '3xl': 'max-w-3xl',
   '4xl': 'max-w-4xl',
   '5xl': 'max-w-5xl',
+  '6xl': 'max-w-6xl',
 };
 
-export function Modal({ isOpen, onClose, title, description, children, footer, maxWidth = '2xl', overflowVisible = false }: ModalProps) {
-  if (!isOpen) return null;
+export function Modal({ isOpen, open, onClose, title, description, children, footer, maxWidth = '2xl', overflowVisible = false, className }: ModalProps) {
+  const isVisible = isOpen ?? open ?? false;
+  if (!isVisible) return null;
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -44,7 +48,8 @@ export function Modal({ isOpen, onClose, title, description, children, footer, m
           className={cn(
             "relative bg-white dark:bg-[#09090b] w-full rounded-2xl shadow-2xl border border-slate-200/80 dark:border-white/10 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200",
             maxWidthClasses[maxWidth],
-            overflowVisible ? "overflow-visible" : "overflow-hidden"
+            overflowVisible ? "overflow-visible" : "overflow-hidden",
+            className
           )}
           onClick={e => e.stopPropagation()}
         >

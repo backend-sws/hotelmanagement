@@ -9,6 +9,7 @@ export interface StaffMember {
   phone: string;
   avatar: string | null;
   role: string;
+  department?: string | null;
   monthly_salary: number;
   commission_rate: number;
   join_date: string | null;

@@ -14,7 +14,6 @@ class LeaveRequestController extends Controller
     {
         $query = LeaveRequest::with(['user', 'approvedBy'])->orderBy('created_at', 'desc');
 
-        // If the user is just a regular staff member, only show their own leave requests
         $user = $request->user();
         $isManager = $user->hasRole(['admin', 'manager', 'Business Admin', 'Superadmin']);
         
@@ -28,6 +27,18 @@ class LeaveRequestController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Filter by request_type: leave or wfh
+        if ($request->has('request_type')) {
+            $query->where('request_type', $request->request_type);
+        }
+
+        // Filter for WFH not yet attendance-marked
+        if ($request->boolean('wfh_pending_attendance')) {
+            $query->where('request_type', 'wfh')
+                  ->where('status', 'approved')
+                  ->where('wfh_attendance_marked', false);
+        }
+
         return response()->json([
             'success' => true,
             'data' => $query->get()
@@ -37,25 +48,29 @@ class LeaveRequestController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'leave_type' => 'required|string',
-            'from_date' => 'required|date',
-            'to_date' => 'required|date|after_or_equal:from_date',
-            'reason' => 'required|string',
+            'request_type'  => 'nullable|in:leave,wfh',
+            'leave_type'    => 'required|string',
+            'leave_category' => 'nullable|in:paid,unpaid,sick,casual,earned,comp_off',
+            'from_date'     => 'required|date',
+            'to_date'       => 'required|date|after_or_equal:from_date',
+            'reason'        => 'required|string',
         ]);
 
         $leave = LeaveRequest::create([
-            'user_id' => $request->user()->id,
-            'leave_type' => $validated['leave_type'],
-            'from_date' => $validated['from_date'],
-            'to_date' => $validated['to_date'],
-            'reason' => $validated['reason'],
-            'status' => 'pending',
+            'user_id'        => $request->user()->id,
+            'request_type'   => $validated['request_type'] ?? 'leave',
+            'leave_type'     => $validated['leave_type'],
+            'leave_category' => $validated['leave_category'] ?? 'paid',
+            'from_date'      => $validated['from_date'],
+            'to_date'        => $validated['to_date'],
+            'reason'         => $validated['reason'],
+            'status'         => 'pending',
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Leave request submitted successfully.',
-            'data' => $leave->load('user')
+            'message' => $leave->isWfh() ? 'WFH request submitted successfully.' : 'Leave request submitted successfully.',
+            'data'    => $leave->load('user')
         ]);
     }
 
@@ -113,7 +128,8 @@ class LeaveRequestController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $validated = $request->validate([
-            'status' => 'required|in:approved,rejected',
+            'status'       => 'required|in:approved,rejected',
+            'admin_remark' => 'nullable|string|max:500',
         ]);
 
         $user = $request->user();
@@ -126,14 +142,48 @@ class LeaveRequestController extends Controller
         $leaveRequest = LeaveRequest::findOrFail($id);
         
         $leaveRequest->update([
-            'status' => $validated['status'],
-            'approved_by' => $user->id,
+            'status'       => $validated['status'],
+            'approved_by'  => $user->id,
+            'admin_remark' => $validated['admin_remark'] ?? null,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Leave status updated successfully.',
-            'data' => $leaveRequest->load(['user', 'approvedBy'])
+            'data'    => $leaveRequest->load(['user', 'approvedBy'])
+        ]);
+    }
+
+    /**
+     * PATCH /api/business/leave-requests/{id}/override-category
+     * Admin overrides the leave category: paid → unpaid or vice versa.
+     * This override is respected by PayrollService when calculating salary.
+     */
+    public function overrideCategory(Request $request, $id)
+    {
+        $user = $request->user();
+        $isManager = $user->hasRole(['admin', 'manager', 'Business Admin', 'Superadmin']);
+
+        if (!$isManager) {
+            return response()->json(['message' => 'Unauthorized. Only managers can override leave category.'], 403);
+        }
+
+        $request->validate([
+            'admin_override_category' => 'required|in:paid,unpaid',
+            'admin_remark'            => 'nullable|string|max:500',
+        ]);
+
+        $leaveRequest = LeaveRequest::findOrFail($id);
+
+        $leaveRequest->update([
+            'admin_override_category' => $request->admin_override_category,
+            'admin_remark'            => $request->admin_remark ?? $leaveRequest->admin_remark,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Leave category overridden to ' . $request->admin_override_category . '.',
+            'data'    => $leaveRequest->load(['user', 'approvedBy'])
         ]);
     }
 }

@@ -29,6 +29,7 @@ class StaffService
                 'users.phone',
                 'users.avatar',
                 'business_user.role',
+                'business_user.department',
                 'business_user.salary_type',
                 'business_user.monthly_salary',
                 'business_user.daily_salary',
@@ -86,6 +87,7 @@ class StaffService
                 'business_id' => $businessId,
                 'user_id' => $user->id,
                 'role' => $data['role'] ?? 'staff',
+                'department' => $data['department'] ?? null,
                 'salary_type' => $data['salary_type'] ?? 'monthly',
                 'monthly_salary' => $data['monthly_salary'] ?? 0,
                 'daily_salary' => $data['daily_salary'] ?? null,
@@ -163,6 +165,7 @@ class StaffService
             $pivotData['status'] = $data['status'];
         }
         if (isset($data['role'])) $pivotData['role'] = $data['role'];
+        if (array_key_exists('department', $data)) $pivotData['department'] = $data['department'];
 
         if (!empty($pivotData)) {
             $pivotData['updated_at'] = now();
@@ -213,7 +216,7 @@ class StaffService
             ->where('business_user.user_id', $userId)
             ->select(
                 'users.id', 'users.name', 'users.email', 'users.phone', 'users.avatar',
-                'business_user.role', 'business_user.salary_type', 'business_user.monthly_salary',
+                'business_user.role', 'business_user.department', 'business_user.salary_type', 'business_user.monthly_salary',
                 'business_user.daily_salary', 'business_user.salary_components',
                 'business_user.commission_rate', 'business_user.join_date', 'business_user.status'
             )

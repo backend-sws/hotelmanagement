@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAttendance, useMarkAttendance } from '../api/useAttendance';
 import { useStaff } from '../../staff/api/useStaff';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -17,13 +18,23 @@ import { exportToCsv } from '@/utils/exportToCsv';
 import { useAuthStore } from '@/store/authStore';
 import { AttendanceMonthlyGrid } from '../components/AttendanceMonthlyGrid';
 import { getAttendanceColumns } from '../constants/attendanceColumns';
-import { useApproveAttendance, useUnapproveAttendance, useTodayAttendance } from '../api/useAttendance';
+import {
+  useApproveAttendance,
+  useUnapproveAttendance,
+  useTodayAttendance,
+  useAttendanceReport,
+  usePendingRegularizations,
+  useHolidays,
+} from '../api/useAttendance';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { FilterContainer, FilterSelect, FilterReset } from '@/components/ui/filter-controls';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { MonthPicker } from '@/components/ui/MonthPicker';
+import { RegularizationModal } from '../components/RegularizationModal';
+import { RegularizationAdminModal } from '../components/RegularizationAdminModal';
 
 export default function AttendancePage() {
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState({
     from: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
     to: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
@@ -34,6 +45,8 @@ export default function AttendancePage() {
   const [isMarkOpen, setIsMarkOpen] = useState(false);
   const [isDayStatusOpen, setIsDayStatusOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isRegularizeOpen, setIsRegularizeOpen] = useState(false);
+  const [isRegularizeAdminOpen, setIsRegularizeAdminOpen] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
@@ -43,7 +56,12 @@ export default function AttendancePage() {
   const approveMutation = useApproveAttendance();
   const unapproveMutation = useUnapproveAttendance();
   const { data: todayStatus } = useTodayAttendance();
+  const { data: monthlyReport } = useAttendanceReport(selectedMonth);
+  const { data: pendingRegData } = usePendingRegularizations();
+  const { data: holidays = [] } = useHolidays(selectedMonth);
   const user = useAuthStore(state => state.user);
+
+  const pendingRegs = pendingRegData?.data || pendingRegData || [];
 
   const isCheckedIn = !!todayStatus?.check_in_time;
   const isCheckedOut = !!todayStatus?.check_out_time;
@@ -121,6 +139,14 @@ export default function AttendancePage() {
       absentLeaveCount
     };
   }, [attendanceData, isManager]);
+
+  const avgEfficiency = useMemo(() => {
+    if (!monthlyReport || !Array.isArray(monthlyReport) || monthlyReport.length === 0) return null;
+    const items = monthlyReport.filter((r: any) => r.efficiency_pct !== undefined && r.efficiency_pct !== null);
+    if (items.length === 0) return null;
+    const sum = items.reduce((acc: number, r: any) => acc + (r.efficiency_pct || 0), 0);
+    return (sum / items.length).toFixed(1);
+  }, [monthlyReport]);
 
   const handleExport = () => {
     if (!attendanceData || !attendanceData.data) return;
@@ -237,13 +263,53 @@ export default function AttendancePage() {
                   <UserCheck className="w-3.5 h-3.5 mr-1.5 text-purple-500" />
                   Mark Manual
                 </Button>
+
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsRegularizeAdminOpen(true)}
+                  className={`bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-xs font-bold px-3 h-10 ${
+                    pendingRegs.length > 0 ? 'border-amber-500/60 text-amber-500 hover:bg-amber-500/10' : ''
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
+                  Correction Requests
+                  {pendingRegs.length > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[10px] font-black animate-pulse">
+                      {pendingRegs.length}
+                    </span>
+                  )}
+                </Button>
               </>
             )}
 
             <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => setIsRegularizeOpen(true)}
+              className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-xs font-bold px-3.5 h-10 hover:bg-slate-50 dark:hover:bg-zinc-800 cursor-pointer"
+            >
+              <Clock className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
+              Request Regularization
+            </Button>
+
+            {!isManager && (
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/hr/leave-requests')}
+                className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-xs font-bold px-3.5 h-10 hover:bg-slate-50 dark:hover:bg-zinc-800 cursor-pointer"
+              >
+                <Calendar className="w-3.5 h-3.5 mr-1.5 text-primary-500" />
+                Apply Leave / WFH
+              </Button>
+            )}
+
+            <Button 
+              variant="brand"
               size="sm"
               onClick={() => setIsCheckInOpen(true)}
-              className="bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md shadow-primary-500/20 px-4 h-10"
+              className="text-xs font-bold px-4 h-10 cursor-pointer"
             >
               <Clock className="w-4 h-4 mr-1.5" />
               {isCheckedOut ? 'Done for Today' : isCheckedIn ? 'Self Check Out' : 'Self Check In'}
@@ -255,13 +321,20 @@ export default function AttendancePage() {
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-0 pb-8 space-y-6">
         
         {/* KPI Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <CustomKpiCard
             title="Present Days"
             value={stats.presentCount}
             icon={<UserCheck className="w-5 h-5 text-white" />}
             glowColor="emerald"
             subtitle="Active present records"
+          />
+          <CustomKpiCard
+            title="Avg Efficiency"
+            value={avgEfficiency !== null ? `${avgEfficiency}%` : '—'}
+            icon={<Award className="w-5 h-5 text-white" />}
+            glowColor="purple"
+            subtitle="Working hours efficiency"
           />
           <CustomKpiCard
             title="Pending Approval"
@@ -271,11 +344,11 @@ export default function AttendancePage() {
             subtitle="Awaiting manager verification"
           />
           <CustomKpiCard
-            title="Outside Geofence"
-            value={stats.geofenceOutCount}
+            title="Correction Requests"
+            value={pendingRegs.length}
             icon={<ShieldAlert className="w-5 h-5 text-white" />}
-            glowColor="rose"
-            subtitle="Flagged remote check-ins"
+            glowColor="amber"
+            subtitle="Arrival time requests"
           />
           <CustomKpiCard
             title="Absent / Leave"
@@ -369,6 +442,8 @@ export default function AttendancePage() {
             isManager={isManager}
             loggedInUserId={user?.id || 0}
             isLoading={isLoading || isStaffLoading}
+            monthlyReport={monthlyReport || []}
+            holidays={holidays}
           />
         )}
       </div>
@@ -383,12 +458,14 @@ export default function AttendancePage() {
         isOpen={isDayStatusOpen}
         onClose={() => setIsDayStatusOpen(false)}
         staffList={staffToDisplay}
+        holidays={holidays}
       />
 
       <AttendanceMarkModal
         isOpen={isMarkOpen}
         onClose={() => setIsMarkOpen(false)}
         staffList={staffToDisplay}
+        holidays={holidays}
       />
 
       <AttendanceImportModal
@@ -396,6 +473,18 @@ export default function AttendancePage() {
         onClose={() => setIsImportOpen(false)}
         staffList={staffToDisplay}
         month={selectedMonth}
+      />
+
+      <RegularizationModal
+        isOpen={isRegularizeOpen}
+        onClose={() => setIsRegularizeOpen(false)}
+        staffList={isManager ? staffList : undefined}
+        defaultUserId={selectedStaff ? parseInt(selectedStaff) : undefined}
+      />
+
+      <RegularizationAdminModal
+        isOpen={isRegularizeAdminOpen}
+        onClose={() => setIsRegularizeAdminOpen(false)}
       />
 
       <Modal isOpen={!!photoUrl} onClose={() => setPhotoUrl(null)} title="Attendance Photo">
