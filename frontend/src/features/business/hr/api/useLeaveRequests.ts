@@ -65,7 +65,10 @@ export const useUpdateLeaveStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
-      toast.success('Leave status updated');
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-report'] });
+      queryClient.invalidateQueries({ queryKey: ['payrolls'] });
+      toast.success('Leave status updated & attendance marked!');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to update leave status');
@@ -85,6 +88,8 @@ export const useOverrideLeaveCategory = () => {
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['payrolls'] });
       toast.success(`Leave category overridden to ${vars.category}!`);
     },
     onError: (error: any) => {

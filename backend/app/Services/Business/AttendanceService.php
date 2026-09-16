@@ -208,8 +208,10 @@ class AttendanceService
 
         if (!empty($filters['month'])) {
             $this->syncHolidaysForMonth($businessId, $filters['month']);
+            $this->syncApprovedLeavesForMonth($businessId, $filters['month']);
         } elseif (!empty($filters['from_date']) && !empty($filters['to_date'])) {
             $this->syncHolidaysBetweenDates($businessId, $filters['from_date'], $filters['to_date']);
+            $this->syncApprovedLeavesBetweenDates($businessId, $filters['from_date'], $filters['to_date']);
         }
 
         $query = Attendance::with(['user', 'location'])
@@ -318,11 +320,157 @@ class AttendanceService
     }
 
     /**
+     * Mark attendance as 'leave' (or 'present' with wfh) for all dates in an approved LeaveRequest.
+     */
+    public function applyApprovedLeaveToAttendance(LeaveRequest $leaveRequest, ?int $approverId = null): void
+    {
+        $businessId = $leaveRequest->business_id;
+        $userId     = $leaveRequest->user_id;
+        $approverId = $approverId ?? $leaveRequest->approved_by ?? auth()->id();
+
+        // Handle WFH request
+        if ($leaveRequest->request_type === 'wfh') {
+            $this->markWfhAttendance($leaveRequest->id);
+            return;
+        }
+
+        $startDate = Carbon::parse($leaveRequest->from_date)->startOfDay();
+        $endDate   = Carbon::parse($leaveRequest->to_date)->startOfDay();
+
+        $leaveTypeName = ucfirst(str_replace('_', ' ', $leaveRequest->leave_type ?? 'Leave'));
+        $categoryName  = ucfirst($leaveRequest->effectiveCategory());
+        $noteText      = "Approved {$leaveTypeName} ({$categoryName})";
+
+        $current = $startDate->copy();
+        while ($current->lte($endDate)) {
+            $dateStr = $current->format('Y-m-d');
+
+            $record = Attendance::where('business_id', $businessId)
+                ->where('user_id', $userId)
+                ->where('date', $dateStr)
+                ->first();
+
+            if (!$record) {
+                Attendance::create([
+                    'business_id' => $businessId,
+                    'user_id'     => $userId,
+                    'date'        => $dateStr,
+                    'status'      => 'leave',
+                    'notes'       => $noteText,
+                    'approved_by' => $approverId,
+                ]);
+            } else {
+                // If the employee didn't physically check in, update status to 'leave'
+                if (empty($record->check_in_time) || in_array($record->status, ['absent', 'leave'])) {
+                    $record->update([
+                        'status'      => 'leave',
+                        'notes'       => $noteText,
+                        'approved_by' => $approverId,
+                    ]);
+                }
+            }
+
+            $current->addDay();
+        }
+    }
+
+    /**
+     * Remove or revert attendance when an approved leave request is rejected or deleted.
+     */
+    public function removeLeaveFromAttendance(LeaveRequest $leaveRequest): void
+    {
+        $businessId = $leaveRequest->business_id;
+        $userId     = $leaveRequest->user_id;
+
+        $startDate = Carbon::parse($leaveRequest->from_date)->startOfDay();
+        $endDate   = Carbon::parse($leaveRequest->to_date)->startOfDay();
+
+        $current = $startDate->copy();
+        while ($current->lte($endDate)) {
+            $dateStr = $current->format('Y-m-d');
+
+            $record = Attendance::where('business_id', $businessId)
+                ->where('user_id', $userId)
+                ->where('date', $dateStr)
+                ->where('status', 'leave')
+                ->first();
+
+            if ($record) {
+                if (empty($record->check_in_time)) {
+                    $record->delete();
+                } else {
+                    $record->update([
+                        'status' => 'present',
+                        'notes'  => null,
+                    ]);
+                }
+            }
+
+            $current->addDay();
+        }
+    }
+
+    /**
+     * Sync all approved leaves for a given month into the attendances table.
+     */
+    public function syncApprovedLeavesForMonth(int $businessId, string $month): void
+    {
+        $parts = explode('-', $month);
+        if (count($parts) !== 2) return;
+
+        $startOfMonth = Carbon::createFromDate($parts[0], $parts[1], 1)->startOfMonth()->toDateString();
+        $endOfMonth   = Carbon::createFromDate($parts[0], $parts[1], 1)->endOfMonth()->toDateString();
+
+        $approvedLeaves = LeaveRequest::where('business_id', $businessId)
+            ->where('status', 'approved')
+            ->where('request_type', 'leave')
+            ->where(function ($q) use ($startOfMonth, $endOfMonth) {
+                $q->whereBetween('from_date', [$startOfMonth, $endOfMonth])
+                  ->orWhereBetween('to_date', [$startOfMonth, $endOfMonth])
+                  ->orWhere(function ($sub) use ($startOfMonth, $endOfMonth) {
+                      $sub->where('from_date', '<=', $startOfMonth)
+                          ->where('to_date', '>=', $endOfMonth);
+                  });
+            })
+            ->get();
+
+        foreach ($approvedLeaves as $leave) {
+            $this->applyApprovedLeaveToAttendance($leave);
+        }
+    }
+
+    /**
+     * Sync all approved leaves for a given date range into the attendances table.
+     */
+    public function syncApprovedLeavesBetweenDates(int $businessId, string $fromDate, string $toDate): void
+    {
+        $approvedLeaves = LeaveRequest::where('business_id', $businessId)
+            ->where('status', 'approved')
+            ->where('request_type', 'leave')
+            ->where(function ($q) use ($fromDate, $toDate) {
+                $q->whereBetween('from_date', [$fromDate, $toDate])
+                  ->orWhereBetween('to_date', [$fromDate, $toDate])
+                  ->orWhere(function ($sub) use ($fromDate, $toDate) {
+                      $sub->where('from_date', '<=', $fromDate)
+                          ->where('to_date', '>=', $toDate);
+                  });
+            })
+            ->get();
+
+        foreach ($approvedLeaves as $leave) {
+            $this->applyApprovedLeaveToAttendance($leave);
+        }
+    }
+
+    /**
      * Get monthly attendance summary for staff.
      */
     public function getMonthlyReport(string $month, ?int $userId = null): array
     {
         $businessId = app('current_business_id');
+
+        $this->syncHolidaysForMonth($businessId, $month);
+        $this->syncApprovedLeavesForMonth($businessId, $month);
 
         $staffQuery = DB::table('business_user')
             ->join('users', 'business_user.user_id', '=', 'users.id')

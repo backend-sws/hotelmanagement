@@ -112,9 +112,16 @@ class LeaveRequestController extends Controller
 
     public function destroy(Request $request, LeaveRequest $leaveRequest)
     {
-        // Only allow deleting if status is pending and belongs to user
-        if ($leaveRequest->status !== 'pending' || $request->user()->id !== $leaveRequest->user_id) {
+        $user = $request->user();
+        $isManager = $user->hasRole(['admin', 'manager', 'Business Admin', 'Superadmin']);
+
+        // Only allow deleting if status is pending and belongs to user (or manager)
+        if (!$isManager && ($leaveRequest->status !== 'pending' || $user->id !== $leaveRequest->user_id)) {
             return response()->json(['message' => 'Cannot delete this request.'], 403);
+        }
+
+        if ($leaveRequest->status === 'approved') {
+            app(\App\Services\Business\AttendanceService::class)->removeLeaveFromAttendance($leaveRequest);
         }
 
         $leaveRequest->delete();
@@ -140,6 +147,7 @@ class LeaveRequestController extends Controller
         }
 
         $leaveRequest = LeaveRequest::findOrFail($id);
+        $prevStatus = $leaveRequest->status;
         
         $leaveRequest->update([
             'status'       => $validated['status'],
@@ -147,9 +155,17 @@ class LeaveRequestController extends Controller
             'admin_remark' => $validated['admin_remark'] ?? null,
         ]);
 
+        // Auto-reflect in attendance
+        $attendanceService = app(\App\Services\Business\AttendanceService::class);
+        if ($validated['status'] === 'approved') {
+            $attendanceService->applyApprovedLeaveToAttendance($leaveRequest, $user->id);
+        } elseif ($validated['status'] === 'rejected' && $prevStatus === 'approved') {
+            $attendanceService->removeLeaveFromAttendance($leaveRequest);
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Leave status updated successfully.',
+            'message' => 'Leave status updated and attendance marked successfully.',
             'data'    => $leaveRequest->load(['user', 'approvedBy'])
         ]);
     }
@@ -179,6 +195,10 @@ class LeaveRequestController extends Controller
             'admin_override_category' => $request->admin_override_category,
             'admin_remark'            => $request->admin_remark ?? $leaveRequest->admin_remark,
         ]);
+
+        if ($leaveRequest->status === 'approved' && $leaveRequest->request_type === 'leave') {
+            app(\App\Services\Business\AttendanceService::class)->applyApprovedLeaveToAttendance($leaveRequest, $user->id);
+        }
 
         return response()->json([
             'success' => true,
