@@ -12,13 +12,14 @@ import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { usePlans } from '../../plans/api/usePlans';
 import { usePartners } from '../../partners/api/usePartners';
 import { useUpdateTenant, useResetTenantPassword } from '../api/useSuperadminTenants';
-import { PREMIUM_FEATURES, HOTEL_FEATURES } from '../../plans/components/PlanFormModal';
-import { businessMenuGroups, hotelMenuGroups } from '@/components/layout/Sidebar';
+import { PREMIUM_FEATURES, HOTEL_FEATURES, FIELDOPS_FEATURES } from '../../plans/components/PlanFormModal';
+import { businessMenuGroups, hotelMenuGroups, fieldOpsMenuGroups } from '@/components/layout/Sidebar';
 import { DynamicForm } from '@/components/ui/dynamic-form';
 
 const allMenuGroups = [
   ...businessMenuGroups,
   ...hotelMenuGroups,
+  ...fieldOpsMenuGroups,
   { title: "STAFF & HR (OPERATIONS)", items: [] },
   { title: "STAFF & HR (MANAGEMENT)", items: [] }
 ];
@@ -331,6 +332,66 @@ export function EditTenantModal({ isOpen, onClose, tenant }: EditTenantModalProp
                         </div>
                         {isPlanFeature && (
                           <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-bold uppercase">In Plan</span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleCustomFeature(feature.id, true)}
+                          className={`flex-1 py-1 text-xs font-semibold rounded ${overrideVal === true ? 'bg-green-500 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-white/20'}`}
+                        >
+                          Force ON
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleCustomFeature(feature.id, false)}
+                          className={`flex-1 py-1 text-xs font-semibold rounded ${overrideVal === false ? 'bg-amber-500 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-white/20'}`}
+                        >
+                          Force OFF
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleCustomFeature(feature.id, 'hidden')}
+                          className={`flex-1 py-1 text-xs font-semibold rounded ${overrideVal === 'hidden' ? 'bg-red-500 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-white/20'}`}
+                        >
+                          Hide
+                        </button>
+                        {overrideVal !== undefined && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newObj = { ...selectedFeatures };
+                              delete newObj[feature.id];
+                              setSelectedFeatures(newObj);
+                            }}
+                            className="px-2 py-1 text-xs font-semibold rounded text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 underline"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Field Ops & WhatsApp Modules */}
+              <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2 mt-4">⚡ Field Ops & WhatsApp Modules</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {FIELDOPS_FEATURES.map((feature: any) => {
+                  const isPlanFeature = !!selectedPlan?.features?.[feature.id];
+                  const overrideVal = selectedFeatures[feature.id];
+                  
+                  return (
+                    <div key={feature.id} className="p-3 rounded-lg border border-emerald-200/60 dark:border-emerald-800/30 bg-emerald-50/50 dark:bg-emerald-900/10 flex flex-col gap-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-sm text-slate-800 dark:text-slate-200">{feature.label}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{feature.description}</p>
+                        </div>
+                        {isPlanFeature && (
+                          <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold uppercase">In Plan</span>
                         )}
                       </div>
                       

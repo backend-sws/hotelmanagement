@@ -28,6 +28,7 @@ import {
   TrendingUp,
   Building,
   RefreshCw,
+  Navigation,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/store/layoutStore";
@@ -215,6 +216,21 @@ export const hotelMenuGroups = [
   },
 ];
 
+export const fieldOpsMenuGroups = [
+  {
+    title: "⚡ FIELD OPS & WHATSAPP",
+    items: [
+      { name: "WHATSAPP WALLET", href: "/fieldops/wallet", icon: Wallet, feature: 'has_whatsapp_fieldops' },
+      { name: "RADAR & OVERVIEW", href: "/fieldops/radar", icon: Radio, feature: 'has_whatsapp_fieldops' },
+      { name: "ANALYTICS & ROI", href: "/fieldops/analytics", icon: BarChart3, feature: 'has_whatsapp_fieldops' },
+      { name: "FIELD TASKS", href: "/fieldops/tasks", icon: ClipboardList, feature: 'has_whatsapp_fieldops' },
+      { name: "BOT ATTENDANCE", href: "/fieldops/attendance", icon: Activity, feature: 'has_whatsapp_fieldops' },
+      { name: "TRAVEL & TA/DA", href: "/fieldops/tada", icon: Navigation, feature: 'has_whatsapp_fieldops' },
+      { name: "PHOTO PROOFS", href: "/fieldops/proofs", icon: Sparkles, feature: 'has_whatsapp_fieldops' },
+      { name: "BOT AUTOMATION", href: "/fieldops/bot-settings", icon: MessageSquare, feature: 'has_whatsapp_fieldops' },
+    ]
+  }
+];
 
 export const superadminMenuGroups = [
   {
@@ -224,6 +240,7 @@ export const superadminMenuGroups = [
       { name: "SUBSCRIPTION PLANS", href: "/superadmin/plans", icon: Package, permission: "manage_plans" },
       { name: "SUBSCRIPTION LOGS", href: "/superadmin/subscriptions", icon: Receipt, permission: "manage_plans" },
       { name: "TENANTS / BUSINESSES", href: "/superadmin/tenants", icon: Building2, permission: "manage_tenants" },
+      { name: "WHATSAPP PRICING", href: "/superadmin/whatsapp-pricing", icon: Wallet, permission: "manage_settings" },
     ]
   },
   {
@@ -331,8 +348,8 @@ export function Sidebar({ className }: { className?: string }) {
     setIsLockModalOpen(true);
   };
 
-  const isSuperadmin = user?.roles?.some((r) => r.name === 'Superadmin');
-  const isPartner = user?.roles?.some((r) => r.name === 'Partner');
+  const isSuperadmin = user?.roles?.some((r) => r.name?.toLowerCase() === 'superadmin');
+  const isPartner = user?.roles?.some((r) => r.name?.toLowerCase() === 'partner');
 
   const hiddenSidebarItems: string[] = activeBusiness?.settings?.hidden_sidebar_items || [];
   const filteredBusinessGroups = businessMenuGroups.map(group => ({
@@ -543,12 +560,23 @@ export function Sidebar({ className }: { className?: string }) {
     })
     .filter((g): g is typeof hotelMenuGroups[number] => g !== null && g.items.length > 0);
 
-  // Combined business + hotel menu (hotel inserted before ADMINISTRATION)
+  // Field Ops: show groups/items that the tenant has enabled via feature flags and not hidden
+  const filteredFieldOpsGroups = fieldOpsMenuGroups
+    .map(group => ({
+      ...group,
+      items: group.items
+        .filter(item => !hiddenSidebarItems.includes(item.href))
+        .filter(item => !item.feature || hasFeature(item.feature as string)),
+    }))
+    .filter(group => group.items.length > 0);
+
+  // Combined business + hotel + fieldops menu (fieldops & hotel inserted before ADMINISTRATION)
   const businessAdminGroup = filteredBusinessGroups.filter(g => g.title === "ADMINISTRATION");
   const businessOtherGroups = filteredBusinessGroups.filter(g => g.title !== "ADMINISTRATION");
   
   const combinedBusinessGroups = [
     ...businessOtherGroups,
+    ...filteredFieldOpsGroups,
     ...filteredHotelGroups,
     ...businessAdminGroup,
   ];

@@ -44,6 +44,13 @@ export const HOTEL_FEATURES = [
   { id: 'has_hotel_corporate', label: '🏢 Corporate & City Ledger', description: 'Corporate account billing, monthly consolidated invoices.' },
 ];
 
+export const FIELDOPS_FEATURES = [
+  { id: 'has_whatsapp_fieldops', label: '⚡ Field Ops & WhatsApp Bot', description: 'Enable field technician tracking, automated WhatsApp attendance & task dispatch.' },
+  { id: 'has_ai_vision', label: '🤖 AI Vision Fraud Check', description: 'Enable Gemini Vision photo inspection for proof of work.' },
+  { id: 'has_tada_tracking', label: '📍 Travel Allowance (TA/DA)', description: 'Automated GPS distance & mileage allowance calculation.' },
+  { id: 'has_radar_tracking', label: '🛰️ Live Radar Telemetry', description: 'Real-time GPS map tracking, speed & battery breadcrumbs.' },
+];
+
 
 
 
@@ -91,6 +98,11 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
         has_hotel_gst_compliance: false,
         has_hotel_reports: false,
         has_hotel_corporate: false,
+        // Field Ops & WhatsApp modules
+        has_whatsapp_fieldops: false,
+        has_ai_vision: false,
+        has_tada_tracking: false,
+        has_radar_tracking: false,
       } as any,
       is_active: true
     }
@@ -141,6 +153,11 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
           has_hotel_gst_compliance: !!planToEdit.features?.has_hotel_gst_compliance,
           has_hotel_reports: !!planToEdit.features?.has_hotel_reports,
           has_hotel_corporate: !!planToEdit.features?.has_hotel_corporate,
+          // Field Ops & WhatsApp modules
+          has_whatsapp_fieldops: !!planToEdit.features?.has_whatsapp_fieldops,
+          has_ai_vision: !!planToEdit.features?.has_ai_vision,
+          has_tada_tracking: !!planToEdit.features?.has_tada_tracking,
+          has_radar_tracking: !!planToEdit.features?.has_radar_tracking,
         } as any
       });
     } else {
@@ -169,6 +186,10 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
           has_finance: false,
           can_whitelabel_invoice: false,
           has_activity_logs: false,
+          has_whatsapp_fieldops: false,
+          has_ai_vision: false,
+          has_tada_tracking: false,
+          has_radar_tracking: false,
         },
         is_active: true
       });
@@ -318,6 +339,44 @@ export function PlanFormModal({ isOpen, onClose, planToEdit }: PlanFormModalProp
                       </div>
                       <div className="flex-1">
                         <h4 className={`text-sm font-bold ${isSelected ? 'text-amber-700 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                          {feature.label}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                          {feature.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <h4 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-2 border-b border-emerald-200 dark:border-emerald-800/50 pb-2 mt-8">⚡ Field Ops & WhatsApp Automation</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {FIELDOPS_FEATURES.map(feature => {
+                const isSelected = form.watch(`features.${feature.id}` as any);
+                return (
+                  <div 
+                    key={feature.id} 
+                    onClick={() => form.setValue(`features.${feature.id}` as any, !isSelected, { shouldDirty: true })}
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      isSelected 
+                        ? 'bg-emerald-500/10 border-emerald-500/50' 
+                        : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-emerald-200 dark:hover:border-emerald-800/40'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                        isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-slate-400 dark:border-slate-500'
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                            <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className={`text-sm font-bold ${isSelected ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-200'}`}>
                           {feature.label}
                         </h4>
                         <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">

@@ -31,6 +31,10 @@ Route::prefix('v1')->group(function () {
         ->name('invoice.verify')
         ->middleware('signed');
 
+    // WhatsApp Cloud API Webhook (Public for Meta Handshake & Events)
+    Route::get('/whatsapp/webhook', [\App\Http\Controllers\Api\WhatsApp\WebhookController::class, 'verify']);
+    Route::post('/whatsapp/webhook', [\App\Http\Controllers\Api\WhatsApp\WebhookController::class, 'handle']);
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/user', function (Request $request) {
@@ -458,6 +462,49 @@ Route::prefix('v1')->group(function () {
                 Route::post('corporate-accounts/{id}/payment', [\App\Http\Controllers\Api\Business\HotelCorporateController::class, 'recordPayment']);
             });
 
+            // 🔒 Field Ops & WhatsApp Automation (feature: has_whatsapp_fieldops)
+            Route::middleware(['feature:has_whatsapp_fieldops'])->group(function () {
+                // WhatsApp Wallet & Field Ops Billing
+                Route::get('whatsapp/wallet', [\App\Http\Controllers\Api\Business\WhatsAppWalletController::class, 'getWallet']);
+                Route::get('whatsapp/wallet/transactions', [\App\Http\Controllers\Api\Business\WhatsAppWalletController::class, 'getTransactions']);
+                Route::post('whatsapp/wallet/recharge', [\App\Http\Controllers\Api\Business\WhatsAppWalletController::class, 'recharge']);
+                Route::post('whatsapp/wallet/create-order', [\App\Http\Controllers\Api\Business\WhatsAppWalletController::class, 'createRechargeOrder']);
+                Route::post('whatsapp/wallet/verify-payment', [\App\Http\Controllers\Api\Business\WhatsAppWalletController::class, 'verifyRechargePayment']);
+                Route::get('whatsapp/attendance-logs', [\App\Http\Controllers\Api\Business\WhatsAppWalletController::class, 'getBotAttendanceLogs']);
+
+                // Phase 3: Field Tasks, Dispatch & Watermarked Proofs
+                Route::apiResource('field-tasks', \App\Http\Controllers\Api\Business\FieldTaskController::class);
+                Route::post('field-tasks/{id}/dispatch', [\App\Http\Controllers\Api\Business\FieldTaskController::class, 'dispatchTask']);
+                Route::get('field-proofs', [\App\Http\Controllers\Api\Business\FieldTaskController::class, 'getProofs']);
+                Route::get('field-staff', [\App\Http\Controllers\Api\Business\FieldTaskController::class, 'getStaffList']);
+
+                // Phase 4: Travel Allowance (TA/DA) & GPS Mileage
+                Route::apiResource('travel-allowances', \App\Http\Controllers\Api\Business\TravelAllowanceController::class);
+                Route::post('travel-allowances/{id}/approve', [\App\Http\Controllers\Api\Business\TravelAllowanceController::class, 'approve']);
+                Route::post('travel-allowances/{id}/reject', [\App\Http\Controllers\Api\Business\TravelAllowanceController::class, 'reject']);
+                Route::post('travel-allowances/{id}/recalculate', [\App\Http\Controllers\Api\Business\TravelAllowanceController::class, 'recalculate']);
+                Route::post('travel-allowances/sync-payroll', [\App\Http\Controllers\Api\Business\TravelAllowanceController::class, 'syncPayroll']);
+
+                // Phase 5: Live Radar Map & Executive Analytics
+                Route::get('radar/live-positions', [\App\Http\Controllers\Api\Business\FieldOpsRadarController::class, 'livePositions']);
+                Route::get('radar/route-trail', [\App\Http\Controllers\Api\Business\FieldOpsRadarController::class, 'routeTrail']);
+                Route::get('fieldops/analytics', [\App\Http\Controllers\Api\Business\FieldOpsRadarController::class, 'analytics']);
+
+                // Bot Automation & Health Settings
+                Route::get('fieldops/bot-settings', [\App\Http\Controllers\Api\Business\FieldOpsBotSettingsController::class, 'index']);
+                Route::put('fieldops/bot-settings', [\App\Http\Controllers\Api\Business\FieldOpsBotSettingsController::class, 'update']);
+                Route::post('fieldops/test-bot-message', [\App\Http\Controllers\Api\Business\FieldOpsBotSettingsController::class, 'testMessage']);
+            });
+
+        });
+
+        // FieldOps Bot Settings & Wallet direct route aliases
+        Route::middleware(['tenant', 'feature:has_whatsapp_fieldops'])->group(function () {
+            Route::get('fieldops/bot-settings', [\App\Http\Controllers\Api\Business\FieldOpsBotSettingsController::class, 'index']);
+            Route::put('fieldops/bot-settings', [\App\Http\Controllers\Api\Business\FieldOpsBotSettingsController::class, 'update']);
+            Route::post('fieldops/test-bot-message', [\App\Http\Controllers\Api\Business\FieldOpsBotSettingsController::class, 'testMessage']);
+            Route::post('whatsapp/wallet/create-order', [\App\Http\Controllers\Api\Business\WhatsAppWalletController::class, 'createRechargeOrder']);
+            Route::post('whatsapp/wallet/verify-payment', [\App\Http\Controllers\Api\Business\WhatsAppWalletController::class, 'verifyRechargePayment']);
         });
 
         // Public Webhooks for OTA (Outside auth middleware)
@@ -483,6 +530,7 @@ Route::prefix('v1')->group(function () {
             Route::put('/settings', [\App\Http\Controllers\Api\Superadmin\SettingController::class, 'update']);
             Route::post('/settings/logo', [\App\Http\Controllers\Api\Superadmin\SettingController::class, 'uploadLogo']);
             Route::post('/settings/favicon', [\App\Http\Controllers\Api\Superadmin\SettingController::class, 'uploadFavicon']);
+            Route::post('/whatsapp/test-connection', [\App\Http\Controllers\Api\Superadmin\SettingController::class, 'testWhatsApp']);
 
             // Plans
             Route::apiResource('plans', \App\Http\Controllers\Api\Superadmin\PlanController::class);
@@ -543,6 +591,14 @@ Route::prefix('v1')->group(function () {
             Route::patch('/payouts/{id}/approve', [\App\Http\Controllers\Api\Superadmin\PayoutController::class, 'approve']);
             Route::patch('/payouts/{id}/reject', [\App\Http\Controllers\Api\Superadmin\PayoutController::class, 'reject']);
             Route::patch('/payouts/{id}/paid', [\App\Http\Controllers\Api\Superadmin\PayoutController::class, 'markPaid']);
+
+            // WhatsApp Pricing & Rate Cards (Superadmin)
+            Route::get('/whatsapp-pricing', [\App\Http\Controllers\Api\Superadmin\WhatsAppPricingController::class, 'index']);
+            Route::put('/whatsapp-pricing/rates', [\App\Http\Controllers\Api\Superadmin\WhatsAppPricingController::class, 'updateGlobalRate']);
+            Route::post('/whatsapp-pricing/tenant-rate', [\App\Http\Controllers\Api\Superadmin\WhatsAppPricingController::class, 'setTenantRate']);
+            Route::delete('/whatsapp-pricing/tenant-rate/{businessId}/{category}', [\App\Http\Controllers\Api\Superadmin\WhatsAppPricingController::class, 'deleteTenantRate']);
+            Route::get('/whatsapp-pricing/tenant-wallets', [\App\Http\Controllers\Api\Superadmin\WhatsAppPricingController::class, 'getTenantWallets']);
+            Route::post('/whatsapp-pricing/credit-tenant', [\App\Http\Controllers\Api\Superadmin\WhatsAppPricingController::class, 'manualCreditTenant']);
         });
 
 
@@ -572,3 +628,8 @@ Route::prefix('v1')->group(function () {
         });
     });
 });
+
+// WhatsApp Webhook Root Fallback (accessible via /api/whatsapp/webhook in case /v1 is omitted in Meta Console)
+Route::get('/whatsapp/webhook', [\App\Http\Controllers\Api\WhatsApp\WebhookController::class, 'verify']);
+Route::post('/whatsapp/webhook', [\App\Http\Controllers\Api\WhatsApp\WebhookController::class, 'handle']);
+

@@ -38,6 +38,12 @@ export const planSchema = z.object({
     has_hotel_gst_compliance: z.boolean().default(false),
     has_hotel_reports: z.boolean().default(false),
     has_hotel_corporate: z.boolean().default(false),
+
+    // Field Ops & WhatsApp Modules
+    has_whatsapp_fieldops: z.boolean().default(false),
+    has_ai_vision: z.boolean().default(false),
+    has_tada_tracking: z.boolean().default(false),
+    has_radar_tracking: z.boolean().default(false),
   }).default({
     max_locations: 1,
     max_staff: 1,
@@ -69,6 +75,10 @@ export const planSchema = z.object({
     has_hotel_gst_compliance: false,
     has_hotel_reports: false,
     has_hotel_corporate: false,
+    has_whatsapp_fieldops: false,
+    has_ai_vision: false,
+    has_tada_tracking: false,
+    has_radar_tracking: false,
   }),
   is_active: z.boolean()
 });

@@ -17,19 +17,46 @@ class ProfileService
      */
     public function getProfile(User $user): array
     {
+        $currentTeamId = getPermissionsTeamId();
+
+        // 1. Fetch global roles & permissions (where team_id is null)
+        setPermissionsTeamId(null);
         $user->unsetRelation('roles')->unsetRelation('permissions');
-        $user->load('roles');
+        $globalRoles = $user->roles()->get();
+        $globalPermissions = $user->getAllPermissions();
+
+        // 2. Fetch team-specific roles & permissions if a team is active
+        $teamRoles = collect();
+        $teamPermissions = collect();
+        if ($currentTeamId !== null) {
+            setPermissionsTeamId($currentTeamId);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
+            $teamRoles = $user->roles()->get();
+            $teamPermissions = $user->getAllPermissions();
+        }
+
+        // Restore team ID
+        setPermissionsTeamId($currentTeamId);
+
+        // Merge roles and permissions
+        $allRoles = $globalRoles->concat($teamRoles)->unique('id');
+        $allPermissions = $globalPermissions->concat($teamPermissions)->pluck('name')->unique()->values();
+
+        // If user has Superadmin role, assign all system permissions
+        if ($allRoles->contains(fn($r) => strtolower($r->name) === 'superadmin')) {
+            $allPermissions = \Spatie\Permission\Models\Permission::pluck('name')->unique()->values();
+        }
 
         return [
-            'id'         => $user->id,
-            'name'       => $user->name,
-            'email'      => $user->email,
-            'phone'      => $user->phone,
-            'avatar'     => $user->avatar, // The User model now handles the URL conversion
-            'status'     => $user->status ?? 'active',
-            'roles'      => $user->roles->map(fn($r) => ['id' => $r->id, 'name' => $r->name]),
-            'permissions'=> $user->getAllPermissions()->pluck('name'),
-            'created_at' => $user->created_at,
+            'id'          => $user->id,
+            'name'        => $user->name,
+            'email'       => $user->email,
+            'phone'       => $user->phone,
+            'avatar'      => $user->avatar, // The User model now handles the URL conversion
+            'status'      => $user->status ?? 'active',
+            'roles'       => $allRoles->map(fn($r) => ['id' => $r->id, 'name' => $r->name])->values(),
+            'permissions' => $allPermissions,
+            'created_at'  => $user->created_at,
         ];
     }
 

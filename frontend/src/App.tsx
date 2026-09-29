@@ -119,6 +119,17 @@ const PartnerResourcesPage = lazy(() => import('@/features/partner/resources/pag
 // Superadmin Payouts
 const SuperadminPayouts = lazy(() => import('@/features/superadmin/payouts/pages/PayoutsPage'));
 
+// ⚡ WhatsApp Field Ops & Wallet (Phase 1, 2, 3, 4 & 5)
+const WhatsAppPricingPage = lazy(() => import('@/features/superadmin/pricing/pages/WhatsAppPricingPage'));
+const WhatsAppWalletPage = lazy(() => import('@/features/business/fieldops/pages/WhatsAppWalletPage'));
+const BotAttendancePage = lazy(() => import('@/features/business/fieldops/pages/BotAttendancePage'));
+const FieldTasksPage = lazy(() => import('@/features/business/fieldops/pages/FieldTasksPage'));
+const ProofGalleryPage = lazy(() => import('@/features/business/fieldops/pages/ProofGalleryPage'));
+const TravelAllowancePage = lazy(() => import('@/features/business/fieldops/pages/TravelAllowancePage'));
+const LiveRadarPage = lazy(() => import('@/features/business/fieldops/pages/LiveRadarPage'));
+const FieldOpsAnalyticsPage = lazy(() => import('@/features/business/fieldops/pages/FieldOpsAnalyticsPage'));
+const BotSettingsPage = lazy(() => import('@/features/business/fieldops/pages/BotSettingsPage'));
+
 // 🏨 Hotel Management — Phase 2 (Dashboard + Rooms + Front Desk)
 const HotelDashboardPage = lazy(() => import('@/features/hotel/dashboard/HotelDashboardPage').then(m => ({ default: m.HotelDashboardPage })));
 const HotelRoomsPage    = lazy(() => import('@/features/hotel/rooms/pages/RoomsPage').then(m => ({ default: m.RoomsPage })));
@@ -166,7 +177,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function SuperadminRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
-  const isSuperadmin = user?.roles?.some(r => r.name === 'Superadmin');
+  const isSuperadmin = user?.roles?.some(r => r.name?.toLowerCase() === 'superadmin');
   if (!isSuperadmin) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
@@ -174,8 +185,8 @@ function SuperadminRoute({ children }: { children: React.ReactNode }) {
 function BusinessRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
   const { activeBusiness, isLoading, hasFetched } = useTenantStore();
-  const isSuperadmin = user?.roles?.some(r => r.name === 'Superadmin');
-  const isPartner = user?.roles?.some(r => r.name === 'Partner');
+  const isSuperadmin = user?.roles?.some(r => r.name?.toLowerCase() === 'superadmin');
+  const isPartner = user?.roles?.some(r => r.name?.toLowerCase() === 'partner');
 
   if (isSuperadmin) return <Navigate to="/superadmin/dashboard" replace />;
   if (isPartner && !user?.businesses?.length) return <Navigate to="/partner/dashboard" replace />;
@@ -601,6 +612,64 @@ function App() {
               </BusinessRoute>
             } />
 
+            {/* ⚡ Field Ops & WhatsApp Module */}
+            <Route path="/fieldops/wallet" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_whatsapp_fieldops">
+                  <WhatsAppWalletPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/fieldops/attendance" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_whatsapp_fieldops">
+                  <BotAttendancePage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/fieldops/tasks" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_whatsapp_fieldops">
+                  <FieldTasksPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/fieldops/proofs" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_whatsapp_fieldops">
+                  <ProofGalleryPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/fieldops/tada" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_whatsapp_fieldops">
+                  <TravelAllowancePage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/fieldops/radar" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_whatsapp_fieldops">
+                  <LiveRadarPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/fieldops/analytics" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_whatsapp_fieldops">
+                  <FieldOpsAnalyticsPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+            <Route path="/fieldops/bot-settings" element={
+              <BusinessRoute>
+                <FeatureGuard feature="has_whatsapp_fieldops">
+                  <BotSettingsPage />
+                </FeatureGuard>
+              </BusinessRoute>
+            } />
+
             {/* Superadmin Routes */}
             <Route path="/superadmin/dashboard" element={<SuperadminRoute><PermissionGuard permission="view_dashboard"><SuperadminDashboard /></PermissionGuard></SuperadminRoute>} />
             <Route path="/superadmin/profile" element={<SuperadminRoute><ProfilePage /></SuperadminRoute>} />
@@ -618,6 +687,7 @@ function App() {
             <Route path="/superadmin/logs" element={<SuperadminRoute><PermissionGuard permission="manage_system_logs"><SystemLogsPage /></PermissionGuard></SuperadminRoute>} />
             <Route path="/superadmin/payouts" element={<SuperadminRoute><PermissionGuard permission="manage_payouts"><SuperadminPayouts /></PermissionGuard></SuperadminRoute>} />
             <Route path="/superadmin/resources" element={<SuperadminRoute><PermissionGuard permission="manage_settings"><ResourcesPage /></PermissionGuard></SuperadminRoute>} />
+            <Route path="/superadmin/whatsapp-pricing" element={<SuperadminRoute><PermissionGuard permission="manage_settings"><WhatsAppPricingPage /></PermissionGuard></SuperadminRoute>} />
 
             {/* Partner Routes */}
             <Route path="/partner/dashboard" element={<PartnerRoute><PermissionGuard permission="view_partner_dashboard"><PartnerDashboard /></PermissionGuard></PartnerRoute>} />

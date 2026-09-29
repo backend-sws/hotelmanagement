@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Menu, Expand, Shrink, Moon, Sun, Palette, Paintbrush, Settings, ArrowRight, Monitor, User, LogOut, CreditCard, Building2, Store, HelpCircle, Crown, Lock, Keyboard } from "lucide-react";
+import { Menu, Expand, Shrink, Moon, Sun, Palette, Paintbrush, Settings, ArrowRight, Monitor, User, LogOut, CreditCard, Building2, Store, HelpCircle, Crown, Lock, Keyboard, ShieldAlert } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useLayoutStore } from "@/store/layoutStore";
 import { useThemeStore, type LayoutTheme, type PrimaryColor, type FontFamily } from "@/store/themeStore";
@@ -182,8 +182,8 @@ function ProfileMenu() {
   const location = useLocation();
 
   // Determine Role for Header Display
-  const isSuperadmin = user?.roles?.some(r => r.name === 'Superadmin') || location.pathname.startsWith('/superadmin');
-  const isPartner = user?.roles?.some(r => r.name === 'Partner') || location.pathname.startsWith('/partner');
+  const isSuperadmin = user?.roles?.some(r => r.name?.toLowerCase() === 'superadmin') || location.pathname.startsWith('/superadmin');
+  const isPartner = user?.roles?.some(r => r.name?.toLowerCase() === 'partner') || location.pathname.startsWith('/partner');
   const isBusinessManager = user?.roles?.some((r) => r.name === 'admin' || r.name === 'manager' || r.name === 'Business Admin');
   
   let displayRole = "Staff";
@@ -304,6 +304,14 @@ function ProfileMenu() {
 
         {/* User Options */}
         <div className="p-2 space-y-0.5">
+          {isSuperadmin && (
+            <button
+              onClick={() => { setIsOpen(false); navigate('/superadmin/dashboard'); }}
+              className="w-full flex items-center px-3 py-2.5 text-xs font-semibold text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-500/10 hover:bg-primary-100 dark:hover:bg-primary-500/20 rounded-lg transition-all duration-200 group/btn"
+            >
+              <ShieldAlert className="w-4 h-4 mr-3 text-primary-500 group-hover/btn:scale-110 transition-all" /> Superadmin Panel
+            </button>
+          )}
           <button
             onClick={() => { setIsOpen(false); navigate(isSuperadmin ? '/superadmin/profile' : isPartner ? '/partner/profile' : '/profile'); }}
             className="w-full flex items-center px-3 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg transition-all duration-200 group/btn"
@@ -365,8 +373,8 @@ export function Header({ className }: { className?: string }) {
   const location = useLocation();
   const { getMaxLimit } = useFeatureAccess();
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
-  const isSuperadminMode = user?.roles?.some(r => r.name === 'Superadmin') || location.pathname.startsWith('/superadmin');
-  const isPartnerMode = location.pathname.startsWith('/partner');
+  const isSuperadminMode = user?.roles?.some(r => r.name?.toLowerCase() === 'superadmin') || location.pathname.startsWith('/superadmin');
+  const isPartnerMode = user?.roles?.some(r => r.name?.toLowerCase() === 'partner') || location.pathname.startsWith('/partner');
   const isBusinessManager = user?.roles?.some((r) => r.name === 'admin' || r.name === 'manager' || r.name === 'Business Admin');
 
   // Real-time DateTime logic

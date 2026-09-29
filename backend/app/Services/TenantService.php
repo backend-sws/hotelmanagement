@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Partner;
 use App\Models\Plan;
 use App\Models\Commission;
+use App\Models\BusinessWallet;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Services\System\ActivityLogService;
@@ -123,6 +124,19 @@ class TenantService
             $billingCycle = $data['billing_cycle'] ?? 'yearly';
             $this->generateCommission($business, $data['partner_id'], $data['plan_id'], $data['amount_paid'] ?? 0, $paymentCollectedBy, $billingCycle);
         }
+
+        // Initialize WhatsApp prepaid wallet for this business
+        BusinessWallet::firstOrCreate(
+            ['business_id' => $business->id],
+            [
+                'balance'               => 0.0000,
+                'currency'              => 'INR',
+                'low_balance_threshold' => 200.00,
+                'status'                => 'active',
+                'total_recharged'       => 0.0000,
+                'total_consumed'        => 0.0000,
+            ]
+        );
 
         return $business->load(['owner', 'plan']);
     }
