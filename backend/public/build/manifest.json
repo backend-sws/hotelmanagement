@@ -1,255 +1,1415 @@
 {
-  "_ApplicationLogo-DR3ZBGSF.js": {
-    "file": "assets/ApplicationLogo-DR3ZBGSF.js",
+  "_AnimatedSection-BAXHM9-w.js": {
+    "file": "assets/AnimatedSection-BAXHM9-w.js",
+    "name": "AnimatedSection",
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "_ApplicationLogo-C1yatttv.js": {
+    "file": "assets/ApplicationLogo-C1yatttv.js",
     "name": "ApplicationLogo",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
-  "_AuthenticatedLayout-D7au-Z7A.js": {
-    "file": "assets/AuthenticatedLayout-D7au-Z7A.js",
+  "_AuthenticatedLayout-Cqgsdin7.js": {
+    "file": "assets/AuthenticatedLayout-Cqgsdin7.js",
     "name": "AuthenticatedLayout",
     "imports": [
       "resources/js/app.tsx",
-      "_ApplicationLogo-DR3ZBGSF.js",
-      "_transition-CdPfaago.js"
+      "_ApplicationLogo-C1yatttv.js",
+      "_transition-CHxy23z7.js"
     ]
   },
-  "_FooterSection-cMHgr6fJ.js": {
-    "file": "assets/FooterSection-cMHgr6fJ.js",
-    "name": "FooterSection",
-    "imports": [
-      "resources/js/app.tsx"
-    ]
-  },
-  "_GuestLayout-FFV8t8QY.js": {
-    "file": "assets/GuestLayout-FFV8t8QY.js",
+  "_GuestLayout-DOsU3SWp.js": {
+    "file": "assets/GuestLayout-DOsU3SWp.js",
     "name": "GuestLayout",
     "imports": [
       "resources/js/app.tsx",
-      "_ApplicationLogo-DR3ZBGSF.js"
+      "_ApplicationLogo-C1yatttv.js"
     ]
   },
-  "_InputLabel-DH8ek8nL.js": {
-    "file": "assets/InputLabel-DH8ek8nL.js",
+  "_InputLabel-B2dHxOjJ.js": {
+    "file": "assets/InputLabel-B2dHxOjJ.js",
     "name": "InputLabel",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
-  "_PrimaryButton-WQ_lDQfU.js": {
-    "file": "assets/PrimaryButton-WQ_lDQfU.js",
+  "_PrimaryButton-CiOXB-P_.js": {
+    "file": "assets/PrimaryButton-CiOXB-P_.js",
     "name": "PrimaryButton",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
-  "_TextInput-FRcll04p.js": {
-    "file": "assets/TextInput-FRcll04p.js",
+  "_SiteLayout-DmZncLwS.js": {
+    "file": "assets/SiteLayout-DmZncLwS.js",
+    "name": "SiteLayout",
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "_TextInput-CFDBxxUl.js": {
+    "file": "assets/TextInput-CFDBxxUl.js",
     "name": "TextInput",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
-  "_transition-CdPfaago.js": {
-    "file": "assets/transition-CdPfaago.js",
+  "_circle-check-DCkC_Abj.js": {
+    "file": "assets/circle-check-DCkC_Abj.js",
+    "name": "circle-check",
+    "imports": [
+      "_createLucideIcon-Bc0Kjeks.js"
+    ]
+  },
+  "_createLucideIcon-Bc0Kjeks.js": {
+    "file": "assets/createLucideIcon-Bc0Kjeks.js",
+    "name": "createLucideIcon",
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "_message-square-Dbp8ux6u.js": {
+    "file": "assets/message-square-Dbp8ux6u.js",
+    "name": "message-square",
+    "imports": [
+      "_createLucideIcon-Bc0Kjeks.js"
+    ]
+  },
+  "_search-ldyaO2tK.js": {
+    "file": "assets/search-ldyaO2tK.js",
+    "name": "search",
+    "imports": [
+      "_createLucideIcon-Bc0Kjeks.js"
+    ]
+  },
+  "_transition-CHxy23z7.js": {
+    "file": "assets/transition-CHxy23z7.js",
     "name": "transition",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
   "resources/js/Pages/Auth/ConfirmPassword.tsx": {
-    "file": "assets/ConfirmPassword-DflAu2sU.js",
+    "file": "assets/ConfirmPassword-BpCotcZ8.js",
     "name": "ConfirmPassword",
     "src": "resources/js/Pages/Auth/ConfirmPassword.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_TextInput-FRcll04p.js",
-      "_InputLabel-DH8ek8nL.js",
-      "_PrimaryButton-WQ_lDQfU.js",
-      "_GuestLayout-FFV8t8QY.js",
-      "_ApplicationLogo-DR3ZBGSF.js"
+      "_TextInput-CFDBxxUl.js",
+      "_InputLabel-B2dHxOjJ.js",
+      "_PrimaryButton-CiOXB-P_.js",
+      "_GuestLayout-DOsU3SWp.js",
+      "_ApplicationLogo-C1yatttv.js"
     ]
   },
   "resources/js/Pages/Auth/ForgotPassword.tsx": {
-    "file": "assets/ForgotPassword-iiq-REdi.js",
+    "file": "assets/ForgotPassword-C8IiMxhS.js",
     "name": "ForgotPassword",
     "src": "resources/js/Pages/Auth/ForgotPassword.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_TextInput-FRcll04p.js",
-      "_PrimaryButton-WQ_lDQfU.js",
-      "_GuestLayout-FFV8t8QY.js",
-      "_ApplicationLogo-DR3ZBGSF.js"
+      "_TextInput-CFDBxxUl.js",
+      "_PrimaryButton-CiOXB-P_.js",
+      "_GuestLayout-DOsU3SWp.js",
+      "_ApplicationLogo-C1yatttv.js"
     ]
   },
   "resources/js/Pages/Auth/Login.tsx": {
-    "file": "assets/Login-DvJMAcsI.js",
+    "file": "assets/Login-CRSjfcAz.js",
     "name": "Login",
     "src": "resources/js/Pages/Auth/Login.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_TextInput-FRcll04p.js",
-      "_InputLabel-DH8ek8nL.js",
-      "_PrimaryButton-WQ_lDQfU.js",
-      "_GuestLayout-FFV8t8QY.js",
-      "_ApplicationLogo-DR3ZBGSF.js"
+      "_TextInput-CFDBxxUl.js",
+      "_InputLabel-B2dHxOjJ.js",
+      "_PrimaryButton-CiOXB-P_.js",
+      "_GuestLayout-DOsU3SWp.js",
+      "_ApplicationLogo-C1yatttv.js"
     ]
   },
   "resources/js/Pages/Auth/Register.tsx": {
-    "file": "assets/Register-DOaXEqx5.js",
+    "file": "assets/Register-C6l99kyE.js",
     "name": "Register",
     "src": "resources/js/Pages/Auth/Register.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_TextInput-FRcll04p.js",
-      "_InputLabel-DH8ek8nL.js",
-      "_PrimaryButton-WQ_lDQfU.js",
-      "_GuestLayout-FFV8t8QY.js",
-      "_ApplicationLogo-DR3ZBGSF.js"
+      "_TextInput-CFDBxxUl.js",
+      "_InputLabel-B2dHxOjJ.js",
+      "_PrimaryButton-CiOXB-P_.js",
+      "_GuestLayout-DOsU3SWp.js",
+      "_ApplicationLogo-C1yatttv.js"
     ]
   },
   "resources/js/Pages/Auth/ResetPassword.tsx": {
-    "file": "assets/ResetPassword-BzC-oYuD.js",
+    "file": "assets/ResetPassword-DeEJv447.js",
     "name": "ResetPassword",
     "src": "resources/js/Pages/Auth/ResetPassword.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_TextInput-FRcll04p.js",
-      "_InputLabel-DH8ek8nL.js",
-      "_PrimaryButton-WQ_lDQfU.js",
-      "_GuestLayout-FFV8t8QY.js",
-      "_ApplicationLogo-DR3ZBGSF.js"
+      "_TextInput-CFDBxxUl.js",
+      "_InputLabel-B2dHxOjJ.js",
+      "_PrimaryButton-CiOXB-P_.js",
+      "_GuestLayout-DOsU3SWp.js",
+      "_ApplicationLogo-C1yatttv.js"
     ]
   },
   "resources/js/Pages/Auth/VerifyEmail.tsx": {
-    "file": "assets/VerifyEmail-CA3yVXDP.js",
+    "file": "assets/VerifyEmail-BKoqbywG.js",
     "name": "VerifyEmail",
     "src": "resources/js/Pages/Auth/VerifyEmail.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_PrimaryButton-WQ_lDQfU.js",
-      "_GuestLayout-FFV8t8QY.js",
-      "_ApplicationLogo-DR3ZBGSF.js"
+      "_PrimaryButton-CiOXB-P_.js",
+      "_GuestLayout-DOsU3SWp.js",
+      "_ApplicationLogo-C1yatttv.js"
     ]
   },
   "resources/js/Pages/Dashboard.tsx": {
-    "file": "assets/Dashboard-BI82vjmB.js",
+    "file": "assets/Dashboard-ClKn0MH5.js",
     "name": "Dashboard",
     "src": "resources/js/Pages/Dashboard.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_AuthenticatedLayout-D7au-Z7A.js",
-      "_ApplicationLogo-DR3ZBGSF.js",
-      "_transition-CdPfaago.js"
+      "_AuthenticatedLayout-Cqgsdin7.js",
+      "_ApplicationLogo-C1yatttv.js",
+      "_transition-CHxy23z7.js"
     ]
   },
-  "resources/js/Pages/Landing/About.tsx": {
-    "file": "assets/About-CikYU6ZL.js",
-    "name": "About",
-    "src": "resources/js/Pages/Landing/About.tsx",
+  "resources/js/Pages/Landing/AboutPage.tsx": {
+    "file": "assets/AboutPage-CGNTI2fI.js",
+    "name": "AboutPage",
+    "src": "resources/js/Pages/Landing/AboutPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_FooterSection-cMHgr6fJ.js"
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/AboutSections/AboutHeroAndMission.tsx",
+      "resources/js/Pages/Landing/AboutSections/FoundersAndLeadership.tsx",
+      "resources/js/Pages/Landing/AboutSections/EngineeringCultureAndTechStack.tsx",
+      "resources/js/Pages/Landing/AboutSections/NationwideFootprintAndOffices.tsx",
+      "resources/js/Pages/Landing/AboutSections/WorkplaceCultureAndCareersBridge.tsx",
+      "resources/js/Pages/Landing/AboutSections/SocialImpactFaqAndClosing.tsx"
     ]
   },
-  "resources/js/Pages/Landing/Blog.tsx": {
-    "file": "assets/Blog-D_HzLbE2.js",
-    "name": "Blog",
-    "src": "resources/js/Pages/Landing/Blog.tsx",
+  "resources/js/Pages/Landing/AboutSections/AboutHeroAndMission.tsx": {
+    "file": "assets/AboutHeroAndMission-DfF-e0Y9.js",
+    "name": "AboutHeroAndMission",
+    "src": "resources/js/Pages/Landing/AboutSections/AboutHeroAndMission.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/AboutSections/EngineeringCultureAndTechStack.tsx": {
+    "file": "assets/EngineeringCultureAndTechStack-C7wEzhdn.js",
+    "name": "EngineeringCultureAndTechStack",
+    "src": "resources/js/Pages/Landing/AboutSections/EngineeringCultureAndTechStack.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/AboutSections/FoundersAndLeadership.tsx": {
+    "file": "assets/FoundersAndLeadership-Q-w6b5hD.js",
+    "name": "FoundersAndLeadership",
+    "src": "resources/js/Pages/Landing/AboutSections/FoundersAndLeadership.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/AboutSections/NationwideFootprintAndOffices.tsx": {
+    "file": "assets/NationwideFootprintAndOffices-CcbYEgnd.js",
+    "name": "NationwideFootprintAndOffices",
+    "src": "resources/js/Pages/Landing/AboutSections/NationwideFootprintAndOffices.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/AboutSections/SocialImpactFaqAndClosing.tsx": {
+    "file": "assets/SocialImpactFaqAndClosing-BhK2EK_Y.js",
+    "name": "SocialImpactFaqAndClosing",
+    "src": "resources/js/Pages/Landing/AboutSections/SocialImpactFaqAndClosing.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/AboutSections/WorkplaceCultureAndCareersBridge.tsx": {
+    "file": "assets/WorkplaceCultureAndCareersBridge-39tm1h8d.js",
+    "name": "WorkplaceCultureAndCareersBridge",
+    "src": "resources/js/Pages/Landing/AboutSections/WorkplaceCultureAndCareersBridge.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ArticleSections/ArticleBodyContentAndStatutoryAlerts.tsx": {
+    "file": "assets/ArticleBodyContentAndStatutoryAlerts-xXekMHJR.js",
+    "name": "ArticleBodyContentAndStatutoryAlerts",
+    "src": "resources/js/Pages/Landing/ArticleSections/ArticleBodyContentAndStatutoryAlerts.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ArticleSections/ArticleHeroAndMetadata.tsx": {
+    "file": "assets/ArticleHeroAndMetadata-Bo1SHcPD.js",
+    "name": "ArticleHeroAndMetadata",
+    "src": "resources/js/Pages/Landing/ArticleSections/ArticleHeroAndMetadata.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ArticleSections/ClosingArticleTrialCta.tsx": {
+    "file": "assets/ClosingArticleTrialCta-H_ERLyBT.js",
+    "name": "ClosingArticleTrialCta",
+    "src": "resources/js/Pages/Landing/ArticleSections/ClosingArticleTrialCta.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ArticleSections/CodePayloadAndTemplatesSection.tsx": {
+    "file": "assets/CodePayloadAndTemplatesSection-DhRNj5-g.js",
+    "name": "CodePayloadAndTemplatesSection",
+    "src": "resources/js/Pages/Landing/ArticleSections/CodePayloadAndTemplatesSection.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ArticleSections/InteractiveAudienceEngagement.tsx": {
+    "file": "assets/InteractiveAudienceEngagement-BoaY5jmS.js",
+    "name": "InteractiveAudienceEngagement",
+    "src": "resources/js/Pages/Landing/ArticleSections/InteractiveAudienceEngagement.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ArticleSections/RelatedArticlesAndAuthorFooter.tsx": {
+    "file": "assets/RelatedArticlesAndAuthorFooter-CIKJnFgF.js",
+    "name": "RelatedArticlesAndAuthorFooter",
+    "src": "resources/js/Pages/Landing/ArticleSections/RelatedArticlesAndAuthorFooter.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/BlogArticlePage.tsx": {
+    "file": "assets/BlogArticlePage-Dr9fWutP.js",
+    "name": "BlogArticlePage",
+    "src": "resources/js/Pages/Landing/BlogArticlePage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_FooterSection-cMHgr6fJ.js"
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/ArticleSections/ArticleHeroAndMetadata.tsx",
+      "resources/js/Pages/Landing/ArticleSections/ArticleBodyContentAndStatutoryAlerts.tsx",
+      "resources/js/Pages/Landing/ArticleSections/CodePayloadAndTemplatesSection.tsx",
+      "resources/js/Pages/Landing/ArticleSections/InteractiveAudienceEngagement.tsx",
+      "resources/js/Pages/Landing/ArticleSections/RelatedArticlesAndAuthorFooter.tsx",
+      "resources/js/Pages/Landing/ArticleSections/ClosingArticleTrialCta.tsx"
     ]
   },
-  "resources/js/Pages/Landing/Contact.tsx": {
-    "file": "assets/Contact-C0_YgEIW.js",
-    "name": "Contact",
-    "src": "resources/js/Pages/Landing/Contact.tsx",
+  "resources/js/Pages/Landing/BlogPage.tsx": {
+    "file": "assets/BlogPage-3eblAHW9.js",
+    "name": "BlogPage",
+    "src": "resources/js/Pages/Landing/BlogPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_FooterSection-cMHgr6fJ.js"
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/BlogSections/BlogHeroAndFeaturedPicks.tsx",
+      "resources/js/Pages/Landing/BlogSections/GstAndStatutoryGuidesGrid.tsx",
+      "resources/js/Pages/Landing/BlogSections/RetailPosAndWholesaleGuides.tsx",
+      "resources/js/Pages/Landing/BlogSections/WhatsAppCommerceAndAiInnovation.tsx",
+      "resources/js/Pages/Landing/BlogSections/CfoInsightsAndIndustryReports.tsx",
+      "resources/js/Pages/Landing/BlogSections/NewsletterFaqAndClosingCta.tsx"
     ]
   },
-  "resources/js/Pages/LandingPage.tsx": {
-    "file": "assets/LandingPage-Bq9dkE-L.js",
-    "name": "LandingPage",
-    "src": "resources/js/Pages/LandingPage.tsx",
+  "resources/js/Pages/Landing/BlogSections/BlogHeroAndFeaturedPicks.tsx": {
+    "file": "assets/BlogHeroAndFeaturedPicks-DxxI8Sa3.js",
+    "name": "BlogHeroAndFeaturedPicks",
+    "src": "resources/js/Pages/Landing/BlogSections/BlogHeroAndFeaturedPicks.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/BlogSections/CfoInsightsAndIndustryReports.tsx": {
+    "file": "assets/CfoInsightsAndIndustryReports-CeNtXry_.js",
+    "name": "CfoInsightsAndIndustryReports",
+    "src": "resources/js/Pages/Landing/BlogSections/CfoInsightsAndIndustryReports.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/BlogSections/GstAndStatutoryGuidesGrid.tsx": {
+    "file": "assets/GstAndStatutoryGuidesGrid-DQFCEpMj.js",
+    "name": "GstAndStatutoryGuidesGrid",
+    "src": "resources/js/Pages/Landing/BlogSections/GstAndStatutoryGuidesGrid.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/BlogSections/NewsletterFaqAndClosingCta.tsx": {
+    "file": "assets/NewsletterFaqAndClosingCta-DmHM1f03.js",
+    "name": "NewsletterFaqAndClosingCta",
+    "src": "resources/js/Pages/Landing/BlogSections/NewsletterFaqAndClosingCta.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/BlogSections/RetailPosAndWholesaleGuides.tsx": {
+    "file": "assets/RetailPosAndWholesaleGuides-BymkQo_2.js",
+    "name": "RetailPosAndWholesaleGuides",
+    "src": "resources/js/Pages/Landing/BlogSections/RetailPosAndWholesaleGuides.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/BlogSections/WhatsAppCommerceAndAiInnovation.tsx": {
+    "file": "assets/WhatsAppCommerceAndAiInnovation-DX9hjtHF.js",
+    "name": "WhatsAppCommerceAndAiInnovation",
+    "src": "resources/js/Pages/Landing/BlogSections/WhatsAppCommerceAndAiInnovation.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ContactPage.tsx": {
+    "file": "assets/ContactPage-D9gtJGeD.js",
+    "name": "ContactPage",
+    "src": "resources/js/Pages/Landing/ContactPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_FooterSection-cMHgr6fJ.js",
-      "_ApplicationLogo-DR3ZBGSF.js"
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/ContactSections/ContactHeroAndDirectChannels.tsx",
+      "resources/js/Pages/Landing/ContactSections/ComprehensiveInquiryForm.tsx",
+      "resources/js/Pages/Landing/ContactSections/NationwideOfficesAndMaps.tsx",
+      "resources/js/Pages/Landing/ContactSections/SupportSlaAndEscalationMatrix.tsx",
+      "resources/js/Pages/Landing/ContactSections/CaAndPartnerInquiryBridge.tsx",
+      "resources/js/Pages/Landing/ContactSections/ContactFaqAndTrustClosing.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ContactSections/CaAndPartnerInquiryBridge.tsx": {
+    "file": "assets/CaAndPartnerInquiryBridge-D6sXPORP.js",
+    "name": "CaAndPartnerInquiryBridge",
+    "src": "resources/js/Pages/Landing/ContactSections/CaAndPartnerInquiryBridge.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ContactSections/ComprehensiveInquiryForm.tsx": {
+    "file": "assets/ComprehensiveInquiryForm-Cx5ISeZ_.js",
+    "name": "ComprehensiveInquiryForm",
+    "src": "resources/js/Pages/Landing/ContactSections/ComprehensiveInquiryForm.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ContactSections/ContactFaqAndTrustClosing.tsx": {
+    "file": "assets/ContactFaqAndTrustClosing-CdmuFXXR.js",
+    "name": "ContactFaqAndTrustClosing",
+    "src": "resources/js/Pages/Landing/ContactSections/ContactFaqAndTrustClosing.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ContactSections/ContactHeroAndDirectChannels.tsx": {
+    "file": "assets/ContactHeroAndDirectChannels-vBGcZLJR.js",
+    "name": "ContactHeroAndDirectChannels",
+    "src": "resources/js/Pages/Landing/ContactSections/ContactHeroAndDirectChannels.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ContactSections/NationwideOfficesAndMaps.tsx": {
+    "file": "assets/NationwideOfficesAndMaps-g3v_hasF.js",
+    "name": "NationwideOfficesAndMaps",
+    "src": "resources/js/Pages/Landing/ContactSections/NationwideOfficesAndMaps.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ContactSections/SupportSlaAndEscalationMatrix.tsx": {
+    "file": "assets/SupportSlaAndEscalationMatrix-IGKAk4YR.js",
+    "name": "SupportSlaAndEscalationMatrix",
+    "src": "resources/js/Pages/Landing/ContactSections/SupportSlaAndEscalationMatrix.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/DemoPage.tsx": {
+    "file": "assets/DemoPage-ByDPpdtv.js",
+    "name": "DemoPage",
+    "src": "resources/js/Pages/Landing/DemoPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/DemoSections/DemoHeroAndSchedulePicker.tsx",
+      "resources/js/Pages/Landing/DemoSections/IndustryTailoredDemoForm.tsx",
+      "resources/js/Pages/Landing/DemoSections/InteractiveSelfGuidedSandbox.tsx",
+      "resources/js/Pages/Landing/DemoSections/WhatYouWillLearnCurriculum.tsx",
+      "resources/js/Pages/Landing/DemoSections/EnterpriseSocialProofAndStories.tsx",
+      "resources/js/Pages/Landing/DemoSections/DemoFaqAndClosingCta.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/DemoSections/DemoFaqAndClosingCta.tsx": {
+    "file": "assets/DemoFaqAndClosingCta-DsBy8JgT.js",
+    "name": "DemoFaqAndClosingCta",
+    "src": "resources/js/Pages/Landing/DemoSections/DemoFaqAndClosingCta.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/DemoSections/DemoHeroAndSchedulePicker.tsx": {
+    "file": "assets/DemoHeroAndSchedulePicker-JK2-LvBa.js",
+    "name": "DemoHeroAndSchedulePicker",
+    "src": "resources/js/Pages/Landing/DemoSections/DemoHeroAndSchedulePicker.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/DemoSections/EnterpriseSocialProofAndStories.tsx": {
+    "file": "assets/EnterpriseSocialProofAndStories-BvKxFCMx.js",
+    "name": "EnterpriseSocialProofAndStories",
+    "src": "resources/js/Pages/Landing/DemoSections/EnterpriseSocialProofAndStories.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/DemoSections/IndustryTailoredDemoForm.tsx": {
+    "file": "assets/IndustryTailoredDemoForm-lRzrmYjM.js",
+    "name": "IndustryTailoredDemoForm",
+    "src": "resources/js/Pages/Landing/DemoSections/IndustryTailoredDemoForm.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/DemoSections/InteractiveSelfGuidedSandbox.tsx": {
+    "file": "assets/InteractiveSelfGuidedSandbox-D2o8Tk2n.js",
+    "name": "InteractiveSelfGuidedSandbox",
+    "src": "resources/js/Pages/Landing/DemoSections/InteractiveSelfGuidedSandbox.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/DemoSections/WhatYouWillLearnCurriculum.tsx": {
+    "file": "assets/WhatYouWillLearnCurriculum-qtr_oawp.js",
+    "name": "WhatYouWillLearnCurriculum",
+    "src": "resources/js/Pages/Landing/DemoSections/WhatYouWillLearnCurriculum.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FeaturesPage.tsx": {
+    "file": "assets/FeaturesPage-CQ_Ej9Lw.js",
+    "name": "FeaturesPage",
+    "src": "resources/js/Pages/Landing/FeaturesPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/FeaturesSections/FeaturesHeroAndNav.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/GstAndInvoicingDeepDive.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/AutomationAndReminders.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/PosAndOfflineEngine.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/InventoryAndSupplyChain.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/HrPayrollAttendance.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/FieldOpsAndAiSection.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/HospitalityAndRestaurant.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/FinancialLedgerAndReports.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/SecurityApiAndRoadmap.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FeaturesSections/AutomationAndReminders.tsx": {
+    "file": "assets/AutomationAndReminders-6okaNkkw.js",
+    "name": "AutomationAndReminders",
+    "src": "resources/js/Pages/Landing/FeaturesSections/AutomationAndReminders.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FeaturesSections/FeaturesHeroAndNav.tsx": {
+    "file": "assets/FeaturesHeroAndNav-DamO-pGv.js",
+    "name": "FeaturesHeroAndNav",
+    "src": "resources/js/Pages/Landing/FeaturesSections/FeaturesHeroAndNav.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FeaturesSections/FieldOpsAndAiSection.tsx": {
+    "file": "assets/FieldOpsAndAiSection-CHMVtpjf.js",
+    "name": "FieldOpsAndAiSection",
+    "src": "resources/js/Pages/Landing/FeaturesSections/FieldOpsAndAiSection.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FeaturesSections/FinancialLedgerAndReports.tsx": {
+    "file": "assets/FinancialLedgerAndReports-LWnrPUQ0.js",
+    "name": "FinancialLedgerAndReports",
+    "src": "resources/js/Pages/Landing/FeaturesSections/FinancialLedgerAndReports.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FeaturesSections/GstAndInvoicingDeepDive.tsx": {
+    "file": "assets/GstAndInvoicingDeepDive-C7_oGgG0.js",
+    "name": "GstAndInvoicingDeepDive",
+    "src": "resources/js/Pages/Landing/FeaturesSections/GstAndInvoicingDeepDive.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FeaturesSections/HospitalityAndRestaurant.tsx": {
+    "file": "assets/HospitalityAndRestaurant-CB7AsgYH.js",
+    "name": "HospitalityAndRestaurant",
+    "src": "resources/js/Pages/Landing/FeaturesSections/HospitalityAndRestaurant.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FeaturesSections/HrPayrollAttendance.tsx": {
+    "file": "assets/HrPayrollAttendance-DftPMcCI.js",
+    "name": "HrPayrollAttendance",
+    "src": "resources/js/Pages/Landing/FeaturesSections/HrPayrollAttendance.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FeaturesSections/InventoryAndSupplyChain.tsx": {
+    "file": "assets/InventoryAndSupplyChain-DWvVjkg0.js",
+    "name": "InventoryAndSupplyChain",
+    "src": "resources/js/Pages/Landing/FeaturesSections/InventoryAndSupplyChain.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FeaturesSections/PosAndOfflineEngine.tsx": {
+    "file": "assets/PosAndOfflineEngine-g2Z8Lszv.js",
+    "name": "PosAndOfflineEngine",
+    "src": "resources/js/Pages/Landing/FeaturesSections/PosAndOfflineEngine.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FeaturesSections/SecurityApiAndRoadmap.tsx": {
+    "file": "assets/SecurityApiAndRoadmap-B2KltNjo.js",
+    "name": "SecurityApiAndRoadmap",
+    "src": "resources/js/Pages/Landing/FeaturesSections/SecurityApiAndRoadmap.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FieldOpsSections/AmcContractsAndBilling.tsx": {
+    "file": "assets/AmcContractsAndBilling-BHXwlXL9.js",
+    "name": "AmcContractsAndBilling",
+    "src": "resources/js/Pages/Landing/FieldOpsSections/AmcContractsAndBilling.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FieldOpsSections/FieldOpsHeroAndFormats.tsx": {
+    "file": "assets/FieldOpsHeroAndFormats-BZs__IGs.js",
+    "name": "FieldOpsHeroAndFormats",
+    "src": "resources/js/Pages/Landing/FieldOpsSections/FieldOpsHeroAndFormats.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FieldOpsSections/FieldOpsSocialProofAndClosing.tsx": {
+    "file": "assets/FieldOpsSocialProofAndClosing-DUO23iCR.js",
+    "name": "FieldOpsSocialProofAndClosing",
+    "src": "resources/js/Pages/Landing/FieldOpsSections/FieldOpsSocialProofAndClosing.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FieldOpsSections/GeminiAiVisionProofAndVanStock.tsx": {
+    "file": "assets/GeminiAiVisionProofAndVanStock-BNkGTDp-.js",
+    "name": "GeminiAiVisionProofAndVanStock",
+    "src": "resources/js/Pages/Landing/FieldOpsSections/GeminiAiVisionProofAndVanStock.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FieldOpsSections/GpsTrackingAndTaDaEngine.tsx": {
+    "file": "assets/GpsTrackingAndTaDaEngine-vYdvGprH.js",
+    "name": "GpsTrackingAndTaDaEngine",
+    "src": "resources/js/Pages/Landing/FieldOpsSections/GpsTrackingAndTaDaEngine.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/FieldOpsSections/WhatsAppDispatchAndJobCards.tsx": {
+    "file": "assets/WhatsAppDispatchAndJobCards-jzQS8tTD.js",
+    "name": "WhatsAppDispatchAndJobCards",
+    "src": "resources/js/Pages/Landing/FieldOpsSections/WhatsAppDispatchAndJobCards.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/GstCompliancePage.tsx": {
+    "file": "assets/GstCompliancePage-B5yvdplf.js",
+    "name": "GstCompliancePage",
+    "src": "resources/js/Pages/Landing/GstCompliancePage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/GstSections/GstHeroAndArchitecture.tsx",
+      "resources/js/Pages/Landing/GstSections/EInvoicingAndEWayBillEngine.tsx",
+      "resources/js/Pages/Landing/GstSections/Gstr2bReconciliationAndItc.tsx",
+      "resources/js/Pages/Landing/GstSections/HsnFinderAndMultiRateTax.tsx",
+      "resources/js/Pages/Landing/GstSections/TallyGstSyncAndAuditPack.tsx",
+      "resources/js/Pages/Landing/GstSections/GstSocialProofAndClosing.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/GstSections/EInvoicingAndEWayBillEngine.tsx": {
+    "file": "assets/EInvoicingAndEWayBillEngine-Bt-GUdbc.js",
+    "name": "EInvoicingAndEWayBillEngine",
+    "src": "resources/js/Pages/Landing/GstSections/EInvoicingAndEWayBillEngine.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/GstSections/GstHeroAndArchitecture.tsx": {
+    "file": "assets/GstHeroAndArchitecture-CUJiQgMT.js",
+    "name": "GstHeroAndArchitecture",
+    "src": "resources/js/Pages/Landing/GstSections/GstHeroAndArchitecture.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/GstSections/GstSocialProofAndClosing.tsx": {
+    "file": "assets/GstSocialProofAndClosing-D2k4Mbd1.js",
+    "name": "GstSocialProofAndClosing",
+    "src": "resources/js/Pages/Landing/GstSections/GstSocialProofAndClosing.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/GstSections/Gstr2bReconciliationAndItc.tsx": {
+    "file": "assets/Gstr2bReconciliationAndItc-CGNMwUoT.js",
+    "name": "Gstr2bReconciliationAndItc",
+    "src": "resources/js/Pages/Landing/GstSections/Gstr2bReconciliationAndItc.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/GstSections/HsnFinderAndMultiRateTax.tsx": {
+    "file": "assets/HsnFinderAndMultiRateTax-B4gk6T19.js",
+    "name": "HsnFinderAndMultiRateTax",
+    "src": "resources/js/Pages/Landing/GstSections/HsnFinderAndMultiRateTax.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/GstSections/TallyGstSyncAndAuditPack.tsx": {
+    "file": "assets/TallyGstSyncAndAuditPack-nPQLksNM.js",
+    "name": "TallyGstSyncAndAuditPack",
+    "src": "resources/js/Pages/Landing/GstSections/TallyGstSyncAndAuditPack.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/HomePage.tsx": {
+    "file": "assets/HomePage-Cxm7ajwh.js",
+    "name": "HomePage",
+    "src": "resources/js/Pages/Landing/HomePage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/Sections/HeroSection.tsx",
+      "resources/js/Pages/Landing/Sections/PainAndSolutionSection.tsx",
+      "resources/js/Pages/Landing/Sections/CoreFeaturesAndDashboard.tsx",
+      "resources/js/Pages/Landing/Sections/DeepDivesSection.tsx",
+      "resources/js/Pages/Landing/Sections/FieldOpsAndHRSection.tsx",
+      "resources/js/Pages/Landing/Sections/ReportingAndIndustrySection.tsx",
+      "resources/js/Pages/Landing/Sections/CalculatorAndPricingSection.tsx",
+      "resources/js/Pages/Landing/Sections/SocialProofAndComparisonSection.tsx",
+      "resources/js/Pages/Landing/Sections/AiAndTechSection.tsx",
+      "resources/js/Pages/Landing/Sections/InteractiveBotAndDemoSection.tsx",
+      "resources/js/Pages/Landing/Sections/FaqAndClosingSection.tsx",
+      "_AnimatedSection-BAXHM9-w.js"
+    ]
+  },
+  "resources/js/Pages/Landing/HotelSections/HospitalityGstAndOperations.tsx": {
+    "file": "assets/HospitalityGstAndOperations-CYzIyvn3.js",
+    "name": "HospitalityGstAndOperations",
+    "src": "resources/js/Pages/Landing/HotelSections/HospitalityGstAndOperations.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/HotelSections/HospitalitySocialProofAndClosing.tsx": {
+    "file": "assets/HospitalitySocialProofAndClosing-DQrZ9CMR.js",
+    "name": "HospitalitySocialProofAndClosing",
+    "src": "resources/js/Pages/Landing/HotelSections/HospitalitySocialProofAndClosing.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/HotelSections/HotelHeroAndFormats.tsx": {
+    "file": "assets/HotelHeroAndFormats-8bBBt3Wm.js",
+    "name": "HotelHeroAndFormats",
+    "src": "resources/js/Pages/Landing/HotelSections/HotelHeroAndFormats.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/HotelSections/HotelPmsAndFrontDesk.tsx": {
+    "file": "assets/HotelPmsAndFrontDesk-BxKoekwA.js",
+    "name": "HotelPmsAndFrontDesk",
+    "src": "resources/js/Pages/Landing/HotelSections/HotelPmsAndFrontDesk.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/HotelSections/RecipeInventoryAndFoodAggregators.tsx": {
+    "file": "assets/RecipeInventoryAndFoodAggregators-BEyp9tW4.js",
+    "name": "RecipeInventoryAndFoodAggregators",
+    "src": "resources/js/Pages/Landing/HotelSections/RecipeInventoryAndFoodAggregators.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/HotelSections/RestaurantTableAndKotEngine.tsx": {
+    "file": "assets/RestaurantTableAndKotEngine-BOtKIbHF.js",
+    "name": "RestaurantTableAndKotEngine",
+    "src": "resources/js/Pages/Landing/HotelSections/RestaurantTableAndKotEngine.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ManufacturingSections/BatchTrackingAndMachineOee.tsx": {
+    "file": "assets/BatchTrackingAndMachineOee-BLh5ypFW.js",
+    "name": "BatchTrackingAndMachineOee",
+    "src": "resources/js/Pages/Landing/ManufacturingSections/BatchTrackingAndMachineOee.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ManufacturingSections/GstJobWorkAndSubcontracting.tsx": {
+    "file": "assets/GstJobWorkAndSubcontracting-EV6_5kcm.js",
+    "name": "GstJobWorkAndSubcontracting",
+    "src": "resources/js/Pages/Landing/ManufacturingSections/GstJobWorkAndSubcontracting.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ManufacturingSections/ManufacturingHeroAndFormats.tsx": {
+    "file": "assets/ManufacturingHeroAndFormats-COeV9j0v.js",
+    "name": "ManufacturingHeroAndFormats",
+    "src": "resources/js/Pages/Landing/ManufacturingSections/ManufacturingHeroAndFormats.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ManufacturingSections/ManufacturingSocialProofAndClosing.tsx": {
+    "file": "assets/ManufacturingSocialProofAndClosing-w3KvGB5p.js",
+    "name": "ManufacturingSocialProofAndClosing",
+    "src": "resources/js/Pages/Landing/ManufacturingSections/ManufacturingSocialProofAndClosing.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ManufacturingSections/MultiLevelBomAndWorkOrders.tsx": {
+    "file": "assets/MultiLevelBomAndWorkOrders-BL9nzBj-.js",
+    "name": "MultiLevelBomAndWorkOrders",
+    "src": "resources/js/Pages/Landing/ManufacturingSections/MultiLevelBomAndWorkOrders.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/ManufacturingSections/QualityControlAndLandedCosting.tsx": {
+    "file": "assets/QualityControlAndLandedCosting-Bbv9LTRj.js",
+    "name": "QualityControlAndLandedCosting",
+    "src": "resources/js/Pages/Landing/ManufacturingSections/QualityControlAndLandedCosting.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/PricingPage.tsx": {
+    "file": "assets/PricingPage-BfIDgT21.js",
+    "name": "PricingPage",
+    "src": "resources/js/Pages/Landing/PricingPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/PricingSections/PricingHeroAndCards.tsx",
+      "resources/js/Pages/Landing/PricingSections/PlanWizardAndRoi.tsx",
+      "resources/js/Pages/Landing/PricingSections/FeatureMatrixAndHardware.tsx",
+      "resources/js/Pages/Landing/PricingSections/DiscountsAndPerks.tsx",
+      "resources/js/Pages/Landing/PricingSections/EnterpriseAndSocialProof.tsx",
+      "resources/js/Pages/Landing/PricingSections/FaqAndClosingPricing.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/PricingSections/DiscountsAndPerks.tsx": {
+    "file": "assets/DiscountsAndPerks-yPnUQwO0.js",
+    "name": "DiscountsAndPerks",
+    "src": "resources/js/Pages/Landing/PricingSections/DiscountsAndPerks.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/PricingSections/EnterpriseAndSocialProof.tsx": {
+    "file": "assets/EnterpriseAndSocialProof-BUwsbQ8H.js",
+    "name": "EnterpriseAndSocialProof",
+    "src": "resources/js/Pages/Landing/PricingSections/EnterpriseAndSocialProof.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/PricingSections/FaqAndClosingPricing.tsx": {
+    "file": "assets/FaqAndClosingPricing-Df6MxEQX.js",
+    "name": "FaqAndClosingPricing",
+    "src": "resources/js/Pages/Landing/PricingSections/FaqAndClosingPricing.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/PricingSections/FeatureMatrixAndHardware.tsx": {
+    "file": "assets/FeatureMatrixAndHardware-y9054wwk.js",
+    "name": "FeatureMatrixAndHardware",
+    "src": "resources/js/Pages/Landing/PricingSections/FeatureMatrixAndHardware.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/PricingSections/PlanWizardAndRoi.tsx": {
+    "file": "assets/PlanWizardAndRoi-CbdSqRhz.js",
+    "name": "PlanWizardAndRoi",
+    "src": "resources/js/Pages/Landing/PricingSections/PlanWizardAndRoi.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/PricingSections/PricingHeroAndCards.tsx": {
+    "file": "assets/PricingHeroAndCards-DTpG44S0.js",
+    "name": "PricingHeroAndCards",
+    "src": "resources/js/Pages/Landing/PricingSections/PricingHeroAndCards.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/RetailSections/CustomerLoyaltyAndPromotions.tsx": {
+    "file": "assets/CustomerLoyaltyAndPromotions-nAHRoyD3.js",
+    "name": "CustomerLoyaltyAndPromotions",
+    "src": "resources/js/Pages/Landing/RetailSections/CustomerLoyaltyAndPromotions.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_createLucideIcon-Bc0Kjeks.js",
+      "_message-square-Dbp8ux6u.js",
+      "_circle-check-DCkC_Abj.js"
+    ]
+  },
+  "resources/js/Pages/Landing/RetailSections/InventoryAndVariants.tsx": {
+    "file": "assets/InventoryAndVariants-BZNS9U1c.js",
+    "name": "InventoryAndVariants",
+    "src": "resources/js/Pages/Landing/RetailSections/InventoryAndVariants.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_createLucideIcon-Bc0Kjeks.js",
+      "_circle-check-DCkC_Abj.js",
+      "_search-ldyaO2tK.js"
+    ]
+  },
+  "resources/js/Pages/Landing/RetailSections/OperationsSecurityAndGst.tsx": {
+    "file": "assets/OperationsSecurityAndGst-BFTlOij_.js",
+    "name": "OperationsSecurityAndGst",
+    "src": "resources/js/Pages/Landing/RetailSections/OperationsSecurityAndGst.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_createLucideIcon-Bc0Kjeks.js",
+      "_circle-check-DCkC_Abj.js"
+    ]
+  },
+  "resources/js/Pages/Landing/RetailSections/PosAndCheckoutExperience.tsx": {
+    "file": "assets/PosAndCheckoutExperience-Dqh2kalE.js",
+    "name": "PosAndCheckoutExperience",
+    "src": "resources/js/Pages/Landing/RetailSections/PosAndCheckoutExperience.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/RetailSections/RetailHeroAndFormats.tsx": {
+    "file": "assets/RetailHeroAndFormats-Dv21kkS9.js",
+    "name": "RetailHeroAndFormats",
+    "src": "resources/js/Pages/Landing/RetailSections/RetailHeroAndFormats.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/RetailSections/RetailSocialProofAndClosing.tsx": {
+    "file": "assets/RetailSocialProofAndClosing-Bt9MOSWb.js",
+    "name": "RetailSocialProofAndClosing",
+    "src": "resources/js/Pages/Landing/RetailSections/RetailSocialProofAndClosing.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_createLucideIcon-Bc0Kjeks.js",
+      "_search-ldyaO2tK.js",
+      "_message-square-Dbp8ux6u.js"
+    ]
+  },
+  "resources/js/Pages/Landing/Sections/AiAndTechSection.tsx": {
+    "file": "assets/AiAndTechSection-DeygJ7i_.js",
+    "name": "AiAndTechSection",
+    "src": "resources/js/Pages/Landing/Sections/AiAndTechSection.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_AnimatedSection-BAXHM9-w.js"
+    ]
+  },
+  "resources/js/Pages/Landing/Sections/CalculatorAndPricingSection.tsx": {
+    "file": "assets/CalculatorAndPricingSection-ClUXoetu.js",
+    "name": "CalculatorAndPricingSection",
+    "src": "resources/js/Pages/Landing/Sections/CalculatorAndPricingSection.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_AnimatedSection-BAXHM9-w.js"
+    ]
+  },
+  "resources/js/Pages/Landing/Sections/CoreFeaturesAndDashboard.tsx": {
+    "file": "assets/CoreFeaturesAndDashboard-DR5ipPRR.js",
+    "name": "CoreFeaturesAndDashboard",
+    "src": "resources/js/Pages/Landing/Sections/CoreFeaturesAndDashboard.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_AnimatedSection-BAXHM9-w.js"
+    ]
+  },
+  "resources/js/Pages/Landing/Sections/DeepDivesSection.tsx": {
+    "file": "assets/DeepDivesSection-BCCeEutx.js",
+    "name": "DeepDivesSection",
+    "src": "resources/js/Pages/Landing/Sections/DeepDivesSection.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_AnimatedSection-BAXHM9-w.js"
+    ]
+  },
+  "resources/js/Pages/Landing/Sections/FaqAndClosingSection.tsx": {
+    "file": "assets/FaqAndClosingSection-CJtEasNy.js",
+    "name": "FaqAndClosingSection",
+    "src": "resources/js/Pages/Landing/Sections/FaqAndClosingSection.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_AnimatedSection-BAXHM9-w.js"
+    ]
+  },
+  "resources/js/Pages/Landing/Sections/FieldOpsAndHRSection.tsx": {
+    "file": "assets/FieldOpsAndHRSection-D7AMzxo8.js",
+    "name": "FieldOpsAndHRSection",
+    "src": "resources/js/Pages/Landing/Sections/FieldOpsAndHRSection.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_AnimatedSection-BAXHM9-w.js"
+    ]
+  },
+  "resources/js/Pages/Landing/Sections/HeroSection.tsx": {
+    "file": "assets/HeroSection-BGcEb1Fd.js",
+    "name": "HeroSection",
+    "src": "resources/js/Pages/Landing/Sections/HeroSection.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/Sections/InteractiveBotAndDemoSection.tsx": {
+    "file": "assets/InteractiveBotAndDemoSection-BDTC0aCF.js",
+    "name": "InteractiveBotAndDemoSection",
+    "src": "resources/js/Pages/Landing/Sections/InteractiveBotAndDemoSection.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_AnimatedSection-BAXHM9-w.js"
+    ]
+  },
+  "resources/js/Pages/Landing/Sections/PainAndSolutionSection.tsx": {
+    "file": "assets/PainAndSolutionSection-DM57OLwV.js",
+    "name": "PainAndSolutionSection",
+    "src": "resources/js/Pages/Landing/Sections/PainAndSolutionSection.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_AnimatedSection-BAXHM9-w.js"
+    ]
+  },
+  "resources/js/Pages/Landing/Sections/ReportingAndIndustrySection.tsx": {
+    "file": "assets/ReportingAndIndustrySection-CekZi3ae.js",
+    "name": "ReportingAndIndustrySection",
+    "src": "resources/js/Pages/Landing/Sections/ReportingAndIndustrySection.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_AnimatedSection-BAXHM9-w.js"
+    ]
+  },
+  "resources/js/Pages/Landing/Sections/SocialProofAndComparisonSection.tsx": {
+    "file": "assets/SocialProofAndComparisonSection-DetSfYbC.js",
+    "name": "SocialProofAndComparisonSection",
+    "src": "resources/js/Pages/Landing/Sections/SocialProofAndComparisonSection.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_AnimatedSection-BAXHM9-w.js"
+    ]
+  },
+  "resources/js/Pages/Landing/Solutions/FieldServicesPage.tsx": {
+    "file": "assets/FieldServicesPage-QRXKRkFF.js",
+    "name": "FieldServicesPage",
+    "src": "resources/js/Pages/Landing/Solutions/FieldServicesPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/FieldOpsSections/FieldOpsHeroAndFormats.tsx",
+      "resources/js/Pages/Landing/FieldOpsSections/WhatsAppDispatchAndJobCards.tsx",
+      "resources/js/Pages/Landing/FieldOpsSections/GpsTrackingAndTaDaEngine.tsx",
+      "resources/js/Pages/Landing/FieldOpsSections/GeminiAiVisionProofAndVanStock.tsx",
+      "resources/js/Pages/Landing/FieldOpsSections/AmcContractsAndBilling.tsx",
+      "resources/js/Pages/Landing/FieldOpsSections/FieldOpsSocialProofAndClosing.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/Solutions/HotelPage.tsx": {
+    "file": "assets/HotelPage-VivuPPTV.js",
+    "name": "HotelPage",
+    "src": "resources/js/Pages/Landing/Solutions/HotelPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/HotelSections/HotelHeroAndFormats.tsx",
+      "resources/js/Pages/Landing/HotelSections/HotelPmsAndFrontDesk.tsx",
+      "resources/js/Pages/Landing/HotelSections/RestaurantTableAndKotEngine.tsx",
+      "resources/js/Pages/Landing/HotelSections/RecipeInventoryAndFoodAggregators.tsx",
+      "resources/js/Pages/Landing/HotelSections/HospitalityGstAndOperations.tsx",
+      "resources/js/Pages/Landing/HotelSections/HospitalitySocialProofAndClosing.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/Solutions/ManufacturingPage.tsx": {
+    "file": "assets/ManufacturingPage-DGBKcJ7u.js",
+    "name": "ManufacturingPage",
+    "src": "resources/js/Pages/Landing/Solutions/ManufacturingPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/ManufacturingSections/ManufacturingHeroAndFormats.tsx",
+      "resources/js/Pages/Landing/ManufacturingSections/MultiLevelBomAndWorkOrders.tsx",
+      "resources/js/Pages/Landing/ManufacturingSections/GstJobWorkAndSubcontracting.tsx",
+      "resources/js/Pages/Landing/ManufacturingSections/BatchTrackingAndMachineOee.tsx",
+      "resources/js/Pages/Landing/ManufacturingSections/QualityControlAndLandedCosting.tsx",
+      "resources/js/Pages/Landing/ManufacturingSections/ManufacturingSocialProofAndClosing.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/Solutions/RetailPage.tsx": {
+    "file": "assets/RetailPage-BVWTvTy4.js",
+    "name": "RetailPage",
+    "src": "resources/js/Pages/Landing/Solutions/RetailPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/RetailSections/RetailHeroAndFormats.tsx",
+      "resources/js/Pages/Landing/RetailSections/PosAndCheckoutExperience.tsx",
+      "resources/js/Pages/Landing/RetailSections/InventoryAndVariants.tsx",
+      "resources/js/Pages/Landing/RetailSections/CustomerLoyaltyAndPromotions.tsx",
+      "resources/js/Pages/Landing/RetailSections/OperationsSecurityAndGst.tsx",
+      "resources/js/Pages/Landing/RetailSections/RetailSocialProofAndClosing.tsx",
+      "_createLucideIcon-Bc0Kjeks.js",
+      "_circle-check-DCkC_Abj.js",
+      "_search-ldyaO2tK.js",
+      "_message-square-Dbp8ux6u.js"
+    ]
+  },
+  "resources/js/Pages/Landing/Solutions/WholesalePage.tsx": {
+    "file": "assets/WholesalePage-CEnXjX42.js",
+    "name": "WholesalePage",
+    "src": "resources/js/Pages/Landing/Solutions/WholesalePage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/WholesaleSections/WholesaleHeroAndFormats.tsx",
+      "resources/js/Pages/Landing/WholesaleSections/B2bPricingAndCatalog.tsx",
+      "resources/js/Pages/Landing/WholesaleSections/CreditKhataAndReceivables.tsx",
+      "resources/js/Pages/Landing/WholesaleSections/GodownLogisticsAndDispatch.tsx",
+      "resources/js/Pages/Landing/WholesaleSections/WholesaleOperationsAndGst.tsx",
+      "resources/js/Pages/Landing/WholesaleSections/WholesaleSocialProofAndClosing.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WhatsAppFeaturesPage.tsx": {
+    "file": "assets/WhatsAppFeaturesPage-DxGY4XAz.js",
+    "name": "WhatsAppFeaturesPage",
+    "src": "resources/js/Pages/Landing/WhatsAppFeaturesPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx",
+      "_SiteLayout-DmZncLwS.js",
+      "resources/js/Pages/Landing/WhatsAppSections/WhatsAppHeroAndArchitecture.tsx",
+      "resources/js/Pages/Landing/WhatsAppSections/InteractiveCommerceAndCatalog.tsx",
+      "resources/js/Pages/Landing/WhatsAppSections/PaymentDunningAndRecovery.tsx",
+      "resources/js/Pages/Landing/WhatsAppSections/FieldOpsAndStaffAutomation.tsx",
+      "resources/js/Pages/Landing/WhatsAppSections/BroadcastMarketingAndMetaPricing.tsx",
+      "resources/js/Pages/Landing/WhatsAppSections/WhatsAppSocialProofAndClosing.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WhatsAppSections/BroadcastMarketingAndMetaPricing.tsx": {
+    "file": "assets/BroadcastMarketingAndMetaPricing-CPlBMFAk.js",
+    "name": "BroadcastMarketingAndMetaPricing",
+    "src": "resources/js/Pages/Landing/WhatsAppSections/BroadcastMarketingAndMetaPricing.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WhatsAppSections/FieldOpsAndStaffAutomation.tsx": {
+    "file": "assets/FieldOpsAndStaffAutomation-2yguVkyO.js",
+    "name": "FieldOpsAndStaffAutomation",
+    "src": "resources/js/Pages/Landing/WhatsAppSections/FieldOpsAndStaffAutomation.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WhatsAppSections/InteractiveCommerceAndCatalog.tsx": {
+    "file": "assets/InteractiveCommerceAndCatalog-Dt00JzDk.js",
+    "name": "InteractiveCommerceAndCatalog",
+    "src": "resources/js/Pages/Landing/WhatsAppSections/InteractiveCommerceAndCatalog.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WhatsAppSections/PaymentDunningAndRecovery.tsx": {
+    "file": "assets/PaymentDunningAndRecovery-CN7fbftu.js",
+    "name": "PaymentDunningAndRecovery",
+    "src": "resources/js/Pages/Landing/WhatsAppSections/PaymentDunningAndRecovery.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WhatsAppSections/WhatsAppHeroAndArchitecture.tsx": {
+    "file": "assets/WhatsAppHeroAndArchitecture-B67hgpee.js",
+    "name": "WhatsAppHeroAndArchitecture",
+    "src": "resources/js/Pages/Landing/WhatsAppSections/WhatsAppHeroAndArchitecture.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WhatsAppSections/WhatsAppSocialProofAndClosing.tsx": {
+    "file": "assets/WhatsAppSocialProofAndClosing-Csl591ZL.js",
+    "name": "WhatsAppSocialProofAndClosing",
+    "src": "resources/js/Pages/Landing/WhatsAppSections/WhatsAppSocialProofAndClosing.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WholesaleSections/B2bPricingAndCatalog.tsx": {
+    "file": "assets/B2bPricingAndCatalog-BYUjEoWk.js",
+    "name": "B2bPricingAndCatalog",
+    "src": "resources/js/Pages/Landing/WholesaleSections/B2bPricingAndCatalog.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WholesaleSections/CreditKhataAndReceivables.tsx": {
+    "file": "assets/CreditKhataAndReceivables-Bjd2ZrGN.js",
+    "name": "CreditKhataAndReceivables",
+    "src": "resources/js/Pages/Landing/WholesaleSections/CreditKhataAndReceivables.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WholesaleSections/GodownLogisticsAndDispatch.tsx": {
+    "file": "assets/GodownLogisticsAndDispatch-rv34gxLq.js",
+    "name": "GodownLogisticsAndDispatch",
+    "src": "resources/js/Pages/Landing/WholesaleSections/GodownLogisticsAndDispatch.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WholesaleSections/WholesaleHeroAndFormats.tsx": {
+    "file": "assets/WholesaleHeroAndFormats-VO2ZVuUr.js",
+    "name": "WholesaleHeroAndFormats",
+    "src": "resources/js/Pages/Landing/WholesaleSections/WholesaleHeroAndFormats.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WholesaleSections/WholesaleOperationsAndGst.tsx": {
+    "file": "assets/WholesaleOperationsAndGst-B5jcUkrX.js",
+    "name": "WholesaleOperationsAndGst",
+    "src": "resources/js/Pages/Landing/WholesaleSections/WholesaleOperationsAndGst.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/Pages/Landing/WholesaleSections/WholesaleSocialProofAndClosing.tsx": {
+    "file": "assets/WholesaleSocialProofAndClosing-COFBa0rZ.js",
+    "name": "WholesaleSocialProofAndClosing",
+    "src": "resources/js/Pages/Landing/WholesaleSections/WholesaleSocialProofAndClosing.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
     ]
   },
   "resources/js/Pages/Profile/Edit.tsx": {
-    "file": "assets/Edit-Drw11yPV.js",
+    "file": "assets/Edit-DgTr9lFV.js",
     "name": "Edit",
     "src": "resources/js/Pages/Profile/Edit.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_AuthenticatedLayout-D7au-Z7A.js",
+      "_AuthenticatedLayout-Cqgsdin7.js",
       "resources/js/Pages/Profile/Partials/DeleteUserForm.tsx",
       "resources/js/Pages/Profile/Partials/UpdatePasswordForm.tsx",
       "resources/js/Pages/Profile/Partials/UpdateProfileInformationForm.tsx",
-      "_ApplicationLogo-DR3ZBGSF.js",
-      "_transition-CdPfaago.js",
-      "_TextInput-FRcll04p.js",
-      "_InputLabel-DH8ek8nL.js",
-      "_PrimaryButton-WQ_lDQfU.js"
+      "_ApplicationLogo-C1yatttv.js",
+      "_transition-CHxy23z7.js",
+      "_TextInput-CFDBxxUl.js",
+      "_InputLabel-B2dHxOjJ.js",
+      "_PrimaryButton-CiOXB-P_.js"
     ]
   },
   "resources/js/Pages/Profile/Partials/DeleteUserForm.tsx": {
-    "file": "assets/DeleteUserForm-Dlibia4H.js",
+    "file": "assets/DeleteUserForm-CwPvYcVU.js",
     "name": "DeleteUserForm",
     "src": "resources/js/Pages/Profile/Partials/DeleteUserForm.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_TextInput-FRcll04p.js",
-      "_InputLabel-DH8ek8nL.js",
-      "_transition-CdPfaago.js"
+      "_TextInput-CFDBxxUl.js",
+      "_InputLabel-B2dHxOjJ.js",
+      "_transition-CHxy23z7.js"
     ]
   },
   "resources/js/Pages/Profile/Partials/UpdatePasswordForm.tsx": {
-    "file": "assets/UpdatePasswordForm-DMhbieLr.js",
+    "file": "assets/UpdatePasswordForm-vnrxztYW.js",
     "name": "UpdatePasswordForm",
     "src": "resources/js/Pages/Profile/Partials/UpdatePasswordForm.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_TextInput-FRcll04p.js",
-      "_InputLabel-DH8ek8nL.js",
-      "_PrimaryButton-WQ_lDQfU.js",
-      "_transition-CdPfaago.js"
+      "_TextInput-CFDBxxUl.js",
+      "_InputLabel-B2dHxOjJ.js",
+      "_PrimaryButton-CiOXB-P_.js",
+      "_transition-CHxy23z7.js"
     ]
   },
   "resources/js/Pages/Profile/Partials/UpdateProfileInformationForm.tsx": {
-    "file": "assets/UpdateProfileInformationForm-nkeBmrwh.js",
+    "file": "assets/UpdateProfileInformationForm-B82YkyDG.js",
     "name": "UpdateProfileInformationForm",
     "src": "resources/js/Pages/Profile/Partials/UpdateProfileInformationForm.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_TextInput-FRcll04p.js",
-      "_InputLabel-DH8ek8nL.js",
-      "_PrimaryButton-WQ_lDQfU.js",
-      "_transition-CdPfaago.js"
+      "_TextInput-CFDBxxUl.js",
+      "_InputLabel-B2dHxOjJ.js",
+      "_PrimaryButton-CiOXB-P_.js",
+      "_transition-CHxy23z7.js"
     ]
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-DpSzTiYd.js",
+    "file": "assets/app-C0-4sjZ8.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,
@@ -261,17 +1421,127 @@
       "resources/js/Pages/Auth/ResetPassword.tsx",
       "resources/js/Pages/Auth/VerifyEmail.tsx",
       "resources/js/Pages/Dashboard.tsx",
-      "resources/js/Pages/Landing/About.tsx",
-      "resources/js/Pages/Landing/Blog.tsx",
-      "resources/js/Pages/Landing/Contact.tsx",
-      "resources/js/Pages/LandingPage.tsx",
+      "resources/js/Pages/Landing/AboutPage.tsx",
+      "resources/js/Pages/Landing/AboutSections/AboutHeroAndMission.tsx",
+      "resources/js/Pages/Landing/AboutSections/EngineeringCultureAndTechStack.tsx",
+      "resources/js/Pages/Landing/AboutSections/FoundersAndLeadership.tsx",
+      "resources/js/Pages/Landing/AboutSections/NationwideFootprintAndOffices.tsx",
+      "resources/js/Pages/Landing/AboutSections/SocialImpactFaqAndClosing.tsx",
+      "resources/js/Pages/Landing/AboutSections/WorkplaceCultureAndCareersBridge.tsx",
+      "resources/js/Pages/Landing/ArticleSections/ArticleBodyContentAndStatutoryAlerts.tsx",
+      "resources/js/Pages/Landing/ArticleSections/ArticleHeroAndMetadata.tsx",
+      "resources/js/Pages/Landing/ArticleSections/ClosingArticleTrialCta.tsx",
+      "resources/js/Pages/Landing/ArticleSections/CodePayloadAndTemplatesSection.tsx",
+      "resources/js/Pages/Landing/ArticleSections/InteractiveAudienceEngagement.tsx",
+      "resources/js/Pages/Landing/ArticleSections/RelatedArticlesAndAuthorFooter.tsx",
+      "resources/js/Pages/Landing/BlogArticlePage.tsx",
+      "resources/js/Pages/Landing/BlogPage.tsx",
+      "resources/js/Pages/Landing/BlogSections/BlogHeroAndFeaturedPicks.tsx",
+      "resources/js/Pages/Landing/BlogSections/CfoInsightsAndIndustryReports.tsx",
+      "resources/js/Pages/Landing/BlogSections/GstAndStatutoryGuidesGrid.tsx",
+      "resources/js/Pages/Landing/BlogSections/NewsletterFaqAndClosingCta.tsx",
+      "resources/js/Pages/Landing/BlogSections/RetailPosAndWholesaleGuides.tsx",
+      "resources/js/Pages/Landing/BlogSections/WhatsAppCommerceAndAiInnovation.tsx",
+      "resources/js/Pages/Landing/ContactPage.tsx",
+      "resources/js/Pages/Landing/ContactSections/CaAndPartnerInquiryBridge.tsx",
+      "resources/js/Pages/Landing/ContactSections/ComprehensiveInquiryForm.tsx",
+      "resources/js/Pages/Landing/ContactSections/ContactFaqAndTrustClosing.tsx",
+      "resources/js/Pages/Landing/ContactSections/ContactHeroAndDirectChannels.tsx",
+      "resources/js/Pages/Landing/ContactSections/NationwideOfficesAndMaps.tsx",
+      "resources/js/Pages/Landing/ContactSections/SupportSlaAndEscalationMatrix.tsx",
+      "resources/js/Pages/Landing/DemoPage.tsx",
+      "resources/js/Pages/Landing/DemoSections/DemoFaqAndClosingCta.tsx",
+      "resources/js/Pages/Landing/DemoSections/DemoHeroAndSchedulePicker.tsx",
+      "resources/js/Pages/Landing/DemoSections/EnterpriseSocialProofAndStories.tsx",
+      "resources/js/Pages/Landing/DemoSections/IndustryTailoredDemoForm.tsx",
+      "resources/js/Pages/Landing/DemoSections/InteractiveSelfGuidedSandbox.tsx",
+      "resources/js/Pages/Landing/DemoSections/WhatYouWillLearnCurriculum.tsx",
+      "resources/js/Pages/Landing/FeaturesPage.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/AutomationAndReminders.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/FeaturesHeroAndNav.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/FieldOpsAndAiSection.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/FinancialLedgerAndReports.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/GstAndInvoicingDeepDive.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/HospitalityAndRestaurant.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/HrPayrollAttendance.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/InventoryAndSupplyChain.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/PosAndOfflineEngine.tsx",
+      "resources/js/Pages/Landing/FeaturesSections/SecurityApiAndRoadmap.tsx",
+      "resources/js/Pages/Landing/FieldOpsSections/AmcContractsAndBilling.tsx",
+      "resources/js/Pages/Landing/FieldOpsSections/FieldOpsHeroAndFormats.tsx",
+      "resources/js/Pages/Landing/FieldOpsSections/FieldOpsSocialProofAndClosing.tsx",
+      "resources/js/Pages/Landing/FieldOpsSections/GeminiAiVisionProofAndVanStock.tsx",
+      "resources/js/Pages/Landing/FieldOpsSections/GpsTrackingAndTaDaEngine.tsx",
+      "resources/js/Pages/Landing/FieldOpsSections/WhatsAppDispatchAndJobCards.tsx",
+      "resources/js/Pages/Landing/GstCompliancePage.tsx",
+      "resources/js/Pages/Landing/GstSections/EInvoicingAndEWayBillEngine.tsx",
+      "resources/js/Pages/Landing/GstSections/GstHeroAndArchitecture.tsx",
+      "resources/js/Pages/Landing/GstSections/GstSocialProofAndClosing.tsx",
+      "resources/js/Pages/Landing/GstSections/Gstr2bReconciliationAndItc.tsx",
+      "resources/js/Pages/Landing/GstSections/HsnFinderAndMultiRateTax.tsx",
+      "resources/js/Pages/Landing/GstSections/TallyGstSyncAndAuditPack.tsx",
+      "resources/js/Pages/Landing/HomePage.tsx",
+      "resources/js/Pages/Landing/HotelSections/HospitalityGstAndOperations.tsx",
+      "resources/js/Pages/Landing/HotelSections/HospitalitySocialProofAndClosing.tsx",
+      "resources/js/Pages/Landing/HotelSections/HotelHeroAndFormats.tsx",
+      "resources/js/Pages/Landing/HotelSections/HotelPmsAndFrontDesk.tsx",
+      "resources/js/Pages/Landing/HotelSections/RecipeInventoryAndFoodAggregators.tsx",
+      "resources/js/Pages/Landing/HotelSections/RestaurantTableAndKotEngine.tsx",
+      "resources/js/Pages/Landing/ManufacturingSections/BatchTrackingAndMachineOee.tsx",
+      "resources/js/Pages/Landing/ManufacturingSections/GstJobWorkAndSubcontracting.tsx",
+      "resources/js/Pages/Landing/ManufacturingSections/ManufacturingHeroAndFormats.tsx",
+      "resources/js/Pages/Landing/ManufacturingSections/ManufacturingSocialProofAndClosing.tsx",
+      "resources/js/Pages/Landing/ManufacturingSections/MultiLevelBomAndWorkOrders.tsx",
+      "resources/js/Pages/Landing/ManufacturingSections/QualityControlAndLandedCosting.tsx",
+      "resources/js/Pages/Landing/PricingPage.tsx",
+      "resources/js/Pages/Landing/PricingSections/DiscountsAndPerks.tsx",
+      "resources/js/Pages/Landing/PricingSections/EnterpriseAndSocialProof.tsx",
+      "resources/js/Pages/Landing/PricingSections/FaqAndClosingPricing.tsx",
+      "resources/js/Pages/Landing/PricingSections/FeatureMatrixAndHardware.tsx",
+      "resources/js/Pages/Landing/PricingSections/PlanWizardAndRoi.tsx",
+      "resources/js/Pages/Landing/PricingSections/PricingHeroAndCards.tsx",
+      "resources/js/Pages/Landing/RetailSections/CustomerLoyaltyAndPromotions.tsx",
+      "resources/js/Pages/Landing/RetailSections/InventoryAndVariants.tsx",
+      "resources/js/Pages/Landing/RetailSections/OperationsSecurityAndGst.tsx",
+      "resources/js/Pages/Landing/RetailSections/PosAndCheckoutExperience.tsx",
+      "resources/js/Pages/Landing/RetailSections/RetailHeroAndFormats.tsx",
+      "resources/js/Pages/Landing/RetailSections/RetailSocialProofAndClosing.tsx",
+      "resources/js/Pages/Landing/Sections/AiAndTechSection.tsx",
+      "resources/js/Pages/Landing/Sections/CalculatorAndPricingSection.tsx",
+      "resources/js/Pages/Landing/Sections/CoreFeaturesAndDashboard.tsx",
+      "resources/js/Pages/Landing/Sections/DeepDivesSection.tsx",
+      "resources/js/Pages/Landing/Sections/FaqAndClosingSection.tsx",
+      "resources/js/Pages/Landing/Sections/FieldOpsAndHRSection.tsx",
+      "resources/js/Pages/Landing/Sections/HeroSection.tsx",
+      "resources/js/Pages/Landing/Sections/InteractiveBotAndDemoSection.tsx",
+      "resources/js/Pages/Landing/Sections/PainAndSolutionSection.tsx",
+      "resources/js/Pages/Landing/Sections/ReportingAndIndustrySection.tsx",
+      "resources/js/Pages/Landing/Sections/SocialProofAndComparisonSection.tsx",
+      "resources/js/Pages/Landing/Solutions/FieldServicesPage.tsx",
+      "resources/js/Pages/Landing/Solutions/HotelPage.tsx",
+      "resources/js/Pages/Landing/Solutions/ManufacturingPage.tsx",
+      "resources/js/Pages/Landing/Solutions/RetailPage.tsx",
+      "resources/js/Pages/Landing/Solutions/WholesalePage.tsx",
+      "resources/js/Pages/Landing/WhatsAppFeaturesPage.tsx",
+      "resources/js/Pages/Landing/WhatsAppSections/BroadcastMarketingAndMetaPricing.tsx",
+      "resources/js/Pages/Landing/WhatsAppSections/FieldOpsAndStaffAutomation.tsx",
+      "resources/js/Pages/Landing/WhatsAppSections/InteractiveCommerceAndCatalog.tsx",
+      "resources/js/Pages/Landing/WhatsAppSections/PaymentDunningAndRecovery.tsx",
+      "resources/js/Pages/Landing/WhatsAppSections/WhatsAppHeroAndArchitecture.tsx",
+      "resources/js/Pages/Landing/WhatsAppSections/WhatsAppSocialProofAndClosing.tsx",
+      "resources/js/Pages/Landing/WholesaleSections/B2bPricingAndCatalog.tsx",
+      "resources/js/Pages/Landing/WholesaleSections/CreditKhataAndReceivables.tsx",
+      "resources/js/Pages/Landing/WholesaleSections/GodownLogisticsAndDispatch.tsx",
+      "resources/js/Pages/Landing/WholesaleSections/WholesaleHeroAndFormats.tsx",
+      "resources/js/Pages/Landing/WholesaleSections/WholesaleOperationsAndGst.tsx",
+      "resources/js/Pages/Landing/WholesaleSections/WholesaleSocialProofAndClosing.tsx",
       "resources/js/Pages/Profile/Edit.tsx",
       "resources/js/Pages/Profile/Partials/DeleteUserForm.tsx",
       "resources/js/Pages/Profile/Partials/UpdatePasswordForm.tsx",
       "resources/js/Pages/Profile/Partials/UpdateProfileInformationForm.tsx"
     ],
     "css": [
-      "assets/app-fHEnJfQ4.css"
+      "assets/app-BYB2SAdE.css"
     ]
   }
 }
