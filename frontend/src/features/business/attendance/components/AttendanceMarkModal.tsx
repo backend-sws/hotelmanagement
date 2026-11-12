@@ -95,7 +95,8 @@ export const AttendanceMarkModal = ({ isOpen, onClose, staffList, holidays = [] 
     } : {};
 
     if (data.user_id === 'all') {
-      const records = staffList.map(staff => ({
+      const activeStaff = (staffList || []).filter(staff => staff.status !== 'inactive');
+      const records = activeStaff.map(staff => ({
         user_id: staff.id,
         date: data.date,
         status: data.status,
@@ -153,8 +154,10 @@ export const AttendanceMarkModal = ({ isOpen, onClose, staffList, holidays = [] 
                 placeholder="Select staff member"
                 searchable={true}
                 options={[
-                  { value: 'all', label: 'All Staff (Bulk)' },
-                  ...(staffList?.map((staff) => ({ value: staff.id.toString(), label: staff.name })) || [])
+                  { value: 'all', label: 'All Active Staff (Bulk)' },
+                  ...((staffList || [])
+                    .filter(s => s.status !== 'inactive')
+                    .map((staff) => ({ value: staff.id.toString(), label: staff.name })))
                 ]}
                 wrapperClassName="w-full"
                 className={errors.user_id ? 'border-red-500' : ''}

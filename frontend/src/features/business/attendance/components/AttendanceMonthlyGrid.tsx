@@ -320,11 +320,19 @@ export function AttendanceMonthlyGrid({
                 const stdHours = staffReport?.total_standard_hours;
                 const actHours = staffReport?.total_actual_hours;
                 const effPct = staffReport?.efficiency_pct;
+                const isInactiveStaff = staff.status === 'inactive';
 
                 return (
                   <tr key={staff.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                     <td className="px-4 py-3 font-medium sticky left-0 bg-white dark:bg-[#111115] z-10 border-r border-slate-200 dark:border-white/5">
-                      {staff.name}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={staff.status === 'inactive' ? 'line-through text-slate-400' : ''}>{staff.name}</span>
+                        {staff.status === 'inactive' && (
+                          <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                            Left / Inactive
+                          </span>
+                        )}
+                      </div>
                     </td>
                     {daysArray.map(day => {
                       const dateStr = `${month}-${String(day).padStart(2, '0')}`;
@@ -342,8 +350,8 @@ export function AttendanceMonthlyGrid({
                       const isPresent = record && record.status === 'present' && !isLateRecord;
                       const isAbsent = record && record.status === 'absent';
                       const isLeave = record && record.status === 'leave';
-                      const isWeekOff = (record && record.status === 'week_off') || isSundayCell;
-                      const isHoliday = (record && record.status === 'holiday') || isHolidayCell;
+                      const isWeekOff = (record && record.status === 'week_off') || (!isInactiveStaff && isSundayCell);
+                      const isHoliday = (record && record.status === 'holiday') || (!isInactiveStaff && isHolidayCell);
 
                       let cellClass = 'bg-slate-100 dark:bg-slate-800 text-slate-400';
                       let cellTitle = 'No record';
@@ -380,7 +388,7 @@ export function AttendanceMonthlyGrid({
                         cellBadge = 'L';
                       }
                       
-                      const hasOvertime = record && record.overtime_hours && record.overtime_hours > 0;
+                      const hasOvertime = record && Number(record.overtime_hours) > 0;
                       const isOtApproved = record && record.overtime_approved;
 
                       return (
@@ -432,7 +440,7 @@ export function AttendanceMonthlyGrid({
                         const isSunday = dayOfWeek === 0;
 
                         if (record) {
-                          if (record.overtime_hours && record.overtime_approved) {
+                          if (Number(record.overtime_hours) > 0 && record.overtime_approved) {
                             approvedOtHours += Number(record.overtime_hours);
                           }
                           const isLate = record.status === 'late' || (record.late_mark_minutes && record.late_mark_minutes > 0) || (record.notes && record.notes.toLowerCase().includes('late entry'));
@@ -452,9 +460,9 @@ export function AttendanceMonthlyGrid({
                           } else if (record.status === 'week_off') {
                             weekOffCount++;
                           }
-                        } else if (holiday) {
+                        } else if (!isInactiveStaff && holiday) {
                           holidayCount++;
-                        } else if (isSunday) {
+                        } else if (!isInactiveStaff && isSunday) {
                           weekOffCount++;
                         }
                       });

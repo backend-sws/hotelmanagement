@@ -211,6 +211,13 @@ class StaffService
                 if ($existingRole === 'admin') {
                     throw new \Exception('A business admin cannot be deactivated.');
                 }
+
+                // If staff left/deactivated, delete future and unpunched attendance records from today onwards
+                \App\Models\Attendance::where('business_id', $businessId)
+                    ->where('user_id', $userId)
+                    ->where('date', '>=', now()->toDateString())
+                    ->whereNull('check_in_time')
+                    ->delete();
             }
             $pivotData['status'] = $data['status'];
         }
@@ -258,6 +265,13 @@ class StaffService
             ->where('business_id', $businessId)
             ->where('user_id', $userId)
             ->update(['status' => 'inactive', 'updated_at' => now()]);
+
+        // Clean up any unfulfilled attendance records from today onwards
+        \App\Models\Attendance::where('business_id', $businessId)
+            ->where('user_id', $userId)
+            ->where('date', '>=', now()->toDateString())
+            ->whereNull('check_in_time')
+            ->delete();
     }
 
     /**

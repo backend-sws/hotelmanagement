@@ -44,6 +44,7 @@ export default function AttendancePage() {
   });
   
   const [selectedStaff, setSelectedStaff] = useState<string>('');
+  const [includeInactive, setIncludeInactive] = useState(false);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const [isMarkOpen, setIsMarkOpen] = useState(false);
   const [isDayStatusOpen, setIsDayStatusOpen] = useState(false);
@@ -122,11 +123,36 @@ export default function AttendancePage() {
 
   const { data: attendanceData, isLoading } = useAttendance(viewMode === 'grid' ? gridFilters : filters);
 
-  const staffToDisplay = staffList?.filter((s: any) => s.role !== 'Business Admin' && s.role !== 'Superadmin') || [];
+  // Separate active staff and ex-staff (inactive)
+  const activeStaffList = useMemo(() => {
+    return (staffList || []).filter((s: any) => 
+      s.role !== 'Business Admin' && 
+      s.role !== 'Superadmin' && 
+      s.status !== 'inactive'
+    );
+  }, [staffList]);
 
-  const filteredStaffList = staffToDisplay.filter((s: any) => 
-    effectiveStaffId === '' ? true : s.id.toString() === effectiveStaffId
-  );
+  const inactiveStaffList = useMemo(() => {
+    return (staffList || []).filter((s: any) => 
+      s.role !== 'Business Admin' && 
+      s.role !== 'Superadmin' && 
+      s.status === 'inactive'
+    );
+  }, [staffList]);
+
+  // If a specific staff is chosen in dropdown, show that staff (even if inactive).
+  // Otherwise, default to ACTIVE staff only, unless admin toggles includeInactive.
+  const staffToDisplay = useMemo(() => {
+    if (effectiveStaffId) {
+      const selected = (staffList || []).find((s: any) => s.id.toString() === effectiveStaffId);
+      return selected ? [selected] : [];
+    }
+    return includeInactive
+      ? (staffList || []).filter((s: any) => s.role !== 'Business Admin' && s.role !== 'Superadmin')
+      : activeStaffList;
+  }, [staffList, effectiveStaffId, includeInactive, activeStaffList]);
+
+  const filteredStaffList = staffToDisplay;
 
   // Compute local attendance statistics
   const stats = useMemo(() => {
@@ -534,15 +560,49 @@ export default function AttendancePage() {
         {/* Unified Filter Controls */}
         <FilterContainer>
           {isManager && (
-            <div className="w-56 shrink-0">
-              <FilterSelect
-                value={selectedStaff}
-                onChange={setSelectedStaff}
-                placeholder="All Staff Members"
-                searchable={true}
-                options={staffList?.map((s: any) => ({ value: s.id.toString(), label: s.name })) || []}
-                wrapperClassName="w-full"
-              />
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="w-60 shrink-0">
+                <FilterSelect
+                  value={selectedStaff}
+                  onChange={setSelectedStaff}
+                  placeholder={`All Active Staff (${activeStaffList.length})`}
+                  searchable={true}
+                  options={[
+                    { value: '', label: `All Active Staff (${activeStaffList.length})` },
+                    ...activeStaffList.map((s: any) => ({ value: s.id.toString(), label: s.name })),
+                    ...(inactiveStaffList.length > 0 ? [
+                      { value: '', label: '── Ex-Employees / Inactive ──' },
+                      ...inactiveStaffList.map((s: any) => ({ 
+                        value: s.id.toString(), 
+                        label: `${s.name} (Ex-Staff / Inactive)` 
+                      }))
+                    ] : [])
+                  ]}
+                  wrapperClassName="w-full"
+                />
+              </div>
+
+              {inactiveStaffList.length > 0 && !selectedStaff && (
+                <button
+                  type="button"
+                  onClick={() => setIncludeInactive(p => !p)}
+                  className={`text-xs font-bold px-3 py-2 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+                    includeInactive 
+                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 shadow-xs' 
+                      : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:text-slate-800 dark:hover:text-zinc-200'
+                  }`}
+                  title="Toggle visibility of inactive/left employees in attendance ledger"
+                >
+                  <span>{includeInactive ? 'Hide Ex-Staff' : 'Show Ex-Staff'}</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                    includeInactive 
+                      ? 'bg-amber-500 text-white' 
+                      : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400'
+                  }`}>
+                    {inactiveStaffList.length}
+                  </span>
+                </button>
+              )}
             </div>
           )}
 

@@ -132,7 +132,8 @@ export function AttendanceImportModal({ isOpen, onClose, staffList = [], month =
     const daysHeaders = Array.from({ length: daysInMonth }, (_, i) => i + 1).join(',');
     const headers = `Staff ID,Staff Name,${daysHeaders}\n`;
     
-    const rows = staffList.map(staff => {
+    const activeStaff = staffList.filter(s => s.status !== 'inactive');
+    const rows = activeStaff.map(staff => {
       const emptyDays = Array.from({ length: daysInMonth }, () => '').join(',');
       return `${staff.id},"${staff.name.replace(/"/g, '""')}",${emptyDays}`;
     }).join('\n');

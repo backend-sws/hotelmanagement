@@ -45,8 +45,9 @@ export const AttendanceDayStatusModal = ({ isOpen, onClose, staffList, holidays 
   }, [holiday, setValue]);
 
   const onSubmit = (data: any) => {
-    // Apply to all active staff
-    const records = staffList.map(staff => ({
+    // Apply ONLY to active staff members
+    const activeStaff = (staffList || []).filter(staff => staff.status !== 'inactive');
+    const records = activeStaff.map(staff => ({
       user_id: staff.id,
       date: data.date,
       status: data.status,

@@ -24,6 +24,16 @@ class AttendanceService
         $userId = auth()->id();
         $today = now()->toDateString();
 
+        // Check if user is active in this business
+        $businessUser = DB::table('business_user')
+            ->where('business_id', $businessId)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($businessUser && $businessUser->status === 'inactive') {
+            throw new \Exception('Your staff account is inactive/deactivated. You cannot check in.');
+        }
+
         // Check if already checked in today
         $existing = Attendance::where('user_id', $userId)
             ->where('date', $today)
@@ -787,7 +797,17 @@ class AttendanceService
     {
         $userId = auth()->id();
         $businessId = app('current_business_id');
+
         if ($businessId) {
+            $businessUser = DB::table('business_user')
+                ->where('business_id', $businessId)
+                ->where('user_id', $userId)
+                ->first();
+
+            if ($businessUser && $businessUser->status === 'inactive') {
+                return null;
+            }
+
             $this->autoMarkAbsentForHalfTimeNoShow($businessId);
         }
 
@@ -1488,10 +1508,14 @@ class AttendanceService
 
         // Active staff members for this business
         $staffMembers = DB::table('business_user')
-            ->where('business_id', $businessId)
+            ->join('users', 'business_user.user_id', '=', 'users.id')
+            ->where('business_user.business_id', $businessId)
             ->where(function ($q) {
-                $q->whereNull('status')->orWhere('status', 'active');
+                $q->whereNull('business_user.status')->orWhere('business_user.status', 'active');
             })
+            ->where('business_user.status', '!=', 'inactive')
+            ->whereNull('users.deleted_at')
+            ->select('business_user.*')
             ->get();
 
         if ($staffMembers->isEmpty()) {
