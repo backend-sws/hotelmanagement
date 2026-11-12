@@ -1,16 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useWorkSettings, useSaveWorkSettings } from '../api/useAttendance';
+import { format } from 'date-fns';
+import { useWorkSettings, useSaveWorkSettings, useHolidays } from '../api/useAttendance';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
+import { BusinessLocationsSection } from '@/features/business/profile/components/BusinessLocationsSection';
+import { LeavePoliciesModal } from '@/features/business/hr/components/LeavePoliciesModal';
+import { useLeavePolicies } from '@/features/business/hr/api/useLeavePolicies';
 import {
   Settings2, Clock, Save, RefreshCw, Building2, CheckCircle2,
   Calendar, ShieldCheck, Sparkles, AlertCircle, Info, Undo2,
   Zap, ArrowRight, Shield, Lock, Camera, Smartphone, MapPin,
   Sliders, Bell, Check, ExternalLink, HelpCircle, Briefcase,
-  Home, HardDrive, Receipt, Database,
+  Home, HardDrive, Receipt, Database, Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -29,7 +33,14 @@ export default function WorkSettingsPage() {
   const { data: settings, isLoading } = useWorkSettings();
   const saveMutation = useSaveWorkSettings();
 
-  const [activeTab, setActiveTab] = useState<'punch_security' | 'timings' | 'weekly_off' | 'overtime' | 'cleanup' | 'all'>('punch_security');
+  const [activeTab, setActiveTab] = useState<
+    'branches' | 'timings' | 'weekly_off' | 'leaves' | 'holidays' | 'punch_security' | 'cleanup' | 'salary_rules' | 'overtime' | 'all'
+  >('punch_security');
+
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const currentMonthStr = useMemo(() => format(new Date(), 'yyyy-MM'), []);
+  const { data: leavePolicies = [] } = useLeavePolicies();
+  const { data: holidaysList = [] } = useHolidays(currentMonthStr);
 
   const [form, setForm] = useState({
     work_start_time: '09:00',
@@ -262,10 +273,14 @@ export default function WorkSettingsPage() {
           <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-2 border-t border-slate-100 dark:border-zinc-800/80 scrollbar-none">
             <button
               type="button"
-              onClick={() => navigate('/business/profile')}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400 cursor-pointer"
+              onClick={() => setActiveTab('branches')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'branches'
+                  ? 'bg-[#0f4ca5] text-white border-transparent shadow-sm ring-1 ring-blue-500/30'
+                  : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
+              }`}
             >
-              <Building2 className="w-3.5 h-3.5 text-slate-500" />
+              <Building2 className={`w-3.5 h-3.5 ${activeTab === 'branches' ? 'text-white' : 'text-slate-500'}`} />
               Branches & Geofence
             </button>
 
@@ -274,11 +289,11 @@ export default function WorkSettingsPage() {
               onClick={() => setActiveTab('timings')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                 activeTab === 'timings'
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
+                  ? 'bg-[#0f4ca5] text-white border-transparent shadow-sm ring-1 ring-blue-500/30'
                   : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
               }`}
             >
-              <Clock className="w-3.5 h-3.5" />
+              <Clock className={`w-3.5 h-3.5 ${activeTab === 'timings' ? 'text-white' : 'text-slate-500'}`} />
               Shift Timings & Grace
             </button>
 
@@ -287,29 +302,37 @@ export default function WorkSettingsPage() {
               onClick={() => setActiveTab('weekly_off')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                 activeTab === 'weekly_off'
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
+                  ? 'bg-[#0f4ca5] text-white border-transparent shadow-sm ring-1 ring-blue-500/30'
                   : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
               }`}
             >
-              <Calendar className="w-3.5 h-3.5" />
+              <Calendar className={`w-3.5 h-3.5 ${activeTab === 'weekly_off' ? 'text-white' : 'text-slate-500'}`} />
               Weekly Off Rules
             </button>
 
             <button
               type="button"
-              onClick={() => navigate('/leave-requests')}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400 cursor-pointer"
+              onClick={() => setActiveTab('leaves')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'leaves'
+                  ? 'bg-[#0f4ca5] text-white border-transparent shadow-sm ring-1 ring-blue-500/30'
+                  : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
+              }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
+              <ShieldCheck className={`w-3.5 h-3.5 ${activeTab === 'leaves' ? 'text-white' : 'text-slate-500'}`} />
               Leave Policy Defaults
             </button>
 
             <button
               type="button"
-              onClick={() => navigate('/attendance/holidays')}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400 cursor-pointer"
+              onClick={() => setActiveTab('holidays')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'holidays'
+                  ? 'bg-[#0f4ca5] text-white border-transparent shadow-sm ring-1 ring-blue-500/30'
+                  : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
+              }`}
             >
-              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+              <Calendar className={`w-3.5 h-3.5 ${activeTab === 'holidays' ? 'text-white' : 'text-slate-500'}`} />
               Official Holidays
             </button>
 
@@ -331,20 +354,24 @@ export default function WorkSettingsPage() {
               onClick={() => setActiveTab('cleanup')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                 activeTab === 'cleanup'
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
+                  ? 'bg-[#0f4ca5] text-white border-transparent shadow-sm ring-1 ring-blue-500/30'
                   : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
               }`}
             >
-              <HardDrive className="w-3.5 h-3.5 text-slate-500" />
+              <HardDrive className={`w-3.5 h-3.5 ${activeTab === 'cleanup' ? 'text-white' : 'text-slate-500'}`} />
               Storage & Selfie Cleanup
             </button>
 
             <button
               type="button"
-              onClick={() => navigate('/business/payroll')}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400 cursor-pointer"
+              onClick={() => setActiveTab('salary_rules')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'salary_rules'
+                  ? 'bg-[#0f4ca5] text-white border-transparent shadow-sm ring-1 ring-blue-500/30'
+                  : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
+              }`}
             >
-              <Receipt className="w-3.5 h-3.5 text-amber-500" />
+              <Receipt className={`w-3.5 h-3.5 ${activeTab === 'salary_rules' ? 'text-white' : 'text-amber-500'}`} />
               Salary Deductions & Penalties
             </button>
 
@@ -353,11 +380,11 @@ export default function WorkSettingsPage() {
               onClick={() => setActiveTab('overtime')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                 activeTab === 'overtime'
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
+                  ? 'bg-[#0f4ca5] text-white border-transparent shadow-sm ring-1 ring-blue-500/30'
                   : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
               }`}
             >
-              <Zap className="w-3.5 h-3.5 text-amber-500" />
+              <Zap className={`w-3.5 h-3.5 ${activeTab === 'overtime' ? 'text-white' : 'text-amber-500'}`} />
               Overtime Policy & Charges
             </button>
 
@@ -412,6 +439,44 @@ export default function WorkSettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Main Configuration Column (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
+            {/* TAB: Branches & Geofence */}
+            {(activeTab === 'branches' || activeTab === 'all') && (
+              <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        Branches & Office Geofence Radius
+                      </h2>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Define hotel site GPS coordinates, operational boundaries, and punch verification fence
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/setup/profile')}
+                    className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                  >
+                    <span>Full Profile</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/30 text-xs text-blue-900 dark:text-blue-200 flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                  <p className="text-[11px] leading-relaxed">
+                    Staff punching in with <strong>At Office Punch (Geofence + Camera)</strong> mode must be within the geofence radius configured below. Approved WFH staff automatically bypass this fence.
+                  </p>
+                </div>
+
+                <BusinessLocationsSection />
+              </div>
+            )}
+
             {/* TAB: Punch Security & Rules */}
             {(activeTab === 'punch_security' || activeTab === 'all') && (
               <div className="space-y-6">
@@ -1181,6 +1246,216 @@ export default function WorkSettingsPage() {
                 </div>
               </div>
             )}
+
+            {/* TAB: Leave Policy Defaults */}
+            {(activeTab === 'leaves' || activeTab === 'all') && (
+              <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        Leave Policy Defaults & Entitlements
+                      </h2>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Monthly employee leave quotas, WFH allowances, and calendar exclusion rules
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => setIsLeaveModalOpen(true)}
+                      className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      Manage Quotas
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/hr/leave-requests')}
+                      className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 font-bold ml-2 cursor-pointer"
+                    >
+                      <span>Staff Requests</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/30 text-xs text-emerald-900 dark:text-emerald-200 flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-bold block">Automated Calendar Off-Day Exclusion Rule</span>
+                    <p className="text-[11px] leading-relaxed text-emerald-800 dark:text-emerald-300">
+                      When staff submit leave requests, the attendance engine <strong>automatically excludes Sundays, weekly offs, and company holidays</strong>. Only actual scheduled working days are deducted from employee balances.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {leavePolicies.length > 0 ? (
+                    leavePolicies.map((policy) => (
+                      <div key={policy.id} className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-800/30 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-900 dark:text-white capitalize">{policy.leave_type} Leave</span>
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                            policy.is_paid 
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+                              : 'bg-slate-200 dark:bg-zinc-700 text-slate-600 dark:text-zinc-300'
+                          }`}>
+                            {policy.is_paid ? 'Paid' : 'Unpaid'}
+                          </span>
+                        </div>
+                        <div className="text-xl font-black text-slate-900 dark:text-white">
+                          {policy.monthly_quota} <span className="text-xs font-normal text-slate-500">days / mo</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full p-6 text-center text-xs text-slate-500 dark:text-zinc-400 border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
+                      No custom leave quotas created yet. Click &quot;Manage Quotas&quot; to configure Casual (CL), Sick (SL), and Earned (EL) allowances.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB: Official Holidays */}
+            {(activeTab === 'holidays' || activeTab === 'all') && (
+              <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        Official Company Holidays
+                      </h2>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Designated business off-days and national holidays automatically credited
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/attendance/holidays')}
+                    className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                  >
+                    <span>Full Holiday Calendar</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-900/30 text-xs text-purple-900 dark:text-purple-200 flex items-start gap-2.5">
+                  <Info className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+                  <p className="text-[11px] leading-relaxed">
+                    Official holidays are automatically marked on the staff monthly attendance grid with a purple <strong>H</strong> badge and are excluded from required working day quotas.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Current Month Holidays ({currentMonthStr})
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/attendance/holidays')}
+                      className="text-[11px] text-purple-600 dark:text-purple-400 font-bold hover:underline"
+                    >
+                      + Add or Manage Holidays
+                    </button>
+                  </div>
+                  {holidaysList.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {holidaysList.map((h) => (
+                        <div key={h.id} className="p-3.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-bold text-slate-900 dark:text-white block">{h.name}</span>
+                            <span className="text-[11px] text-slate-500">{h.date?.split('T')[0]}</span>
+                          </div>
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                            {h.type}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-5 text-center text-xs text-slate-500 dark:text-zinc-400 border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
+                      No holidays scheduled for this month. Use the Holiday Calendar to plan national or optional festival days.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB: Salary Deductions & Penalties */}
+            {(activeTab === 'salary_rules' || activeTab === 'all') && (
+              <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                      <Receipt className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        Salary Deductions, Penalties & Grace Windows
+                      </h2>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Rules for late arrivals, missed punch-outs, and monthly payroll deduction formulas
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/payroll/components')}
+                    className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                  >
+                    <span>Payroll Rules</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-800/30 space-y-3">
+                    <div className="flex items-center gap-2 font-bold text-xs text-slate-900 dark:text-white">
+                      <Clock className="w-4 h-4 text-amber-500" />
+                      <span>Late Entry Grace Window</span>
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-slate-500 block mb-1">Grace Buffer (Minutes)</label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="120"
+                        value={form.late_mark_grace_minutes}
+                        onChange={(e) => setForm(p => ({ ...p, late_mark_grace_minutes: parseInt(e.target.value) || 0 }))}
+                        className="font-bold text-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Arrivals within {form.late_mark_grace_minutes} minutes of shift start ({form.work_start_time}) are marked present without penalty. Beyond this buffer, a Late Entry (LE) mark is registered.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-800/30 space-y-2">
+                    <div className="flex items-center gap-2 font-bold text-xs text-slate-900 dark:text-white">
+                      <AlertCircle className="w-4 h-4 text-rose-500" />
+                      <span>Standard Deduction Policy</span>
+                    </div>
+                    <ul className="text-[11px] text-slate-600 dark:text-zinc-400 space-y-1.5 list-disc pl-4 leading-relaxed">
+                      <li><strong>Late Mark Rule:</strong> 3 Late Entries can trigger a 0.5-day salary deduction during monthly payroll processing.</li>
+                      <li><strong>Forgot Punch-Out:</strong> Managed under the automated policy (currently set to <strong>{form.forgot_checkout_policy}</strong>).</li>
+                      <li><strong>Daily Wage Basis:</strong> Calculated dynamically as <code>(Basic Salary + Fixed Allowances) ÷ Total Month Days</code>.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sidebar / Overview Column (4 cols) */}
@@ -1385,6 +1660,11 @@ export default function WorkSettingsPage() {
           </div>
         </div>
       </div>
+
+      <LeavePoliciesModal
+        isOpen={isLeaveModalOpen}
+        onClose={() => setIsLeaveModalOpen(false)}
+      />
     </div>
   );
 }

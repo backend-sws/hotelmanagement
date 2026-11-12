@@ -385,6 +385,11 @@ function App() {
             <Route path="/attendance/holidays" element={<BusinessRoute><HolidayCalendarPage /></BusinessRoute>} />
             <Route path="/setup/work-settings" element={<BusinessRoute><WorkSettingsPage /></BusinessRoute>} />
             <Route path="/attendance/work-settings" element={<Navigate to="/setup/work-settings" replace />} />
+            <Route path="/business/work-settings" element={<Navigate to="/setup/work-settings" replace />} />
+            <Route path="/business/profile" element={<Navigate to="/setup/profile" replace />} />
+            <Route path="/leave-requests" element={<Navigate to="/hr/leave-requests" replace />} />
+            <Route path="/business/payroll" element={<Navigate to="/payroll" replace />} />
+            <Route path="/business/holidays" element={<Navigate to="/attendance/holidays" replace />} />
             <Route path="/notices" element={<BusinessRoute><NoticeBoardPage /></BusinessRoute>} />
             <Route path="/hr/notices" element={<Navigate to="/notices" replace />} />
             <Route path="/payroll" element={<BusinessRoute><PayrollPage /></BusinessRoute>} />
@@ -696,6 +701,9 @@ function App() {
             <Route path="/partner/payouts" element={<PartnerRoute><PermissionGuard permission="manage_own_payouts"><PartnerPayouts /></PermissionGuard></PartnerRoute>} />
             <Route path="/partner/profile" element={<PartnerRoute><PermissionGuard permission="manage_own_profile"><PartnerProfile /></PermissionGuard></PartnerRoute>} />
             <Route path="/partner/resources" element={<PartnerRoute><PermissionGuard permission="view_partner_dashboard"><PartnerResourcesPage /></PermissionGuard></PartnerRoute>} />
+
+            {/* Catch-all route — Prevents blank screen on unmatched route */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Routes>
       </Suspense>
