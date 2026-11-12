@@ -92,13 +92,16 @@ class LeaveRequest extends Model
             return 0;
         }
 
-        $holidayDates = BusinessHoliday::where('business_id', $this->business_id)
+        $holidayDates = BusinessHoliday::withoutGlobalScopes()
+            ->where('business_id', $this->business_id)
             ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
             ->pluck('date')
             ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
             ->toArray();
 
-        $workSetting = BusinessWorkSetting::where('business_id', $this->business_id)->first();
+        $workSetting = BusinessWorkSetting::withoutGlobalScopes()
+            ->where('business_id', $this->business_id)
+            ->first();
         $workDays = $workSetting && is_array($workSetting->work_days) 
             ? $workSetting->work_days 
             : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

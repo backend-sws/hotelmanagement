@@ -100,6 +100,7 @@ class PayrollController extends BaseController
         }
 
         $request->validate([
+            'base_salary' => 'nullable|numeric|min:0',
             'bonus' => 'nullable|numeric|min:0',
             'advance_deduction' => 'nullable|numeric|min:0',
             'total_overtime_amount' => 'nullable|numeric|min:0',
@@ -112,14 +113,51 @@ class PayrollController extends BaseController
                 throw new \Exception('Only draft payrolls can be edited.');
             }
 
-            $bonus = $request->input('bonus', $payroll->bonus);
-            $advanceDeduction = $request->input('advance_deduction', $payroll->advance_deduction);
+            $baseSalary = $request->has('base_salary') ? (float) $request->input('base_salary') : (float) $payroll->base_salary;
+            $bonus = (float) $request->input('bonus', $payroll->bonus);
+            $advanceDeduction = (float) $request->input('advance_deduction', $payroll->advance_deduction);
             $otAmount = (float) $request->input('total_overtime_amount', $payroll->total_overtime_amount ?? 0);
             $otHours = (float) $request->input('total_overtime_hours', $payroll->total_overtime_hours ?? 0);
 
-            $finalSalary = $payroll->base_salary - $payroll->deduction + $payroll->total_commission + $otAmount + $bonus - $advanceDeduction;
+            $perDaySalary = (float) $payroll->per_day_salary;
+            $deduction = (float) $payroll->deduction;
+            $absenceDeductions = (float) ($payroll->absence_deductions ?? 0);
+            $lateDeductions = (float) ($payroll->late_deductions ?? 0);
+
+            if ($request->has('base_salary')) {
+                $totalDays = $payroll->total_days > 0 ? $payroll->total_days : 30;
+                $perDaySalary = round($baseSalary / $totalDays, 2);
+
+                if ($payroll->salary_type !== 'daily') {
+                    $lateCutDays = (float) ($payroll->late_cut_days ?? 0);
+                    $lateDeductions = round($lateCutDays * $perDaySalary, 2);
+
+                    $effectivePresent = (float) $payroll->present_days + ((float) $payroll->half_days * 0.5) + (float) $payroll->paid_leaves;
+                    $workingDays = max(1, (int) ($payroll->working_days ?: ($payroll->total_days - ($payroll->week_offs ?? 0) - ($payroll->holidays ?? 0))));
+                    $unpaidAbsences = max(0.0, (float) ($workingDays - $effectivePresent));
+                    $halfDayPortion = min($unpaidAbsences, (float) ($payroll->half_days * 0.5));
+                    $fullAbsentDays = max(0.0, round($unpaidAbsences - $halfDayPortion, 2));
+
+                    $setting = \App\Models\BusinessWorkSetting::withoutGlobalScopes()->where('business_id', $payroll->business_id)->first();
+                    $absencePenaltyMultiplier = ($setting && ($setting->enable_absence_penalty ?? true))
+                        ? (float) ($setting->absence_penalty_multiplier ?? 2.0)
+                        : 1.0;
+
+                    $halfDayDeduction = round($halfDayPortion * $perDaySalary, 2);
+                    $fullAbsentDeduction = round($fullAbsentDays * ($perDaySalary * $absencePenaltyMultiplier), 2);
+                    $absenceDeductions = round($halfDayDeduction + $fullAbsentDeduction, 2);
+                    $deduction = round($absenceDeductions + $lateDeductions, 2);
+                }
+            }
+
+            $finalSalary = $baseSalary - $deduction + (float) $payroll->total_commission + $otAmount + $bonus - $advanceDeduction;
 
             $payroll->update([
+                'base_salary' => $baseSalary,
+                'per_day_salary' => $perDaySalary,
+                'deduction' => $deduction,
+                'absence_deductions' => $absenceDeductions,
+                'late_deductions' => $lateDeductions,
                 'bonus' => $bonus,
                 'advance_deduction' => $advanceDeduction,
                 'total_overtime_amount' => $otAmount,

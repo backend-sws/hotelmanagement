@@ -7,8 +7,11 @@ export interface PayrollRecord {
   user_id: number;
   month: string;
   total_days: number;
+  working_days?: number;
   present_days: number;
   absent_days: number;
+  late_count?: number;
+  late_cut_days?: number;
   half_days: number;
   paid_leaves: number;
   unpaid_leaves: number;
@@ -17,6 +20,8 @@ export interface PayrollRecord {
   base_salary: number;
   per_day_salary: number;
   deduction: number;
+  late_deductions?: number;
+  absence_deductions?: number;
   total_commission: number;
   total_overtime_hours?: number;
   total_overtime_amount?: number;

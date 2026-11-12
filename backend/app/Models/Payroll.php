@@ -16,8 +16,11 @@ class Payroll extends Model
         'user_id',
         'month',
         'total_days',
+        'working_days',
         'present_days',
         'absent_days',
+        'late_count',
+        'late_cut_days',
         'half_days',
         'paid_leaves',
         'unpaid_leaves',
@@ -26,6 +29,8 @@ class Payroll extends Model
         'base_salary',
         'per_day_salary',
         'deduction',
+        'late_deductions',
+        'absence_deductions',
         'total_commission',
         'total_overtime_hours',
         'total_overtime_amount',
@@ -40,6 +45,11 @@ class Payroll extends Model
     ];
 
     protected $casts = [
+        'working_days' => 'integer',
+        'late_count' => 'integer',
+        'late_cut_days' => 'float',
+        'late_deductions' => 'float',
+        'absence_deductions' => 'float',
         'base_salary' => 'float',
         'per_day_salary' => 'float',
         'deduction' => 'float',

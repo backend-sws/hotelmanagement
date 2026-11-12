@@ -55,37 +55,84 @@ class PayrollService
             $endOfMonth = $startOfMonth->copy()->endOfMonth();
             $totalDaysInMonth = $endOfMonth->day;
 
+            // Fetch work settings for this business
+            $workSetting = BusinessWorkSetting::withoutGlobalScopes()->where('business_id', $businessId)->first();
+            $workDaysConfig = $workSetting ? $workSetting->getWorkDaysArray() : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
             // Effective end date: min(today, end_of_month) — prevents future days from being counted as absent
             $today = Carbon::today();
-            $effectiveEndDate = $today->lessThan($endOfMonth) && $today->greaterThanOrEqualTo($startOfMonth)
+            $effectiveEndDate = ($today->lessThan($endOfMonth) && $today->greaterThanOrEqualTo($startOfMonth))
                 ? $today
                 : $endOfMonth;
 
-            // Get attendance records for the month
-            $attendances = Attendance::where('user_id', $userId)
-                ->whereBetween('date', [$startOfMonth, $endOfMonth])
+            // ── 1. CALENDAR WEEK-OFFS & HOLIDAYS DERIVATION ─────────────────
+            // Auto-calculate week-offs from the calendar matching configured non-working days (e.g. Sundays)
+            $calendarWeekOffDates = [];
+            $cur = $startOfMonth->copy();
+            while ($cur->lessThanOrEqualTo($endOfMonth)) {
+                $dayAbbr = $cur->format('D'); // Mon, Tue, etc.
+                if (!in_array($dayAbbr, $workDaysConfig)) {
+                    $calendarWeekOffDates[] = $cur->toDateString();
+                }
+                $cur->addDay();
+            }
+            $totalCalendarWeekOffs = count($calendarWeekOffDates);
+
+            // Fetch attendance records for this month scoped to this business
+            $attendances = Attendance::withoutGlobalScopes()
+                ->where('business_id', $businessId)
+                ->where('user_id', $userId)
+                ->whereBetween('date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
                 ->get();
 
-            $presentDays = $attendances->where('status', 'present')->count();
+            // Week-offs: max of recorded attendance week_off or calendar week_offs
+            $recordedWeekOffs = $attendances->where('status', 'week_off')->count();
+            $weekOffs = max($recordedWeekOffs, $totalCalendarWeekOffs);
+
+            // Holidays: combine records in attendance table + defined in BusinessHoliday table
+            // Exclude holidays falling on already-accounted week-offs to prevent double counting
+            $holidayRecords = BusinessHoliday::withoutGlobalScopes()
+                ->where('business_id', $businessId)
+                ->whereBetween('date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+                ->get();
+
+            $nonWeekOffHolidayCount = 0;
+            foreach ($holidayRecords as $h) {
+                $hDate = Carbon::parse($h->date)->toDateString();
+                if (!in_array($hDate, $calendarWeekOffDates)) {
+                    $nonWeekOffHolidayCount++;
+                }
+            }
+            $recordedHolidays = $attendances->where('status', 'holiday')->count();
+            $holidays = max($recordedHolidays, $nonWeekOffHolidayCount);
+
+            // Standard Working Days in the Month
+            $workingDays = max(1, $totalDaysInMonth - $weekOffs - $holidays);
+
+            // ── 2. ATTENDANCE METRICS ───────────────────────────────────────
+            // Critical: count 'late' as Present (staff arrived and worked, late penalty is applied via Rule 1)
+            $presentDays = $attendances->whereIn('status', ['present', 'late'])->count();
             $absentDays = $attendances->where('status', 'absent')->count();
             $halfDays = $attendances->where('status', 'half_day')->count();
             $leaveDays = $attendances->where('status', 'leave')->count();
-            $weekOffs = $attendances->where('status', 'week_off')->count();
-            
-            // Holidays: combine records in attendance table + defined in BusinessHoliday table
-            $definedHolidays = BusinessHoliday::where('business_id', $businessId)
-                ->whereBetween('date', [$startOfMonth, $endOfMonth])
-                ->count();
-            $holidays = max($attendances->where('status', 'holiday')->count(), $definedHolidays);
+
+            // Total late punch entries this month
+            $lateAttendances = $attendances->filter(function ($a) {
+                return $a->status === 'late'
+                    || ($a->late_mark_minutes && $a->late_mark_minutes > 0)
+                    || ($a->notes && stripos($a->notes, 'late entry') !== false);
+            });
+            $lateCount = $lateAttendances->count();
 
             // Calculate paid leaves with admin override support
-            $approvedLeaveRequests = LeaveRequest::where('business_id', $businessId)
+            $approvedLeaveRequests = LeaveRequest::withoutGlobalScopes()
+                ->where('business_id', $businessId)
                 ->where('user_id', $userId)
                 ->where('request_type', 'leave')
                 ->where('status', 'approved')
                 ->where(function ($q) use ($startOfMonth, $endOfMonth) {
-                    $q->whereBetween('from_date', [$startOfMonth, $endOfMonth])
-                      ->orWhereBetween('to_date', [$startOfMonth, $endOfMonth]);
+                    $q->whereBetween('from_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+                      ->orWhereBetween('to_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()]);
                 })
                 ->get();
 
@@ -114,7 +161,7 @@ class PayrollService
             $paidLeaves = min($leaveDays, $forcedPaid + $quotaPaid);
             $unpaidLeaves = max(0, $leaveDays - $paidLeaves);
 
-            // Commission for this month (use sale relationship date for accuracy)
+            // Commission for this month
             $totalCommission = SaleCommission::where('user_id', $userId)
                 ->where(function ($q) use ($startOfMonth, $endOfMonth) {
                     $q->whereHas('sale', function ($sq) use ($startOfMonth, $endOfMonth) {
@@ -130,8 +177,7 @@ class PayrollService
                 ->where('status', 'approved')
                 ->sum('amount');
 
-            // ── OVERTIME HOURS & CALCULATION ─────────────────────────────────
-            $workSetting = BusinessWorkSetting::where('business_id', $businessId)->first();
+            // ── 3. OVERTIME HOURS & CALCULATION ──────────────────────────────
             $enableOvertime = (bool) ($workSetting->enable_overtime ?? false);
             $otRateType = $workSetting->overtime_rate_type ?? 'fixed_rate';
             $otHourlyRate = (float) ($workSetting->overtime_hourly_rate ?? 0);
@@ -150,7 +196,7 @@ class PayrollService
                 $totalOvertimeHours = round($otRecords->sum('overtime_hours'), 2);
             }
 
-            // ── DAILY SALARY TYPE ──────────────────────────────────────────
+            // ── 4. DAILY SALARY TYPE ─────────────────────────────────────────
             if ($salaryType === 'daily') {
                 $dailyRate = (float) ($staffData->daily_salary ?? 0);
 
@@ -158,12 +204,6 @@ class PayrollService
                 $effectivePresent = $presentDays + ($halfDays * 0.5) + $paidLeaves;
                 $baseSalary = round($effectivePresent * $dailyRate, 2);
                 $perDaySalary = $dailyRate;
-                $deduction = 0; // No LOP deduction for daily — they simply don't get paid for absent days
-
-                // Working days for reference (total days minus week_offs and holidays)
-                $workingDays = $totalDaysInMonth - $weekOffs - $holidays;
-                if ($workingDays <= 0)
-                    $workingDays = $totalDaysInMonth;
 
                 // Overtime pay calculation for daily staff
                 $totalOvertimeAmount = 0.0;
@@ -180,15 +220,35 @@ class PayrollService
                     $totalOvertimeAmount = round($totalOvertimeHours * $dailyOtRate, 2);
                 }
 
-                $finalSalary = $baseSalary + (float) $totalCommission + $totalOvertimeAmount - (float) $advanceDeduction;
+                // Late penalty for daily staff if rule enabled
+                $lateCutDays = 0.0;
+                $lateDeductionAmount = 0.0;
+                if ($workSetting && ($workSetting->enable_late_deduction ?? true)) {
+                    $freeWaiver = (int) ($workSetting->late_free_waiver_count ?? 2);
+                    $triggerCount = max(1, (int) ($workSetting->late_deduction_trigger_count ?? 4));
+                    $cutAmountDays = (float) ($workSetting->late_deduction_amount_type ?? 1.0);
+
+                    if ($lateCount > $freeWaiver) {
+                        $chargeableLates = $lateCount - $freeWaiver;
+                        $cutCycles = (int) floor($chargeableLates / $triggerCount);
+                        $lateCutDays = round($cutCycles * $cutAmountDays, 2);
+                        $lateDeductionAmount = round($lateCutDays * $perDaySalary, 2);
+                    }
+                }
+
+                $deduction = $lateDeductionAmount;
+                $finalSalary = $baseSalary - $deduction + (float) $totalCommission + $totalOvertimeAmount - (float) $advanceDeduction;
 
                 $payrollData = [
                     'business_id' => $businessId,
                     'user_id' => $userId,
                     'month' => $month,
                     'total_days' => $totalDaysInMonth,
+                    'working_days' => $workingDays,
                     'present_days' => $presentDays,
                     'absent_days' => $absentDays,
+                    'late_count' => $lateCount,
+                    'late_cut_days' => $lateCutDays,
                     'half_days' => $halfDays,
                     'paid_leaves' => $paidLeaves,
                     'unpaid_leaves' => $unpaidLeaves,
@@ -196,7 +256,9 @@ class PayrollService
                     'holidays' => $holidays,
                     'base_salary' => $baseSalary,
                     'per_day_salary' => round($perDaySalary, 2),
-                    'deduction' => 0,
+                    'deduction' => round($deduction, 2),
+                    'late_deductions' => round($lateDeductionAmount, 2),
+                    'absence_deductions' => 0.0,
                     'total_commission' => (float) $totalCommission,
                     'total_overtime_hours' => $totalOvertimeHours,
                     'total_overtime_amount' => $totalOvertimeAmount,
@@ -218,7 +280,7 @@ class PayrollService
                 return Payroll::create($payrollData);
             }
 
-            // ── MONTHLY SALARY TYPE ────────────────────────────────────────
+            // ── 5. MONTHLY SALARY TYPE ───────────────────────────────────────
             $components = $staffData->salary_components
                 ? json_decode($staffData->salary_components, true)
                 : [];
@@ -238,70 +300,82 @@ class PayrollService
                 }
             }
 
-            // If no components array format found, fallback to monthly_salary
-            if ($totalEarnings === 0 && $staffData->monthly_salary > 0) {
+            // Fallback to monthly_salary if components sum to 0 or empty
+            if ($totalEarnings <= 0 && isset($staffData->monthly_salary) && (float) $staffData->monthly_salary > 0) {
                 $totalEarnings = (float) $staffData->monthly_salary;
             }
 
             $baseSalary = $totalEarnings - $totalComponentDeductions;
 
-            // Working days = total days in month - week_offs - holidays
-            $workingDays = $totalDaysInMonth - $weekOffs - $holidays;
-            if ($workingDays <= 0)
-                $workingDays = $totalDaysInMonth;
+            // Daily rate basis: (Basic Salary + Fixed Allowances) ÷ Total Month Days
+            $perDaySalary = $totalDaysInMonth > 0 ? ($baseSalary / $totalDaysInMonth) : 0;
 
-            $perDaySalary = $baseSalary / $workingDays;
-
-            // Effective attendance = present + (half_days × 0.5) + paid_leaves
+            // Effective attendance so far = present + (half_days × 0.5) + paid_leaves
             $effectivePresent = $presentDays + ($halfDays * 0.5) + $paidLeaves;
 
-            // ── Mid-month fix ──
-            // Only count elapsed working days for deduction (don't count future days as absent)
+            // ── Mid-Month Elapsed Calendar Derivation ──
+            // Only count working days that have actually elapsed (prevents future days from being penalized as unapproved absences)
             $elapsedDays = $effectiveEndDate->day;
-            // Count week_offs and holidays that have actually passed (from attendance records up to effective end date)
-            $elapsedAttendances = $attendances->filter(function ($a) use ($effectiveEndDate) {
-                return Carbon::parse($a->date)->lessThanOrEqualTo($effectiveEndDate);
-            });
-            $elapsedWeekOffs = $elapsedAttendances->where('status', 'week_off')->count();
-            $elapsedDefinedHolidays = BusinessHoliday::where('business_id', $businessId)
-                ->whereBetween('date', [$startOfMonth, $effectiveEndDate])
-                ->count();
-            $elapsedHolidays = max($elapsedAttendances->where('status', 'holiday')->count(), $elapsedDefinedHolidays);
-            $elapsedWorkingDays = $elapsedDays - $elapsedWeekOffs - $elapsedHolidays;
-            if ($elapsedWorkingDays <= 0) $elapsedWorkingDays = $elapsedDays;
 
-            // Deduction based only on elapsed working days (not full month)
-            $unpaidAbsences = max(0, $elapsedWorkingDays - $effectivePresent);
-            
-            // Dynamic Absence Penalty Rule: Apply penalty multiplier for unapproved/voluntary absences
+            $elapsedWeekOffs = 0;
+            $curElapsed = $startOfMonth->copy();
+            while ($curElapsed->lessThanOrEqualTo($effectiveEndDate)) {
+                $dayAbbr = $curElapsed->format('D');
+                if (!in_array($dayAbbr, $workDaysConfig)) {
+                    $elapsedWeekOffs++;
+                }
+                $curElapsed->addDay();
+            }
+
+            $elapsedHolidays = 0;
+            foreach ($holidayRecords as $h) {
+                $hDate = Carbon::parse($h->date);
+                if ($hDate->lessThanOrEqualTo($effectiveEndDate)) {
+                    $hDayAbbr = $hDate->format('D');
+                    // Exclude holidays on week-offs already counted
+                    if (in_array($hDayAbbr, $workDaysConfig)) {
+                        $elapsedHolidays++;
+                    }
+                }
+            }
+
+            $elapsedWorkingDays = max(1, $elapsedDays - $elapsedWeekOffs - $elapsedHolidays);
+
+            // Unpaid absences = elapsed working days - effective present
+            $unpaidAbsences = max(0.0, (float) ($elapsedWorkingDays - $effectivePresent));
+
+            // Isolate half-day absences from full unapproved no-shows:
+            // Half-day attendance is penalized only at 1.0x normal day rate (0.5 day wage cut);
+            // The 2.0x unapproved absence penalty strictly applies to full unauthorized no-shows only.
+            $halfDayPortion = min($unpaidAbsences, (float) ($halfDays * 0.5));
+            $fullAbsentDays = max(0.0, round($unpaidAbsences - $halfDayPortion, 2));
+
             $absencePenaltyMultiplier = 1.0;
             if ($workSetting && ($workSetting->enable_absence_penalty ?? true)) {
                 $absencePenaltyMultiplier = (float) ($workSetting->absence_penalty_multiplier ?? 2.0);
             }
-            $absenceDeduction = $unpaidAbsences * ($perDaySalary * $absencePenaltyMultiplier);
+
+            $halfDayDeduction = round($halfDayPortion * $perDaySalary, 2);
+            $fullAbsentDeduction = round($fullAbsentDays * ($perDaySalary * $absencePenaltyMultiplier), 2);
+            $absenceDeduction = round($halfDayDeduction + $fullAbsentDeduction, 2);
 
             // Dynamic Late Arrivals Deduction Rule: Every N late days triggers a salary cut (after free grace passes)
+            $lateCutDays = 0.0;
             $lateDeductionAmount = 0.0;
             if ($workSetting && ($workSetting->enable_late_deduction ?? true)) {
-                $monthlyLates = $attendances->filter(function ($a) {
-                    return $a->status === 'late' 
-                        || ($a->late_mark_minutes && $a->late_mark_minutes > 0)
-                        || ($a->notes && stripos($a->notes, 'late entry') !== false);
-                })->count();
-
                 $freeWaiver = (int) ($workSetting->late_free_waiver_count ?? 2);
                 $triggerCount = max(1, (int) ($workSetting->late_deduction_trigger_count ?? 4));
                 $cutAmountDays = (float) ($workSetting->late_deduction_amount_type ?? 1.0);
 
-                if ($monthlyLates > $freeWaiver) {
-                    $chargeableLates = $monthlyLates - $freeWaiver;
+                if ($lateCount > $freeWaiver) {
+                    $chargeableLates = $lateCount - $freeWaiver;
                     $cutCycles = (int) floor($chargeableLates / $triggerCount);
-                    $lateCutDays = $cutCycles * $cutAmountDays;
-                    $lateDeductionAmount = $lateCutDays * $perDaySalary;
+                    $lateCutDays = round($cutCycles * $cutAmountDays, 2);
+                    $lateDeductionAmount = round($lateCutDays * $perDaySalary, 2);
                 }
             }
 
-            $deduction = $absenceDeduction + $lateDeductionAmount;
+            $deduction = round($absenceDeduction + $lateDeductionAmount, 2);
 
             // Overtime pay calculation for monthly staff
             $totalOvertimeAmount = 0.0;
@@ -326,16 +400,21 @@ class PayrollService
                 'user_id' => $userId,
                 'month' => $month,
                 'total_days' => $totalDaysInMonth,
+                'working_days' => $workingDays,
                 'present_days' => $presentDays,
                 'absent_days' => $absentDays,
+                'late_count' => $lateCount,
+                'late_cut_days' => $lateCutDays,
                 'half_days' => $halfDays,
                 'paid_leaves' => $paidLeaves,
                 'unpaid_leaves' => $unpaidLeaves,
                 'week_offs' => $weekOffs,
                 'holidays' => $holidays,
-                'base_salary' => $baseSalary,
+                'base_salary' => round($baseSalary, 2),
                 'per_day_salary' => round($perDaySalary, 2),
                 'deduction' => round($deduction, 2),
+                'late_deductions' => round($lateDeductionAmount, 2),
+                'absence_deductions' => round($absenceDeduction, 2),
                 'total_commission' => (float) $totalCommission,
                 'total_overtime_hours' => $totalOvertimeHours,
                 'total_overtime_amount' => $totalOvertimeAmount,

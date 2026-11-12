@@ -16,9 +16,23 @@ class BusinessHolidayController extends Controller
      */
     public function index(Request $request)
     {
-        $month = $request->input('month', now()->format('Y-m'));
-        $holidays = $this->holidayService->getForMonth($month);
-        return response()->json(['data' => $holidays]);
+        $businessId = app('current_business_id');
+        $query = \App\Models\BusinessHoliday::where('business_id', $businessId);
+
+        if ($request->boolean('all')) {
+            // Return all holidays for this business
+        } elseif ($request->filled('from_date') && $request->filled('to_date')) {
+            $query->whereBetween('date', [$request->from_date, $request->to_date]);
+        } elseif ($request->filled('year')) {
+            $query->whereYear('date', $request->year);
+        } elseif ($request->filled('month')) {
+            $query->forMonth($request->month);
+        } else {
+            // Default fallback to all holidays in current and adjacent year
+            $query->whereYear('date', now()->year);
+        }
+
+        return response()->json(['data' => $query->orderBy('date')->get()]);
     }
 
     /**

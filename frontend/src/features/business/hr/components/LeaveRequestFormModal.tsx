@@ -3,8 +3,9 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar, Home, CheckCircle2, AlertTriangle, Sparkles, Clock, Info } from 'lucide-react';
+import { format } from 'date-fns';
 import { useLeaveBalances } from '../api/useLeavePolicies';
-import { useWorkSettings } from '@/features/business/attendance/api/useAttendance';
+import { useWorkSettings, useAllHolidays } from '@/features/business/attendance/api/useAttendance';
 
 interface LeaveRequestFormModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export const LeaveRequestFormModal: React.FC<LeaveRequestFormModalProps> = ({
 
   const { data: balanceData } = useLeaveBalances();
   const { data: workSettings } = useWorkSettings();
+  const { data: holidaysList = [] } = useAllHolidays();
   const noticeDaysRequired = workSettings?.leave_notice_days_required ?? 2;
   const isNoticeRuleEnabled = workSettings?.enable_leave_notice_rule ?? true;
 
@@ -52,29 +54,51 @@ export const LeaveRequestFormModal: React.FC<LeaveRequestFormModalProps> = ({
     );
   }, [balanceData, leaveType]);
 
-  // Calculate requested duration in working days (excluding Sundays for leave requests)
+  // Calculate requested duration in working days (excluding Sundays AND official company holidays for leave requests)
   const durationInfo = useMemo(() => {
-    if (!fromDate || !toDate) return { totalDays: 0, workingDays: 0, sundaysCount: 0 };
+    if (!fromDate || !toDate) {
+      return { totalDays: 0, workingDays: 0, sundaysCount: 0, holidaysCount: 0, holidayNames: [] as string[] };
+    }
     const start = new Date(fromDate + 'T00:00:00');
     const end = new Date(toDate + 'T00:00:00');
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
-      return { totalDays: 0, workingDays: 0, sundaysCount: 0 };
+      return { totalDays: 0, workingDays: 0, sundaysCount: 0, holidaysCount: 0, holidayNames: [] as string[] };
     }
+
+    // Map of official holidays: YYYY-MM-DD -> name
+    const holidayMap = new Map<string, string>();
+    holidaysList.forEach(h => {
+      if (h.date) {
+        const dStr = typeof h.date === 'string' ? h.date.slice(0, 10) : '';
+        if (dStr) holidayMap.set(dStr, h.name);
+      }
+    });
 
     let total = 0;
     let sundays = 0;
+    let holidaysCount = 0;
+    const holidayNames: string[] = [];
+
     const curr = new Date(start);
     while (curr <= end) {
       total++;
-      if (curr.getDay() === 0) {
+      const dateStr = format(curr, 'yyyy-MM-dd');
+      const isSunday = curr.getDay() === 0;
+      const isHoliday = holidayMap.has(dateStr);
+
+      if (isSunday) {
         sundays++;
+      } else if (isHoliday) {
+        holidaysCount++;
+        holidayNames.push(`${holidayMap.get(dateStr)} (${format(curr, 'dd MMM')})`);
       }
+
       curr.setDate(curr.getDate() + 1);
     }
 
-    const workingDays = requestType === 'leave' ? Math.max(0, total - sundays) : total;
-    return { totalDays: total, workingDays, sundaysCount: sundays };
-  }, [fromDate, toDate, requestType]);
+    const workingDays = requestType === 'leave' ? Math.max(0, total - sundays - holidaysCount) : total;
+    return { totalDays: total, workingDays, sundaysCount: sundays, holidaysCount, holidayNames };
+  }, [fromDate, toDate, requestType, holidaysList]);
 
   const daysCount = durationInfo.workingDays;
 
@@ -277,7 +301,7 @@ export const LeaveRequestFormModal: React.FC<LeaveRequestFormModalProps> = ({
         )}
 
         {/* Duration / Quota Alert */}
-        {daysCount > 0 && (
+        {daysCount > 0 ? (
           <div>
             {isOverQuota ? (
               <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-200">
@@ -296,9 +320,12 @@ export const LeaveRequestFormModal: React.FC<LeaveRequestFormModalProps> = ({
                 <span className="flex items-center gap-1.5 font-bold">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   Duration: <strong>{daysCount} {daysCount === 1 ? 'working day' : 'working days'}</strong>
-                  {durationInfo.sundaysCount > 0 && requestType === 'leave' && (
+                  {(durationInfo.sundaysCount > 0 || durationInfo.holidaysCount > 0) && requestType === 'leave' && (
                     <span className="text-[11px] font-normal text-slate-500 dark:text-zinc-400 ml-1">
-                      ({durationInfo.sundaysCount} {durationInfo.sundaysCount === 1 ? 'Sunday' : 'Sundays'} excluded)
+                      ({[
+                        durationInfo.sundaysCount > 0 ? `${durationInfo.sundaysCount} ${durationInfo.sundaysCount === 1 ? 'Sunday' : 'Sundays'}` : '',
+                        durationInfo.holidaysCount > 0 ? `${durationInfo.holidaysCount} ${durationInfo.holidaysCount === 1 ? 'Holiday' : 'Holidays'}${durationInfo.holidayNames.length > 0 ? ` (${durationInfo.holidayNames.join(', ')})` : ''}` : ''
+                      ].filter(Boolean).join(' & ')} excluded)
                     </span>
                   )}
                 </span>
@@ -310,7 +337,20 @@ export const LeaveRequestFormModal: React.FC<LeaveRequestFormModalProps> = ({
               </div>
             )}
           </div>
-        )}
+        ) : (fromDate && toDate && requestType === 'leave' && (durationInfo.sundaysCount > 0 || durationInfo.holidaysCount > 0)) ? (
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-xl p-3 flex items-start gap-2.5 text-xs text-blue-900 dark:text-blue-200">
+            <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-600 dark:text-blue-400" />
+            <div>
+              <p className="font-bold">All Selected Dates are Non-Working Days / Holidays</p>
+              <p className="text-[11px] text-blue-700 dark:text-blue-300 mt-0.5 leading-relaxed">
+                The selected range contains only Sundays or official holidays ({[
+                  durationInfo.sundaysCount > 0 ? `${durationInfo.sundaysCount} Sunday(s)` : '',
+                  durationInfo.holidaysCount > 0 ? `${durationInfo.holidaysCount} Holiday(s): ${durationInfo.holidayNames.join(', ')}` : ''
+                ].filter(Boolean).join(' & ')}). 0 leave days will be deducted from your quota or salary.
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         {/* Reason Textarea */}
         <div>

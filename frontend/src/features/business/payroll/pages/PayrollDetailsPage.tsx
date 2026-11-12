@@ -7,7 +7,7 @@ import {
   User, Briefcase, Mail, Calendar, CalendarDays, CheckCircle2, 
   TrendingUp, TrendingDown, Coins, MessageSquare, AlertCircle, 
   Check, X, Shield, Lock, CreditCard, Banknote, ShieldAlert, Clock,
-  SlidersHorizontal, RotateCcw, CheckSquare, Building2
+  SlidersHorizontal, RotateCcw, CheckSquare, Building2, Edit3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -177,8 +177,14 @@ function CorporateSalarySlip({
       .filter((c: any) => c.type === 'deduction' && Number(c.amount) > 0)
       .forEach((c: any) => deductionsList.push({ name: c.name, amount: Number(c.amount) }));
   }
-  if (Number(payroll.deduction) > 0) {
+  if (Number(payroll.absence_deductions) > 0) {
+    deductionsList.push({ name: 'Absence Deductions (Loss of Pay)', amount: Number(payroll.absence_deductions) });
+  } else if (!payroll.late_deductions && Number(payroll.deduction) > 0) {
     deductionsList.push({ name: 'Absence Deductions (Loss of Pay)', amount: Number(payroll.deduction) });
+  }
+  if (Number(payroll.late_deductions) > 0) {
+    const lateCutLabel = payroll.late_cut_days ? ` (${payroll.late_count || 0} lates, ${payroll.late_cut_days}d cut)` : '';
+    deductionsList.push({ name: `Late Arrival Penalty${lateCutLabel}`, amount: Number(payroll.late_deductions) });
   }
   if (Number(payroll.advance_deduction) > 0) {
     deductionsList.push({ name: 'Salary Advance Recovered', amount: Number(payroll.advance_deduction) });
@@ -198,9 +204,11 @@ function CorporateSalarySlip({
     paddedDeductions.push({ name: '', amount: 0 });
   }
 
-  const workingDays = (payroll.total_days - (payroll.week_offs || 0) - (payroll.holidays || 0)) > 0 
-    ? (payroll.total_days - (payroll.week_offs || 0) - (payroll.holidays || 0)) 
-    : payroll.total_days;
+  const workingDays = payroll.working_days && payroll.working_days > 0 
+    ? payroll.working_days 
+    : ((payroll.total_days - (payroll.week_offs || 0) - (payroll.holidays || 0)) > 0 
+        ? (payroll.total_days - (payroll.week_offs || 0) - (payroll.holidays || 0)) 
+        : payroll.total_days);
 
   // Real Department from Staff Profile or DB
   const departmentName = payroll.user?.department || 'Hotel Operations';
@@ -350,6 +358,12 @@ function CorporateSalarySlip({
               <span className="text-slate-500 font-medium">Loss of Pay (LOP):</span>
               <span className="col-span-2 font-bold text-rose-700">{(payroll.absent_days || 0) + (payroll.unpaid_leaves || 0)} Days</span>
             </div>
+            {Number(payroll.late_count || 0) > 0 && (
+              <div className="grid grid-cols-3 gap-1">
+                <span className="text-slate-500 font-medium">Late Punches:</span>
+                <span className="col-span-2 font-bold text-amber-700">{payroll.late_count} Late Entries ({payroll.late_cut_days || 0} Days Cut)</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -817,6 +831,7 @@ export default function PayrollDetailsPage() {
   };
 
   const [formData, setFormData] = useState({
+    base_salary: 0,
     bonus: 0,
     advance_deduction: 0,
     total_overtime_amount: 0,
@@ -827,6 +842,7 @@ export default function PayrollDetailsPage() {
   React.useEffect(() => {
     if (payroll) {
       setFormData({
+        base_salary: Number(payroll.base_salary || 0),
         bonus: payroll.bonus,
         advance_deduction: payroll.advance_deduction,
         total_overtime_amount: payroll.total_overtime_amount || 0,
@@ -863,10 +879,10 @@ export default function PayrollDetailsPage() {
   const isConfirmed = payroll.status === 'confirmed';
   const isMonthly = (payroll as any).salary_type !== 'daily';
 
-  // Calculate Earned Till Date vs Projected
-  const perDaySalary = Number(payroll.per_day_salary || 0);
+  // Base salary and per-day rate
+  const currentBaseSalary = editMode ? Number(formData.base_salary || 0) : Number(payroll.base_salary || 0);
   const totalDays = Number(payroll.total_days || 30);
-  const currentDay = Math.min(new Date().getDate(), totalDays);
+  const perDaySalary = totalDays > 0 ? (currentBaseSalary / totalDays) : Number(payroll.per_day_salary || 0);
   
   const presentDays = Number(payroll.present_days || 0);
   const halfDays = Number(payroll.half_days || 0);
@@ -878,12 +894,15 @@ export default function PayrollDetailsPage() {
     : effectivePresent * perDaySalary;
 
   const currentOtAmount = editMode ? Number(formData.total_overtime_amount || 0) : Number(payroll.total_overtime_amount || 0);
-  const earnedTillDateNet = earnedTillDateBase + Number(payroll.total_commission || 0) + currentOtAmount + Number(formData.bonus || 0) - Number(formData.advance_deduction || 0);
-  const projectedNet = Number(payroll.base_salary) - Number(payroll.deduction) + Number(payroll.total_commission || 0) + currentOtAmount + Number(formData.bonus || 0) - Number(formData.advance_deduction || 0);
+  const currentBonus = editMode ? Number(formData.bonus || 0) : Number(payroll.bonus || 0);
+  const currentAdvance = editMode ? Number(formData.advance_deduction || 0) : Number(payroll.advance_deduction || 0);
+
+  const earnedTillDateNet = earnedTillDateBase + Number(payroll.total_commission || 0) + currentOtAmount + currentBonus - currentAdvance;
+  const projectedNet = currentBaseSalary - Number(payroll.deduction) + Number(payroll.total_commission || 0) + currentOtAmount + currentBonus - currentAdvance;
 
   const displayNet = (isDraft && isMonthly && viewMode === 'earned') ? earnedTillDateNet : projectedNet;
-  const displayBase = (isDraft && isMonthly && viewMode === 'earned') ? earnedTillDateBase : Number(payroll.base_salary);
-  const displayDeduction = (isDraft && isMonthly && viewMode === 'earned') ? 0 : Number(payroll.deduction);
+  const displayBase = currentBaseSalary;
+  const displayDeduction = Number(payroll.deduction || 0);
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-[#09090b]">
@@ -952,6 +971,30 @@ export default function PayrollDetailsPage() {
       {/* Screen Layout Container */}
       <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 pt-4 pb-8 space-y-6 print:hidden">
         
+        {/* Zero Base Salary Alert Banner */}
+        {Number(payroll.base_salary) === 0 && (
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-600/40 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl shrink-0 mt-0.5">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                  Zero Base Salary Configured for this Staff Member
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                  The contracted monthly base salary in the staff profile is currently ₹0. You can click <strong>Edit Details</strong> to assign a salary directly to this slip.
+                </p>
+              </div>
+            </div>
+            {!editMode && isDraft && isManager && (
+              <Button size="sm" onClick={() => setEditMode(true)} className="bg-amber-600 hover:bg-amber-700 text-white shrink-0 shadow-xs">
+                <Edit3 className="w-3.5 h-3.5 mr-1.5" /> Edit Base Salary
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* Hero split layout (Employee + Net Salary + Status widget) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
@@ -1084,9 +1127,15 @@ export default function PayrollDetailsPage() {
                   {displayNet.toLocaleString()}
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-1">
-                Inclusive of bonuses, commissions & {viewMode === 'earned' ? 'recoveries' : 'LOP deductions'}.
-              </p>
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400">
+                  {viewMode === 'earned' ? `Contracted Base: ₹${currentBaseSalary.toLocaleString()}` : `Earned to Date: ₹${earnedTillDateNet.toLocaleString()}`}
+                </span>
+                <span className="text-[10px] text-slate-300 dark:text-zinc-600">•</span>
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400">
+                  {effectivePresent} days credited
+                </span>
+              </div>
             </div>
 
             <div className="border-t border-primary-500/10 dark:border-white/5 pt-4">
@@ -1125,7 +1174,12 @@ export default function PayrollDetailsPage() {
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 tracking-wider">WORKING DAYS</p>
-                <p className="text-lg font-black text-slate-800 dark:text-white leading-tight mt-0.5">{payroll.total_days}</p>
+                <div className="flex items-baseline gap-1.5 mt-0.5">
+                  <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">
+                    {payroll.working_days && payroll.working_days > 0 ? payroll.working_days : Math.max(1, payroll.total_days - (payroll.week_offs || 0) - (payroll.holidays || 0))}
+                  </p>
+                  <span className="text-[10px] text-slate-400 font-medium">({payroll.total_days} Cal. Days)</span>
+                </div>
               </div>
             </div>
 
@@ -1137,6 +1191,9 @@ export default function PayrollDetailsPage() {
               <div>
                 <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 tracking-wider">DAYS PRESENT</p>
                 <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 leading-tight mt-0.5">{payroll.present_days}</p>
+                {Number(payroll.late_count || 0) > 0 && (
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Includes {payroll.late_count} Late Entries</p>
+                )}
               </div>
             </div>
 
@@ -1150,6 +1207,9 @@ export default function PayrollDetailsPage() {
                 <p className="text-lg font-black text-rose-500 dark:text-rose-400 leading-tight mt-0.5">
                   {payroll.absent_days + payroll.unpaid_leaves}
                 </p>
+                {Number(payroll.half_days || 0) > 0 && (
+                  <p className="text-[10px] text-slate-400">{payroll.half_days} Half-Days (0.5x)</p>
+                )}
               </div>
             </div>
 
@@ -1161,7 +1221,10 @@ export default function PayrollDetailsPage() {
               <div>
                 <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 tracking-wider">PAID LEAVES / OFFS</p>
                 <p className="text-lg font-black text-blue-600 dark:text-blue-400 leading-tight mt-0.5">
-                  {payroll.paid_leaves + payroll.holidays + payroll.week_offs}
+                  {(payroll.paid_leaves || 0) + (payroll.holidays || 0) + (payroll.week_offs || 0)}
+                </p>
+                <p className="text-[10px] text-slate-400">
+                  {payroll.week_offs || 0} Offs · {payroll.holidays || 0} Hol · {payroll.paid_leaves || 0} Lv
                 </p>
               </div>
             </div>
@@ -1240,13 +1303,31 @@ export default function PayrollDetailsPage() {
                       </div>
                     ))}
                     
-                    {(!payroll.salary_components || (Array.isArray(payroll.salary_components) && payroll.salary_components.length === 0)) && (
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-555 dark:text-zinc-400">Basic Salary</span>
-                        <span className="font-semibold text-slate-700 dark:text-zinc-200">
-                          ₹{displayBase.toLocaleString()}
-                        </span>
+                    {editMode ? (
+                      <div className="flex justify-between items-center text-sm p-2.5 bg-primary-500/5 rounded-xl border border-primary-500/20">
+                        <div>
+                          <span className="text-slate-700 dark:text-zinc-200 font-bold block">Base Monthly Salary</span>
+                          <span className="text-[10px] text-slate-400">Editable monthly base rate</span>
+                        </div>
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">₹</span>
+                          <input 
+                            type="number" 
+                            className="w-32 pl-6 pr-2.5 h-8 text-right bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold text-slate-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-primary-500" 
+                            value={formData.base_salary}
+                            onChange={(e) => setFormData(prev => ({ ...prev, base_salary: Number(e.target.value) }))}
+                          />
+                        </div>
                       </div>
+                    ) : (
+                      (!payroll.salary_components || (Array.isArray(payroll.salary_components) && payroll.salary_components.length === 0)) ? (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-slate-555 dark:text-zinc-400">Basic Salary</span>
+                          <span className="font-semibold text-slate-700 dark:text-zinc-200">
+                            ₹{displayBase.toLocaleString()}
+                          </span>
+                        </div>
+                      ) : null
                     )}
                   </>
                 )}
@@ -1352,11 +1433,30 @@ export default function PayrollDetailsPage() {
                   </div>
                 ))}
                 
-                {displayDeduction > 0 && (
+                {/* Absence Deductions (LOP) */}
+                {Number(payroll.absence_deductions ?? (Number(payroll.late_deductions) > 0 ? 0 : displayDeduction)) > 0 && (
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-555 dark:text-zinc-400">Absence Deductions (LOP)</span>
+                    <div>
+                      <span className="text-slate-700 dark:text-zinc-300 font-medium block">Absence Deductions (LOP)</span>
+                      <span className="text-[10px] text-slate-400">Unapproved absences & unpaid leaves</span>
+                    </div>
                     <span className="font-semibold text-rose-500">
-                      -₹{displayDeduction.toLocaleString()}
+                      -₹{Number(payroll.absence_deductions ?? displayDeduction).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+
+                {/* Late Arrival Penalty */}
+                {Number(payroll.late_deductions || 0) > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <div>
+                      <span className="text-slate-700 dark:text-zinc-300 font-medium block">Late Arrival Penalty</span>
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                        {payroll.late_count || 0} late arrivals ({payroll.late_cut_days || 0} days cut)
+                      </span>
+                    </div>
+                    <span className="font-semibold text-rose-500">
+                      -₹{Number(payroll.late_deductions).toLocaleString()}
                     </span>
                   </div>
                 )}

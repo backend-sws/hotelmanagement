@@ -464,6 +464,17 @@ export const useHolidays = (month: string) => {
   });
 };
 
+export const useAllHolidays = () => {
+  return useQuery({
+    queryKey: ['holidays', 'all'],
+    queryFn: async () => {
+      const { data } = await api.get('/business/holidays', { params: { all: true } });
+      return data.data as BusinessHoliday[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 export const useAddHoliday = () => {
   const qc = useQueryClient();
   return useMutation({

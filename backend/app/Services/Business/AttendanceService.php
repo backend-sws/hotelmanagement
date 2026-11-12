@@ -573,13 +573,17 @@ class AttendanceService
         $startDate = Carbon::parse($leaveRequest->from_date)->startOfDay();
         $endDate   = Carbon::parse($leaveRequest->to_date)->startOfDay();
 
-        $holidayDates = BusinessHoliday::where('business_id', $businessId)
+        $holidays = BusinessHoliday::withoutGlobalScopes()
+            ->where('business_id', $businessId)
             ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
-            ->pluck('date')
-            ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
+            ->get();
+        $holidayMap = [];
+        foreach ($holidays as $h) {
+            $hDate = Carbon::parse($h->date)->format('Y-m-d');
+            $holidayMap[$hDate] = $h->name;
+        }
 
-        $workSetting = BusinessWorkSetting::where('business_id', $businessId)->first();
+        $workSetting = BusinessWorkSetting::withoutGlobalScopes()->where('business_id', $businessId)->first();
         $workDays = $workSetting && is_array($workSetting->work_days)
             ? $workSetting->work_days
             : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -603,12 +607,58 @@ class AttendanceService
             $dateStr = $current->format('Y-m-d');
             $dayName = $dayMap[$current->dayOfWeek] ?? 'Sun';
 
-            // Applied leave does NOT count Sundays, official off-days, and company holidays
-            if ($current->dayOfWeek === Carbon::SUNDAY || !in_array($dayName, $workDays) || in_array($dateStr, $holidayDates)) {
+            // 1. If this date is an official company holiday: ensure marked as 'holiday'
+            if (isset($holidayMap[$dateStr])) {
+                $hRecord = Attendance::where('business_id', $businessId)
+                    ->where('user_id', $userId)
+                    ->where('date', $dateStr)
+                    ->first();
+                if (!$hRecord) {
+                    Attendance::create([
+                        'business_id' => $businessId,
+                        'user_id'     => $userId,
+                        'date'        => $dateStr,
+                        'status'      => 'holiday',
+                        'notes'       => $holidayMap[$dateStr],
+                        'approved_by' => $approverId,
+                    ]);
+                } elseif (in_array($hRecord->status, ['absent', 'leave']) || empty($hRecord->check_in_time)) {
+                    $hRecord->update([
+                        'status' => 'holiday',
+                        'notes'  => $holidayMap[$dateStr],
+                    ]);
+                }
                 $current->addDay();
                 continue;
             }
 
+            // 2. If this date is Sunday or official off-day: ensure marked as 'week_off'
+            $isOffDay = ($current->dayOfWeek === Carbon::SUNDAY || !in_array($dayName, $workDays));
+            if ($isOffDay) {
+                $wRecord = Attendance::where('business_id', $businessId)
+                    ->where('user_id', $userId)
+                    ->where('date', $dateStr)
+                    ->first();
+                if (!$wRecord) {
+                    Attendance::create([
+                        'business_id' => $businessId,
+                        'user_id'     => $userId,
+                        'date'        => $dateStr,
+                        'status'      => 'week_off',
+                        'notes'       => 'Weekly Off',
+                        'approved_by' => $approverId,
+                    ]);
+                } elseif (in_array($wRecord->status, ['absent', 'leave']) && empty($wRecord->check_in_time)) {
+                    $wRecord->update([
+                        'status' => 'week_off',
+                        'notes'  => 'Weekly Off',
+                    ]);
+                }
+                $current->addDay();
+                continue;
+            }
+
+            // 3. Otherwise, this is a working day: mark as 'leave'
             $record = Attendance::where('business_id', $businessId)
                 ->where('user_id', $userId)
                 ->where('date', $dateStr)
