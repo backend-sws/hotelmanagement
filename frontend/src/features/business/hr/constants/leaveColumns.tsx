@@ -31,17 +31,24 @@ export const getLeaveColumns = ({
     {
       header: 'Request Type',
       cell: (row: LeaveRequest) => (
-        <div className="flex items-center gap-1.5">
-          {row.request_type === 'wfh' ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-              <Home className="w-3 h-3" /> WFH
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-500/15 text-violet-400 border border-violet-500/30">
-              <Calendar className="w-3 h-3" /> Leave
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5">
+            {row.request_type === 'wfh' ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                <Home className="w-3 h-3" /> WFH
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-500/15 text-violet-400 border border-violet-500/30">
+                <Calendar className="w-3 h-3" /> Leave
+              </span>
+            )}
+            <span className="text-xs text-slate-400 capitalize">({row.leave_type})</span>
+          </div>
+          {row.is_short_notice && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+              ⚠️ Short Notice
             </span>
           )}
-          <span className="text-xs text-slate-400 capitalize">({row.leave_type})</span>
         </div>
       ),
     },

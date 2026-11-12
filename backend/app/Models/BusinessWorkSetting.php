@@ -35,6 +35,14 @@ class BusinessWorkSetting extends Model
         'forgot_checkout_policy',
         'forgot_checkout_alert_time',
         'enable_forgot_checkout_alert',
+        'enable_late_deduction',
+        'late_free_waiver_count',
+        'late_deduction_trigger_count',
+        'late_deduction_amount_type',
+        'enable_absence_penalty',
+        'absence_penalty_multiplier',
+        'enable_leave_notice_rule',
+        'leave_notice_days_required',
     ];
 
     protected $casts = [
@@ -54,6 +62,14 @@ class BusinessWorkSetting extends Model
         'punch_mode_selfie_required' => 'boolean',
         'punch_mode_on_duty' => 'boolean',
         'enable_forgot_checkout_alert' => 'boolean',
+        'enable_late_deduction' => 'boolean',
+        'late_free_waiver_count' => 'integer',
+        'late_deduction_trigger_count' => 'integer',
+        'late_deduction_amount_type' => 'float',
+        'enable_absence_penalty' => 'boolean',
+        'absence_penalty_multiplier' => 'float',
+        'enable_leave_notice_rule' => 'boolean',
+        'leave_notice_days_required' => 'integer',
     ];
 
     public function business(): BelongsTo

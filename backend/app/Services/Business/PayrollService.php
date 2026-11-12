@@ -272,7 +272,36 @@ class PayrollService
 
             // Deduction based only on elapsed working days (not full month)
             $unpaidAbsences = max(0, $elapsedWorkingDays - $effectivePresent);
-            $deduction = $unpaidAbsences * $perDaySalary;
+            
+            // Dynamic Absence Penalty Rule: Apply penalty multiplier for unapproved/voluntary absences
+            $absencePenaltyMultiplier = 1.0;
+            if ($workSetting && ($workSetting->enable_absence_penalty ?? true)) {
+                $absencePenaltyMultiplier = (float) ($workSetting->absence_penalty_multiplier ?? 2.0);
+            }
+            $absenceDeduction = $unpaidAbsences * ($perDaySalary * $absencePenaltyMultiplier);
+
+            // Dynamic Late Arrivals Deduction Rule: Every N late days triggers a salary cut (after free grace passes)
+            $lateDeductionAmount = 0.0;
+            if ($workSetting && ($workSetting->enable_late_deduction ?? true)) {
+                $monthlyLates = $attendances->filter(function ($a) {
+                    return $a->status === 'late' 
+                        || ($a->late_mark_minutes && $a->late_mark_minutes > 0)
+                        || ($a->notes && stripos($a->notes, 'late entry') !== false);
+                })->count();
+
+                $freeWaiver = (int) ($workSetting->late_free_waiver_count ?? 2);
+                $triggerCount = max(1, (int) ($workSetting->late_deduction_trigger_count ?? 4));
+                $cutAmountDays = (float) ($workSetting->late_deduction_amount_type ?? 1.0);
+
+                if ($monthlyLates > $freeWaiver) {
+                    $chargeableLates = $monthlyLates - $freeWaiver;
+                    $cutCycles = (int) floor($chargeableLates / $triggerCount);
+                    $lateCutDays = $cutCycles * $cutAmountDays;
+                    $lateDeductionAmount = $lateCutDays * $perDaySalary;
+                }
+            }
+
+            $deduction = $absenceDeduction + $lateDeductionAmount;
 
             // Overtime pay calculation for monthly staff
             $totalOvertimeAmount = 0.0;

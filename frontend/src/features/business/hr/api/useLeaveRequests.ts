@@ -17,6 +17,7 @@ export interface LeaveRequest {
   approved_by?: number;
   wfh_attendance_marked: boolean;
   admin_remark: string | null;
+  is_short_notice?: boolean;
   net_working_days?: number;
   created_at: string;
   user?: { id: number; name: string };

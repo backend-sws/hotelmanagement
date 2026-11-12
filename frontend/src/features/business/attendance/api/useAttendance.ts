@@ -33,6 +33,16 @@ export interface AttendanceRecord {
   is_past_alert_time?: boolean;
   forgot_checkout_alert_time?: string;
   forgot_checkout_policy?: 'half_day' | 'auto_full' | 'incomplete';
+  monthly_late_count?: number;
+  late_free_waiver_count?: number;
+  free_lates_remaining?: number;
+  enable_late_deduction?: boolean;
+  late_deduction_trigger_count?: number;
+  late_deduction_amount_type?: number;
+  enable_absence_penalty?: boolean;
+  absence_penalty_multiplier?: number;
+  enable_leave_notice_rule?: boolean;
+  leave_notice_days_required?: number;
   late_mark_minutes: number | null;
   overtime_hours?: number | null;
   overtime_approved?: boolean;
@@ -81,6 +91,14 @@ export interface BusinessWorkSetting {
   forgot_checkout_policy?: 'half_day' | 'auto_full' | 'incomplete';
   forgot_checkout_alert_time?: string;
   enable_forgot_checkout_alert?: boolean;
+  enable_late_deduction?: boolean;
+  late_free_waiver_count?: number;
+  late_deduction_trigger_count?: number;
+  late_deduction_amount_type?: number;
+  enable_absence_penalty?: boolean;
+  absence_penalty_multiplier?: number;
+  enable_leave_notice_rule?: boolean;
+  leave_notice_days_required?: number;
 }
 
 // ── Attendance Queries ─────────────────────────────────────────────────────

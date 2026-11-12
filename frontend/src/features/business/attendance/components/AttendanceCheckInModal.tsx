@@ -197,6 +197,19 @@ export const AttendanceCheckInModal = ({ isOpen, onClose }: AttendanceCheckInMod
       title="Staff Attendance"
     >
       <div className="space-y-5">
+        {/* Free Late Grace Passes Info (When checking in) */}
+        {!isCheckedIn && !isCheckedOut && todayStatus && (todayStatus.enable_late_deduction ?? true) && (
+          <div className="p-3 bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700/60 rounded-xl flex items-center justify-between text-xs">
+            <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
+              <Clock className="w-3.5 h-3.5 text-amber-500" />
+              Late Grace Passes:
+            </span>
+            <span className="text-[11px] font-bold text-slate-600 dark:text-zinc-300">
+              <strong className="text-amber-600 dark:text-amber-400">{todayStatus.free_lates_remaining ?? 0}</strong> of {todayStatus.late_free_waiver_count ?? 2} free passes remaining this month
+            </span>
+          </div>
+        )}
+
         {/* Approved WFH Notification Banner */}
         {hasApprovedWfh && (
           <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800/60 rounded-xl flex items-start gap-3 text-xs text-emerald-900 dark:text-emerald-200">

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar, Home, CheckCircle2, AlertTriangle, Sparkles, Clock, Info } from 'lucide-react';
 import { useLeaveBalances } from '../api/useLeavePolicies';
+import { useWorkSettings } from '@/features/business/attendance/api/useAttendance';
 
 interface LeaveRequestFormModalProps {
   isOpen: boolean;
@@ -26,6 +27,19 @@ export const LeaveRequestFormModal: React.FC<LeaveRequestFormModalProps> = ({
   const [reason, setReason] = useState('');
 
   const { data: balanceData } = useLeaveBalances();
+  const { data: workSettings } = useWorkSettings();
+  const noticeDaysRequired = workSettings?.leave_notice_days_required ?? 2;
+  const isNoticeRuleEnabled = workSettings?.enable_leave_notice_rule ?? true;
+
+  const isShortNotice = useMemo(() => {
+    if (!fromDate || !isNoticeRuleEnabled || noticeDaysRequired <= 0) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(fromDate + 'T00:00:00');
+    target.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays < noticeDaysRequired;
+  }, [fromDate, isNoticeRuleEnabled, noticeDaysRequired]);
 
   // Find matching quota
   const activeBalance = useMemo(() => {
@@ -243,6 +257,24 @@ export const LeaveRequestFormModal: React.FC<LeaveRequestFormModalProps> = ({
             />
           </div>
         </div>
+
+        {/* Short Notice Alert */}
+        {isShortNotice && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+            <div className="space-y-1">
+              <p className="font-bold flex items-center gap-1.5">
+                <span>⚠️ Short Notice Request</span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                  Manager Discretion
+                </span>
+              </p>
+              <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300/90">
+                Company policy requires at least <strong>{noticeDaysRequired} days advance notice</strong> for planned leaves. This request will be submitted as <strong>Short Notice</strong> and is subject to Manager/HR discretion.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Duration / Quota Alert */}
         {daysCount > 0 && (

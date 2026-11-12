@@ -56,7 +56,23 @@ class LeaveRequestController extends Controller
             'reason'        => 'required|string',
         ]);
 
+        $businessId = app('current_business_id');
+        $workSetting = \App\Models\BusinessWorkSetting::where('business_id', $businessId)->first();
+        $isShortNotice = false;
+
+        if ($workSetting && ($workSetting->enable_leave_notice_rule ?? true)) {
+            $requiredNoticeDays = (int) ($workSetting->leave_notice_days_required ?? 2);
+            $fromDate = \Carbon\Carbon::parse($validated['from_date'])->startOfDay();
+            $today = \Carbon\Carbon::today();
+            $advanceDays = $today->diffInDays($fromDate, false);
+
+            if ($advanceDays < $requiredNoticeDays) {
+                $isShortNotice = true;
+            }
+        }
+
         $leave = LeaveRequest::create([
+            'business_id'    => $businessId,
             'user_id'        => $request->user()->id,
             'request_type'   => $validated['request_type'] ?? 'leave',
             'leave_type'     => $validated['leave_type'],
@@ -64,6 +80,7 @@ class LeaveRequestController extends Controller
             'from_date'      => $validated['from_date'],
             'to_date'        => $validated['to_date'],
             'reason'         => $validated['reason'],
+            'is_short_notice'=> $isShortNotice,
             'status'         => 'pending',
         ]);
 

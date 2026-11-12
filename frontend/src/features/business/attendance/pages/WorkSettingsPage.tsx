@@ -65,6 +65,14 @@ export default function WorkSettingsPage() {
     forgot_checkout_policy: 'half_day' as 'half_day' | 'auto_full' | 'incomplete',
     forgot_checkout_alert_time: '19:00',
     enable_forgot_checkout_alert: true,
+    enable_late_deduction: true,
+    late_free_waiver_count: 2,
+    late_deduction_trigger_count: 4,
+    late_deduction_amount_type: 1.0,
+    enable_absence_penalty: true,
+    absence_penalty_multiplier: 2.0,
+    enable_leave_notice_rule: true,
+    leave_notice_days_required: 2,
   });
 
   const [initialForm, setInitialForm] = useState(form);
@@ -94,6 +102,14 @@ export default function WorkSettingsPage() {
         forgot_checkout_policy: (settings.forgot_checkout_policy as any) || 'half_day',
         forgot_checkout_alert_time: settings.forgot_checkout_alert_time?.slice(0, 5) || '19:00',
         enable_forgot_checkout_alert: settings.enable_forgot_checkout_alert ?? true,
+        enable_late_deduction: settings.enable_late_deduction ?? true,
+        late_free_waiver_count: settings.late_free_waiver_count ?? 2,
+        late_deduction_trigger_count: settings.late_deduction_trigger_count ?? 4,
+        late_deduction_amount_type: Number(settings.late_deduction_amount_type ?? 1.0),
+        enable_absence_penalty: settings.enable_absence_penalty ?? true,
+        absence_penalty_multiplier: Number(settings.absence_penalty_multiplier ?? 2.0),
+        enable_leave_notice_rule: settings.enable_leave_notice_rule ?? true,
+        leave_notice_days_required: settings.leave_notice_days_required ?? 2,
       };
       setForm(loaded);
       setInitialForm(loaded);
@@ -270,7 +286,7 @@ export default function WorkSettingsPage() {
           </div>
 
           {/* Hub Tab Navigation Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-2 border-t border-slate-100 dark:border-zinc-800/80 scrollbar-none">
+          <div className="flex flex-wrap items-center gap-2 pt-2.5 pb-1 border-t border-slate-100 dark:border-zinc-800/80">
             <button
               type="button"
               onClick={() => setActiveTab('branches')}
@@ -437,8 +453,8 @@ export default function WorkSettingsPage() {
 
         {/* Responsive Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Main Configuration Column (8 cols) */}
-          <div className="lg:col-span-8 space-y-6">
+          {/* Main Configuration Column (8 cols, or 12 cols when salary_rules tab is active) */}
+          <div className={`${activeTab === 'salary_rules' ? 'lg:col-span-12' : 'lg:col-span-8'} space-y-6`}>
             {/* TAB: Branches & Geofence */}
             {(activeTab === 'branches' || activeTab === 'all') && (
               <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-6">
@@ -1396,62 +1412,260 @@ export default function WorkSettingsPage() {
             {/* TAB: Salary Deductions & Penalties */}
             {(activeTab === 'salary_rules' || activeTab === 'all') && (
               <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-zinc-800">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                      <Receipt className="w-5 h-5" />
+                {/* Header Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 font-black text-lg">
+                      $
                     </div>
                     <div>
-                      <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        Salary Deductions, Penalties & Grace Windows
+                      <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                        Dynamic Salary Deductions & Attendance Penalty Rules
                       </h2>
-                      <p className="text-xs text-slate-500 dark:text-zinc-400">
-                        Rules for late arrivals, missed punch-outs, and monthly payroll deduction formulas
+                      <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                        Configure automated salary cut triggers for late punches, voluntary unapproved absences, and short-notice leaves. All rules calculate dynamically in monthly payroll.
                       </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/payroll/components')}
-                    className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
-                  >
-                    <span>Payroll Rules</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={saveMutation.isPending}
+                      isLoading={saveMutation.isPending}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-sm cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Save className="w-4 h-4 mr-1" />
+                      Save Penalty Policy
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-800/30 space-y-3">
-                    <div className="flex items-center gap-2 font-bold text-xs text-slate-900 dark:text-white">
-                      <Clock className="w-4 h-4 text-amber-500" />
-                      <span>Late Entry Grace Window</span>
+                {/* 3 Penalty Rules Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {/* RULE 1 • LATE ARRIVALS */}
+                  <div className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/40 bg-amber-500/[0.02] dark:bg-amber-950/[0.06] flex flex-col justify-between space-y-5">
+                    <div className="space-y-4">
+                      {/* Pill & Toggle */}
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
+                          RULE 1 • LATE ARRIVALS
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setForm(p => ({ ...p, enable_late_deduction: !p.enable_late_deduction }))}
+                          className={`relative w-11 h-6 rounded-full transition-all cursor-pointer ${
+                            form.enable_late_deduction ? 'bg-amber-500' : 'bg-slate-200 dark:bg-zinc-700'
+                          }`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                            form.enable_late_deduction ? 'left-6' : 'left-1'
+                          }`} />
+                        </button>
+                      </div>
+
+                      {/* Title & Description */}
+                      <div>
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                          Late Punch Cut Threshold
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 leading-relaxed">
+                          Deduct salary when an employee accumulates late punch-ins beyond the shift grace period ({form.late_mark_grace_minutes}m).
+                        </p>
+                      </div>
+
+                      {/* Field: Monthly Late Waiver */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <Shield className="w-3.5 h-3.5 text-rose-500" />
+                          <span>Monthly Late Waiver (Free Grace Passes):</span>
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={30}
+                            value={form.late_free_waiver_count}
+                            onChange={(e) => setForm(p => ({ ...p, late_free_waiver_count: Math.max(0, parseInt(e.target.value) || 0) }))}
+                            className="w-20 font-bold text-center bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 h-9"
+                          />
+                          <span className="text-xs text-slate-600 dark:text-zinc-400 font-medium">Free Lates / Month</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 leading-tight">
+                          First {form.late_free_waiver_count} late punches are excused with zero penalty cut.
+                        </p>
+                      </div>
+
+                      {/* Field: Every N Late Days Trigger Cut */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                          Every N Late Days Trigger Cut:
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min={1}
+                            max={30}
+                            value={form.late_deduction_trigger_count}
+                            onChange={(e) => setForm(p => ({ ...p, late_deduction_trigger_count: Math.max(1, parseInt(e.target.value) || 1) }))}
+                            className="w-20 font-bold text-center bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 h-9"
+                          />
+                          <span className="text-xs text-slate-600 dark:text-zinc-400 font-medium">Late Punches (e.g. 4)</span>
+                        </div>
+                      </div>
+
+                      {/* Field: Salary Cut per Threshold */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                          Salary Cut per Threshold:
+                        </label>
+                        <select
+                          value={form.late_deduction_amount_type}
+                          onChange={(e) => setForm(p => ({ ...p, late_deduction_amount_type: parseFloat(e.target.value) }))}
+                          className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 h-9"
+                        >
+                          <option value={0.5}>0.5 Day Salary (Half Day)</option>
+                          <option value={1.0}>1.0 Day Salary (Full Day)</option>
+                          <option value={1.5}>1.5 Days Salary</option>
+                          <option value={2.0}>2.0 Days Salary (Two Days)</option>
+                        </select>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-[11px] text-slate-500 block mb-1">Grace Buffer (Minutes)</label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="120"
-                        value={form.late_mark_grace_minutes}
-                        onChange={(e) => setForm(p => ({ ...p, late_mark_grace_minutes: parseInt(e.target.value) || 0 }))}
-                        className="font-bold text-slate-900 dark:text-white"
-                      />
+
+                    {/* Bottom Active Rule Box */}
+                    <div className="p-3 rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/20 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+                      <span className="text-sm">💡</span>
+                      <div className="leading-relaxed">
+                        <strong>Active Rule:</strong> Every {form.late_deduction_trigger_count} late days = {form.late_deduction_amount_type} day salary cut. {form.late_deduction_trigger_count * 2} lates will cut {form.late_deduction_amount_type * 2} days.
+                      </div>
                     </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">
-                      Arrivals within {form.late_mark_grace_minutes} minutes of shift start ({form.work_start_time}) are marked present without penalty. Beyond this buffer, a Late Entry (LE) mark is registered.
-                    </p>
                   </div>
 
-                  <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-800/30 space-y-2">
-                    <div className="flex items-center gap-2 font-bold text-xs text-slate-900 dark:text-white">
-                      <AlertCircle className="w-4 h-4 text-rose-500" />
-                      <span>Standard Deduction Policy</span>
+                  {/* RULE 2 • UNAPPROVED ABSENCE */}
+                  <div className="p-5 rounded-2xl border border-rose-200 dark:border-rose-900/40 bg-rose-500/[0.02] dark:bg-rose-950/[0.06] flex flex-col justify-between space-y-5">
+                    <div className="space-y-4">
+                      {/* Pill & Toggle */}
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300">
+                          RULE 2 • UNAPPROVED ABSENCE
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setForm(p => ({ ...p, enable_absence_penalty: !p.enable_absence_penalty }))}
+                          className={`relative w-11 h-6 rounded-full transition-all cursor-pointer ${
+                            form.enable_absence_penalty ? 'bg-rose-500' : 'bg-slate-200 dark:bg-zinc-700'
+                          }`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                            form.enable_absence_penalty ? 'left-6' : 'left-1'
+                          }`} />
+                        </button>
+                      </div>
+
+                      {/* Title & Description */}
+                      <div>
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                          Voluntary Absence Penalty
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 leading-relaxed">
+                          Penalty multiplier applied when an employee takes voluntary leave without prior approved leave in the system.
+                        </p>
+                      </div>
+
+                      {/* Field: Salary Cut Multiplier */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                          Salary Cut Multiplier per Absent Day:
+                        </label>
+                        <select
+                          value={form.absence_penalty_multiplier}
+                          onChange={(e) => setForm(p => ({ ...p, absence_penalty_multiplier: parseFloat(e.target.value) }))}
+                          className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 h-9"
+                        >
+                          <option value={1.0}>1.0 Day Salary (Standard 1:1 Cut)</option>
+                          <option value={1.5}>1.5 Days Salary</option>
+                          <option value={2.0}>2.0 Days Salary (Double Penalty)</option>
+                          <option value={2.5}>2.5 Days Salary</option>
+                          <option value={3.0}>3.0 Days Salary (Triple Penalty)</option>
+                        </select>
+                      </div>
                     </div>
-                    <ul className="text-[11px] text-slate-600 dark:text-zinc-400 space-y-1.5 list-disc pl-4 leading-relaxed">
-                      <li><strong>Late Mark Rule:</strong> 3 Late Entries can trigger a 0.5-day salary deduction during monthly payroll processing.</li>
-                      <li><strong>Forgot Punch-Out:</strong> Managed under the automated policy (currently set to <strong>{form.forgot_checkout_policy}</strong>).</li>
-                      <li><strong>Daily Wage Basis:</strong> Calculated dynamically as <code>(Basic Salary + Fixed Allowances) ÷ Total Month Days</code>.</li>
-                    </ul>
+
+                    {/* Bottom Active Rule Box */}
+                    <div className="p-3 rounded-xl border border-rose-200/80 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/20 text-xs text-rose-900 dark:text-rose-200 flex items-start gap-2">
+                      <span className="text-sm">🚨</span>
+                      <div className="leading-relaxed">
+                        <strong>Active Rule:</strong> Each unauthorized absent day deducts {form.absence_penalty_multiplier} days from final salary.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RULE 3 • ADVANCE NOTICE */}
+                  <div className="p-5 rounded-2xl border border-blue-200 dark:border-blue-900/40 bg-blue-500/[0.02] dark:bg-blue-950/[0.06] flex flex-col justify-between space-y-5">
+                    <div className="space-y-4">
+                      {/* Pill & Toggle */}
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
+                          RULE 3 • ADVANCE NOTICE
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setForm(p => ({ ...p, enable_leave_notice_rule: !p.enable_leave_notice_rule }))}
+                          className={`relative w-11 h-6 rounded-full transition-all cursor-pointer ${
+                            form.enable_leave_notice_rule ? 'bg-blue-600' : 'bg-slate-200 dark:bg-zinc-700'
+                          }`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                            form.enable_leave_notice_rule ? 'left-6' : 'left-1'
+                          }`} />
+                        </button>
+                      </div>
+
+                      {/* Title & Description */}
+                      <div>
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                          Leave Notice Window
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 leading-relaxed">
+                          Minimum advance notice required before taking leave. Applications submitted with less notice require Manager/HR discretion.
+                        </p>
+                      </div>
+
+                      {/* Field: Advance Notice Required */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                          Advance Notice Required:
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={30}
+                            value={form.leave_notice_days_required}
+                            onChange={(e) => setForm(p => ({ ...p, leave_notice_days_required: Math.max(0, parseInt(e.target.value) || 0) }))}
+                            className="w-20 font-bold text-center bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 h-9"
+                          />
+                          <span className="text-xs text-slate-600 dark:text-zinc-400 font-medium">Days in Advance</span>
+                        </div>
+                      </div>
+
+                      {/* Manager/HR Control callout box */}
+                      <div className="p-3 rounded-xl border border-blue-200/70 dark:border-blue-900/40 bg-blue-50/60 dark:bg-blue-950/20 text-xs text-blue-950 dark:text-blue-200 flex items-start gap-2">
+                        <Shield className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                        <div className="leading-relaxed">
+                          <strong>Manager/HR Control:</strong> If staff apply &lt; {form.leave_notice_days_required} days in advance, request is flagged as ⚠️ <strong>Short Notice</strong>. Manager chooses to waive or deduct penalty at approval time.
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Active Rule Box */}
+                    <div className="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-800/40 text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2">
+                      <span className="text-sm">📝</span>
+                      <div className="leading-relaxed">
+                        <strong>Active Rule:</strong> Minimum {form.leave_notice_days_required} days advance notice required for standard paid leave.
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1459,7 +1673,8 @@ export default function WorkSettingsPage() {
           </div>
 
           {/* Sidebar / Overview Column (4 cols) */}
-          <div className="lg:col-span-4 space-y-6">
+          {activeTab !== 'salary_rules' && (
+            <div className="lg:col-span-4 space-y-6">
             {/* Section 3: Automated Policies */}
             <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800">
@@ -1617,6 +1832,7 @@ export default function WorkSettingsPage() {
               </Button>
             </div>
           </div>
+          )}
         </div>
 
         {/* Bottom Save Action Bar */}

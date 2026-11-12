@@ -222,6 +222,34 @@ class AttendanceController extends BaseController
                 $data['alert_message'] = "You checked in at {$status->check_in_time} but have not checked out yet. If you have already left the office premises, please submit an Out-of-Geofence Punch-Out Request to your manager to avoid half-day capping.";
             }
 
+            // Calculate staff member's current month late punches and remaining free passes
+            $startOfMonth = now()->startOfMonth()->toDateString();
+            $endOfMonth = now()->endOfMonth()->toDateString();
+            $monthlyLateCount = \App\Models\Attendance::where('business_id', $businessId)
+                ->where('user_id', $user->id)
+                ->whereBetween('date', [$startOfMonth, $endOfMonth])
+                ->where(function ($q) {
+                    $q->where('status', 'late')
+                      ->orWhere('late_mark_minutes', '>', 0)
+                      ->orWhere('notes', 'LIKE', '%late entry%');
+                })
+                ->count();
+
+            $freeWaiver = (int) ($workSetting->late_free_waiver_count ?? 2);
+            $enableLateDeduction = $workSetting->enable_late_deduction ?? true;
+            $freeLatesRemaining = max(0, $freeWaiver - $monthlyLateCount);
+
+            $data['monthly_late_count'] = $monthlyLateCount;
+            $data['late_free_waiver_count'] = $freeWaiver;
+            $data['free_lates_remaining'] = $freeLatesRemaining;
+            $data['enable_late_deduction'] = $enableLateDeduction;
+            $data['late_deduction_trigger_count'] = (int) ($workSetting->late_deduction_trigger_count ?? 4);
+            $data['late_deduction_amount_type'] = (float) ($workSetting->late_deduction_amount_type ?? 1.0);
+            $data['enable_absence_penalty'] = $workSetting->enable_absence_penalty ?? true;
+            $data['absence_penalty_multiplier'] = (float) ($workSetting->absence_penalty_multiplier ?? 2.0);
+            $data['enable_leave_notice_rule'] = $workSetting->enable_leave_notice_rule ?? true;
+            $data['leave_notice_days_required'] = (int) ($workSetting->leave_notice_days_required ?? 2);
+
             return $this->success($data, 'Today status retrieved successfully');
         } catch (\Throwable $e) {
             return $this->error($e->getMessage(), 500);

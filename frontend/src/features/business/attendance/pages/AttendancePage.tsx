@@ -514,6 +514,44 @@ export default function AttendancePage() {
           </div>
         )}
 
+        {/* Monthly Late Arrivals & Grace Passes Tracker Banner */}
+        {todayStatus && (todayStatus.enable_late_deduction ?? true) && (
+          <div className="p-4 rounded-2xl bg-white/90 dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-start md:items-center gap-3.5">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+                (todayStatus.free_lates_remaining ?? 0) > 0
+                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+              }`}>
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                    Monthly Late Arrivals & Grace Policy
+                  </h4>
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                    (todayStatus.free_lates_remaining ?? 0) > 0
+                      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                      : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
+                  }`}>
+                    {todayStatus.free_lates_remaining ?? 0} of {todayStatus.late_free_waiver_count ?? 2} Free Passes Remaining
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                  You have recorded <strong className="text-slate-800 dark:text-slate-200">{todayStatus.monthly_late_count ?? 0} late arrival(s)</strong> this month. Policy: First {todayStatus.late_free_waiver_count ?? 2} late punches are excused; then every {todayStatus.late_deduction_trigger_count ?? 4} lates deducts {todayStatus.late_deduction_amount_type ?? 1.0} day salary.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0 self-end md:self-auto text-xs">
+              <div className="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/60 dark:border-zinc-700/60 text-slate-600 dark:text-slate-300 font-medium">
+                Grace buffer: <strong className="text-slate-900 dark:text-white">15m</strong>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* KPI Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <CustomKpiCard

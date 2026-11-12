@@ -40,6 +40,14 @@ class WorkSettingController extends Controller
                 'forgot_checkout_policy' => 'half_day',
                 'forgot_checkout_alert_time' => '19:00:00',
                 'enable_forgot_checkout_alert' => true,
+                'enable_late_deduction'  => true,
+                'late_free_waiver_count' => 2,
+                'late_deduction_trigger_count' => 4,
+                'late_deduction_amount_type' => 1.0,
+                'enable_absence_penalty' => true,
+                'absence_penalty_multiplier' => 2.0,
+                'enable_leave_notice_rule' => true,
+                'leave_notice_days_required' => 2,
             ]
         );
 
@@ -78,6 +86,14 @@ class WorkSettingController extends Controller
             'forgot_checkout_policy' => 'nullable|string|in:half_day,auto_full,incomplete',
             'forgot_checkout_alert_time' => 'nullable|string',
             'enable_forgot_checkout_alert' => 'nullable|boolean',
+            'enable_late_deduction'  => 'nullable|boolean',
+            'late_free_waiver_count' => 'nullable|integer|min:0|max:31',
+            'late_deduction_trigger_count' => 'nullable|integer|min:1|max:31',
+            'late_deduction_amount_type' => 'nullable|numeric|min:0.1|max:10',
+            'enable_absence_penalty' => 'nullable|boolean',
+            'absence_penalty_multiplier' => 'nullable|numeric|min:1.0|max:10.0',
+            'enable_leave_notice_rule' => 'nullable|boolean',
+            'leave_notice_days_required' => 'nullable|integer|min:0|max:60',
         ]);
 
         $setting = BusinessWorkSetting::updateOrCreate(

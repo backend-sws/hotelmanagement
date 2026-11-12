@@ -26,12 +26,14 @@ class LeaveRequest extends Model
         'wfh_attendance_marked',
         'custom_work_hours',
         'admin_remark',
+        'is_short_notice',
     ];
 
     protected $casts = [
+        'is_short_notice' => 'boolean',
+        'wfh_attendance_marked' => 'boolean',
         'from_date' => 'date',
         'to_date' => 'date',
-        'wfh_attendance_marked' => 'boolean',
         'custom_work_hours' => 'float',
     ];
 
