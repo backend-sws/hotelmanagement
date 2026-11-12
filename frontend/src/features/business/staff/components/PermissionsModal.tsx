@@ -173,6 +173,45 @@ export function PermissionsModal({ isOpen, onClose, staff }: PermissionsModalPro
 
   if (!staff) return null;
 
+  const isOwner = Boolean(
+    staff.is_owner || 
+    staff.role === 'owner' || 
+    staff.role === 'hotel_owner' || 
+    staff.role?.toLowerCase?.()?.includes('owner')
+  );
+  const isAdmin = Boolean(
+    staff.role === 'admin' || 
+    staff.role?.toLowerCase?.()?.includes('admin')
+  );
+
+  if (isOwner || isAdmin) {
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={`Manage Permissions: ${staff.name}`}
+        maxWidth="md"
+      >
+        <div className="p-4 space-y-4 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto">
+            <Hotel className="w-6 h-6" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+              Business Owner (Full Unrestricted Access)
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              {staff.name} is the Business Owner / System Administrator and has complete access to all modules, financial ledgers, hotel operations, and business settings. Permissions cannot be modified.
+            </p>
+          </div>
+          <Button onClick={onClose} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+            Close
+          </Button>
+        </div>
+      </Modal>
+    );
+  }
+
   return (
     <Modal
       isOpen={isOpen}

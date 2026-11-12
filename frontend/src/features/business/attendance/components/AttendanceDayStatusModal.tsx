@@ -7,7 +7,7 @@ import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/button';
 import { FilterSelect } from '@/components/ui/filter-controls';
 import { format } from 'date-fns';
-import { Gift } from 'lucide-react';
+import { Gift, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface AttendanceDayStatusModalProps {
   isOpen: boolean;
@@ -22,12 +22,14 @@ export const AttendanceDayStatusModal = ({ isOpen, onClose, staffList, holidays 
   const { register, handleSubmit, control, reset, watch, setValue, formState: { errors } } = useForm({
     defaultValues: {
       date: format(new Date(), 'yyyy-MM-dd'),
-      status: 'holiday',
+      status: 'clear',
       notes: ''
     }
   });
 
   const selectedDate = watch('date');
+  const currentStatus = watch('status');
+
   const holiday = React.useMemo(() => {
     if (!selectedDate || !holidays) return null;
     return holidays.find(h => {
@@ -38,7 +40,6 @@ export const AttendanceDayStatusModal = ({ isOpen, onClose, staffList, holidays 
 
   React.useEffect(() => {
     if (holiday) {
-      setValue('status', 'holiday');
       setValue('notes', holiday.name);
     }
   }, [holiday, setValue]);
@@ -49,7 +50,7 @@ export const AttendanceDayStatusModal = ({ isOpen, onClose, staffList, holidays 
       user_id: staff.id,
       date: data.date,
       status: data.status,
-      notes: data.notes
+      notes: data.notes || (data.status === 'clear' ? 'Normal Working Day' : undefined)
     }));
     
     importMutation.mutate(records, {
@@ -106,10 +107,11 @@ export const AttendanceDayStatusModal = ({ isOpen, onClose, staffList, holidays 
                 onChange={field.onChange}
                 placeholder="Select Status"
                 options={[
+                  { value: 'clear', label: 'Normal Working Day (Revert / Clear Day Status)' },
                   { value: 'holiday', label: 'Shop Closed / Holiday' },
                   { value: 'week_off', label: 'Weekly Off' },
-                  { value: 'half_day', label: 'Half Day' },
-                  { value: 'present', label: 'Working Day (Present)' }
+                  { value: 'half_day', label: 'Half Day (All Staff)' },
+                  { value: 'present', label: 'Bulk Mark All Staff Present' }
                 ]}
                 wrapperClassName="w-full"
               />
@@ -117,11 +119,48 @@ export const AttendanceDayStatusModal = ({ isOpen, onClose, staffList, holidays 
           />
         </div>
 
+        {/* Guidance Alert Cards */}
+        {currentStatus === 'clear' && (
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 p-3.5 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-bold block">Revert to Normal Working Day</span>
+              <p className="leading-relaxed text-[11px] text-emerald-700/90 dark:text-emerald-300/90">
+                This will clear any bulk holiday or off-day status for this date.
+                Staff attendance will <strong>NOT</strong> be automatically registered; employees can check in normally or be marked individually.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {currentStatus === 'present' && (
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 p-3.5 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
+            <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-bold block">Bulk Attendance Registration</span>
+              <p className="leading-relaxed text-[11px] text-amber-700/90 dark:text-amber-300/90">
+                This will immediately record <strong>Present (Full Day)</strong> attendance for all active staff members on this date.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div>
-          <label className="block text-sm font-medium mb-1">Reason / Note</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium">Reason / Note</label>
+            {currentStatus === 'clear' && (
+              <span className="text-[11px] text-slate-400 font-medium">Optional</span>
+            )}
+          </div>
           <Input 
-            {...register('notes', { required: 'Please provide a reason' })} 
-            placeholder="E.g., Diwali Holiday, Shop Closed for Maintenance..." 
+            {...register('notes', { required: (currentStatus !== 'clear' && currentStatus !== 'present') ? 'Please provide a reason' : false })} 
+            placeholder={
+              currentStatus === 'clear'
+                ? "Optional note (e.g., holiday cancelled, regular workday)"
+                : currentStatus === 'present'
+                ? "Optional note (e.g., all present on special duty)"
+                : "E.g., Diwali Holiday, Shop Closed for Maintenance..."
+            } 
             className={errors.notes ? 'border-red-500' : ''}
           />
           {errors.notes && <p className="text-red-500 text-xs mt-1">{errors.notes.message as string}</p>}
@@ -129,7 +168,13 @@ export const AttendanceDayStatusModal = ({ isOpen, onClose, staffList, holidays 
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" isLoading={importMutation.isPending}>Set Status</Button>
+          <Button 
+            type="submit" 
+            isLoading={importMutation.isPending}
+            className={currentStatus === 'clear' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+          >
+            {currentStatus === 'clear' ? 'Revert to Normal Day' : currentStatus === 'present' ? 'Mark All Present' : 'Set Status'}
+          </Button>
         </div>
       </form>
     </Modal>

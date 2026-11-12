@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useCreateStaff, useUpdateStaff } from '../api/useStaff';
+import { useCreateStaff, useUpdateStaff, useStaffPermissions } from '../api/useStaff';
 import { useGetPayrollComponents } from '../../payroll/api/usePayrollComponents';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
@@ -45,9 +45,36 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
   }, [availableComponents]);
 
   const isEditing = !!staff;
+  const isOwner = Boolean(
+    staff?.is_owner || 
+    staff?.role === 'owner' || 
+    staff?.role === 'hotel_owner' || 
+    staff?.role?.toLowerCase?.()?.includes('owner')
+  );
+  const isAdmin = Boolean(
+    staff?.role === 'admin' || 
+    staff?.role?.toLowerCase?.()?.includes('admin')
+  );
+  const isOwnerOrAdmin = isOwner || isAdmin;
+
+  const staffId = staff?.id || 0;
+  const { data: serverPermissions, isLoading: isPermissionsLoading } = useStaffPermissions(
+    isOpen && isEditing && !isOwnerOrAdmin ? staffId : 0
+  );
+
+  const getMatchingPresetKey = (perms: string[]): string => {
+    if (!perms || perms.length === 0) return '';
+    for (const [key, preset] of Object.entries(ROLE_PRESETS)) {
+      if (preset.perms.length === perms.length && preset.perms.every(p => perms.includes(p))) {
+        return key;
+      }
+    }
+    return 'custom';
+  };
+
   const [showPermissions, setShowPermissions] = useState(false);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
-  const [activePreset, setActivePreset] = useState<string>('front_desk');
+  const [activePreset, setActivePreset] = useState<string>('');
   const [useCustomTimings, setUseCustomTimings] = useState<boolean>(false);
 
   const { register, handleSubmit, control, reset, setValue, watch, formState: { errors } } = useForm<StaffFormData>({
@@ -66,6 +93,8 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
       custom_work_start_time: '',
       custom_work_end_time: '',
       custom_standard_hours: null,
+      overtime_eligible: true,
+      custom_overtime_rate: null,
     }
   });
 
@@ -163,10 +192,22 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
         }));
       }
 
-      const initialPermissions = staff?.permissions && Array.isArray(staff.permissions)
-        ? staff.permissions
-        : (staff?.role === 'manager' ? ROLE_PRESETS.all.perms : ROLE_PRESETS.front_desk.perms);
-      setSelectedPermissions(initialPermissions);
+      // For existing staff: use their actual permissions (if present on staff object) or empty []
+      // For new staff: default to empty [] (0 permissions selected)
+      let initialPerms: string[] = [];
+      if (staff) {
+        if (Array.isArray(staff.permissions)) {
+          initialPerms = staff.permissions;
+        } else if (serverPermissions && Array.isArray(serverPermissions)) {
+          initialPerms = serverPermissions;
+        } else {
+          initialPerms = [];
+        }
+      } else {
+        initialPerms = [];
+      }
+      setSelectedPermissions(initialPerms);
+      setActivePreset(getMatchingPresetKey(initialPerms));
 
       const hasCustom = !!(staff?.custom_work_start_time || staff?.custom_standard_hours);
       setUseCustomTimings(hasCustom);
@@ -184,13 +225,23 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
         status: staff?.status || 'active',
         join_date: staff?.join_date || new Date().toISOString().split('T')[0],
         salary_components: initialComponents,
-        permissions: initialPermissions,
+        permissions: initialPerms,
         custom_work_start_time: staff?.custom_work_start_time || '',
         custom_work_end_time: staff?.custom_work_end_time || '',
         custom_standard_hours: staff?.custom_standard_hours ? Number(staff.custom_standard_hours) : null,
+        overtime_eligible: staff?.overtime_eligible !== false,
+        custom_overtime_rate: (staff?.custom_overtime_rate !== null && staff?.custom_overtime_rate !== undefined) ? Number(staff.custom_overtime_rate) : null,
       });
     }
   }, [staff, isOpen, activeComponents, reset]);
+
+  // Synchronize when serverPermissions finishes loading for existing staff
+  useEffect(() => {
+    if (isOpen && isEditing && serverPermissions && Array.isArray(serverPermissions)) {
+      setSelectedPermissions(serverPermissions);
+      setActivePreset(getMatchingPresetKey(serverPermissions));
+    }
+  }, [serverPermissions, isOpen, isEditing]);
 
   const onSubmit = (data: StaffFormData) => {
     if (data.salary_components) {
@@ -200,7 +251,11 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
     if (data.salary_type === 'monthly') {
       data.monthly_salary = calculatedSalary;
     }
-    data.permissions = selectedPermissions;
+    if (isOwnerOrAdmin) {
+      delete data.permissions;
+    } else {
+      data.permissions = selectedPermissions;
+    }
 
     if (!useCustomTimings) {
       data.custom_work_start_time = null;
@@ -211,6 +266,9 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
         data.custom_standard_hours = Number(data.custom_standard_hours);
       }
     }
+
+    data.overtime_eligible = data.overtime_eligible !== false;
+    data.custom_overtime_rate = data.custom_overtime_rate ? Number(data.custom_overtime_rate) : null;
     
     if (isEditing) {
       updateMutation.mutate(
@@ -388,7 +446,7 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
               <div>
                 <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-primary-500" />
-                  Work Timings & Target Hours (स्टाफ शिफ्ट व वर्किंग आवर्स)
+                  Work Timings & Target Hours
                 </h4>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Configure individual staff shift timings for accurate late-mark & efficiency tracking.
@@ -477,94 +535,229 @@ export const StaffFormModal = ({ isOpen, onClose, staff }: StaffFormModalProps) 
                 </div>
               </div>
             )}
+
+            {/* Overtime Eligibility & Custom Charge */}
+            <div className="mt-3 p-4 bg-slate-50 dark:bg-zinc-900/60 rounded-2xl border border-slate-200/80 dark:border-white/5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-800 dark:text-zinc-200">
+                      Overtime (OT) Eligibility & Custom Charge
+                    </h5>
+                    <p className="text-[11px] text-slate-500">
+                      Configure if this staff member is eligible for overtime pay
+                    </p>
+                  </div>
+                </div>
+
+                <Controller
+                  name="overtime_eligible"
+                  control={control}
+                  render={({ field }) => (
+                    <button
+                      type="button"
+                      onClick={() => field.onChange(field.value === false ? true : false)}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        field.value !== false ? 'bg-orange-500' : 'bg-slate-200 dark:bg-zinc-700'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          field.value !== false ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  )}
+                />
+              </div>
+
+              {watch('overtime_eligible') !== false && (
+                <div className="pt-2 border-t border-slate-200/60 dark:border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 block mb-1">
+                      Staff Custom Overtime Rate (₹ / hr)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="10"
+                        placeholder="Company Default"
+                        className="pl-7 font-bold text-xs text-slate-900 dark:text-white"
+                        {...register('custom_overtime_rate', { valueAsNumber: true })}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-zinc-400 bg-white/60 dark:bg-zinc-800/40 p-2.5 rounded-xl border border-slate-200/50 dark:border-white/5">
+                    💡 If empty, company settings (fixed rate or salary multiplier) will automatically apply.
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Access Permissions & Role Presets */}
           <div className="border-t border-slate-200 dark:border-white/10 pt-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  Module Access & Permissions ({selectedPermissions.length} selected)
-                </h4>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">Select a pre-configured role template or customize module permissions</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPermissions(!showPermissions)}
-                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                {showPermissions ? 'Hide List' : 'Customize All'}
-                {showPermissions ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-
-            {/* Quick Preset Buttons */}
-            <div className="flex flex-wrap gap-1.5">
-              {Object.entries(ROLE_PRESETS).map(([key, preset]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => {
-                    setActivePreset(key);
-                    setSelectedPermissions(preset.perms);
-                  }}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
-                    activePreset === key
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                      : 'bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-indigo-500'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Expandable detailed permissions */}
-            {showPermissions && (
-              <div className="mt-2 p-3 bg-slate-50 dark:bg-zinc-900/60 rounded-2xl border border-slate-200/80 dark:border-white/5 space-y-2 max-h-56 overflow-y-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {ALL_STAFF_PERMISSIONS.map(perm => {
-                    const isChecked = selectedPermissions.includes(perm.id);
-                    return (
-                      <div 
-                        key={perm.id} 
-                        onClick={() => {
-                          setActivePreset('custom');
-                          if (isChecked) {
-                            setSelectedPermissions((prev: string[]) => prev.filter((p: string) => p !== perm.id));
-                          } else {
-                            setSelectedPermissions((prev: string[]) => [...prev, perm.id]);
-                          }
-                        }}
-                        className={`p-2 border rounded-xl cursor-pointer flex items-center justify-between select-none transition-all ${
-                          isChecked
-                            ? 'border-indigo-500/80 bg-indigo-50/40 dark:bg-indigo-950/20'
-                            : 'border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c0c0f]'
-                        }`}
-                      >
-                        <div className="pr-2 space-y-0.5">
-                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">{perm.label}</span>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">{perm.description}</span>
-                        </div>
-                        <div className="shrink-0" onClick={e => e.stopPropagation()}>
-                          <Toggle
-                            checked={isChecked}
-                            onChange={checked => {
-                              setActivePreset('custom');
-                              if (checked) {
-                                setSelectedPermissions((prev: string[]) => [...prev, perm.id]);
-                              } else {
-                                setSelectedPermissions((prev: string[]) => prev.filter((p: string) => p !== perm.id));
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+            {isOwnerOrAdmin ? (
+              <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/40 dark:to-purple-950/20 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/40 flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-500/20 flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-black uppercase tracking-wide text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                      Business Owner & System Administrator
+                    </h5>
+                    <p className="text-[11px] font-medium text-indigo-700/90 dark:text-indigo-300 mt-0.5">
+                      The business owner possesses full, unrestricted access to all modules, financial ledgers, hotel operations, and business settings.
+                    </p>
+                  </div>
                 </div>
+                <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-lg bg-indigo-600 text-white shadow-sm whitespace-nowrap">
+                  ⭐ Full Access
+                </span>
               </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      Module Access & Permissions ({selectedPermissions.length} selected)
+                      {isPermissionsLoading && isEditing && (
+                        <span className="text-[10px] font-normal normal-case text-indigo-500 animate-pulse ml-1">
+                          (Fetching...)
+                        </span>
+                      )}
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Select a pre-configured role template or customize individual module permissions
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPermissions(!showPermissions)}
+                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    {showPermissions ? 'Hide List' : 'Customize All'}
+                    {showPermissions ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+
+                {/* Quick Preset Buttons */}
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(ROLE_PRESETS).map(([key, preset]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        setActivePreset(key);
+                        setSelectedPermissions(preset.perms);
+                      }}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                        activePreset === key
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                          : 'bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-indigo-500'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivePreset('');
+                      setSelectedPermissions([]);
+                    }}
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
+                      selectedPermissions.length === 0
+                        ? 'bg-slate-800 text-white border-slate-800 dark:bg-zinc-700 dark:border-zinc-600 shadow-sm'
+                        : 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-100'
+                    }`}
+                  >
+                    🚫 No Access (0 Perms)
+                  </button>
+                </div>
+
+                {/* Expandable detailed permissions */}
+                {showPermissions && (
+                  <div className="mt-2 p-3 bg-slate-50 dark:bg-zinc-900/60 rounded-2xl border border-slate-200/80 dark:border-white/5 space-y-2 max-h-56 overflow-y-auto">
+                    <div className="flex items-center justify-between pb-1 px-1 border-b border-slate-200/50 dark:border-white/5">
+                      <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                        Individual Permissions ({ALL_STAFF_PERMISSIONS.length})
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const allPerms = ALL_STAFF_PERMISSIONS.map(p => p.id);
+                            setSelectedPermissions(allPerms);
+                            setActivePreset('all');
+                          }}
+                          className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                        >
+                          Select All
+                        </button>
+                        <span className="text-slate-300 dark:text-slate-600">|</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedPermissions([]);
+                            setActivePreset('');
+                          }}
+                          className="text-[10px] font-bold text-rose-600 dark:text-rose-400 hover:underline"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+                      {ALL_STAFF_PERMISSIONS.map(perm => {
+                        const isChecked = selectedPermissions.includes(perm.id);
+                        return (
+                          <div 
+                            key={perm.id} 
+                            onClick={() => {
+                              const next = isChecked
+                                ? selectedPermissions.filter((p: string) => p !== perm.id)
+                                : [...selectedPermissions, perm.id];
+                              setSelectedPermissions(next);
+                              setActivePreset(getMatchingPresetKey(next));
+                            }}
+                            className={`p-2 border rounded-xl cursor-pointer flex items-center justify-between select-none transition-all ${
+                              isChecked
+                                ? 'border-indigo-500/80 bg-indigo-50/40 dark:bg-indigo-950/20'
+                                : 'border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c0c0f]'
+                            }`}
+                          >
+                            <div className="pr-2 space-y-0.5">
+                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">{perm.label}</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">{perm.description}</span>
+                            </div>
+                            <div className="shrink-0" onClick={e => e.stopPropagation()}>
+                              <Toggle
+                                checked={isChecked}
+                                onChange={() => {
+                                  const next = isChecked
+                                    ? selectedPermissions.filter((p: string) => p !== perm.id)
+                                    : [...selectedPermissions, perm.id];
+                                  setSelectedPermissions(next);
+                                  setActivePreset(getMatchingPresetKey(next));
+                                }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 

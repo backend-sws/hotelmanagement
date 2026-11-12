@@ -3,6 +3,7 @@
 namespace App\Services\Business;
 
 use App\Models\User;
+use App\Models\Business;
 use App\Models\SaleCommission;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -39,13 +40,51 @@ class StaffService
                 'business_user.status',
                 'business_user.custom_work_start_time',
                 'business_user.custom_work_end_time',
-                'business_user.custom_standard_hours'
+                'business_user.custom_standard_hours',
+                'business_user.overtime_eligible',
+                'business_user.custom_overtime_rate'
             )
             ->orderBy('users.name')
             ->get();
 
-        return $staff->map(function ($member) use ($ownerId) {
+        $userIds = $staff->pluck('id')->toArray();
+
+        // 1. Direct permissions scoped to this business
+        $directPermissions = DB::table('model_has_permissions')
+            ->join('permissions', 'model_has_permissions.permission_id', '=', 'permissions.id')
+            ->where('model_has_permissions.business_id', $businessId)
+            ->where('model_has_permissions.model_type', User::class)
+            ->whereIn('model_has_permissions.model_id', $userIds)
+            ->select('model_has_permissions.model_id', 'permissions.name')
+            ->get()
+            ->groupBy('model_id')
+            ->map(fn($group) => $group->pluck('name')->values()->toArray());
+
+        // 2. Role permissions scoped to this business
+        $rolePermissions = DB::table('model_has_roles')
+            ->join('role_has_permissions', 'model_has_roles.role_id', '=', 'role_has_permissions.role_id')
+            ->join('permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
+            ->where('model_has_roles.business_id', $businessId)
+            ->where('model_has_roles.model_type', User::class)
+            ->whereIn('model_has_roles.model_id', $userIds)
+            ->select('model_has_roles.model_id', 'permissions.name')
+            ->get()
+            ->groupBy('model_id')
+            ->map(fn($group) => $group->pluck('name')->values()->toArray());
+
+        $allSystemPermissions = null;
+
+        return $staff->map(function ($member) use ($ownerId, $directPermissions, &$allSystemPermissions) {
             $member->is_owner = $member->id === $ownerId;
+            if ($member->is_owner) {
+                if ($allSystemPermissions === null) {
+                    $allSystemPermissions = \Spatie\Permission\Models\Permission::pluck('name')->toArray();
+                }
+                $member->permissions = $allSystemPermissions;
+            } else {
+                $direct = $directPermissions->get($member->id, []);
+                $member->permissions = $direct;
+            }
             return $member;
         });
     }
@@ -101,6 +140,8 @@ class StaffService
                 'custom_work_start_time' => $data['custom_work_start_time'] ?? null,
                 'custom_work_end_time'   => $data['custom_work_end_time'] ?? null,
                 'custom_standard_hours'  => $data['custom_standard_hours'] ?? null,
+                'overtime_eligible'      => isset($data['overtime_eligible']) ? (bool) $data['overtime_eligible'] : true,
+                'custom_overtime_rate'   => isset($data['custom_overtime_rate']) && $data['custom_overtime_rate'] !== '' ? (float) $data['custom_overtime_rate'] : null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -178,6 +219,8 @@ class StaffService
         if (array_key_exists('custom_work_start_time', $data)) $pivotData['custom_work_start_time'] = $data['custom_work_start_time'];
         if (array_key_exists('custom_work_end_time', $data)) $pivotData['custom_work_end_time'] = $data['custom_work_end_time'];
         if (array_key_exists('custom_standard_hours', $data)) $pivotData['custom_standard_hours'] = $data['custom_standard_hours'];
+        if (array_key_exists('overtime_eligible', $data)) $pivotData['overtime_eligible'] = (bool) $data['overtime_eligible'];
+        if (array_key_exists('custom_overtime_rate', $data)) $pivotData['custom_overtime_rate'] = ($data['custom_overtime_rate'] !== null && $data['custom_overtime_rate'] !== '') ? (float) $data['custom_overtime_rate'] : null;
 
         if (!empty($pivotData)) {
             $pivotData['updated_at'] = now();
@@ -187,8 +230,10 @@ class StaffService
                 ->update($pivotData);
         }
 
-        // Sync custom permissions if provided
-        if (isset($data['permissions']) && is_array($data['permissions'])) {
+        // Sync custom permissions if provided (and user is not the business owner)
+        $business = \App\Models\Business::find($businessId);
+        $isOwner = $business && $business->owner_id === $userId;
+        if (!$isOwner && isset($data['permissions']) && is_array($data['permissions'])) {
             $this->updateStaffPermissions($userId, $data['permissions']);
         }
     }
@@ -231,7 +276,8 @@ class StaffService
                 'business_user.role', 'business_user.department', 'business_user.salary_type', 'business_user.monthly_salary',
                 'business_user.daily_salary', 'business_user.salary_components',
                 'business_user.commission_rate', 'business_user.join_date', 'business_user.status',
-                'business_user.custom_work_start_time', 'business_user.custom_work_end_time', 'business_user.custom_standard_hours'
+                'business_user.custom_work_start_time', 'business_user.custom_work_end_time', 'business_user.custom_standard_hours',
+                'business_user.overtime_eligible', 'business_user.custom_overtime_rate'
             )
             ->first();
 
@@ -290,10 +336,19 @@ class StaffService
         $businessId = app('current_business_id');
         $user = User::findOrFail($userId);
 
-        // Temporarily set the Spatie team id to fetch scoped permissions
-        setPermissionsTeamId($businessId);
-        
-        return $user->getAllPermissions()->pluck('name')->toArray();
+        $business = Business::find($businessId);
+        if ($business && $business->owner_id === $userId) {
+            return \Spatie\Permission\Models\Permission::pluck('name')->toArray();
+        }
+
+        // Return only direct permissions explicitly assigned to this staff member for this business
+        return DB::table('model_has_permissions')
+            ->join('permissions', 'model_has_permissions.permission_id', '=', 'permissions.id')
+            ->where('model_has_permissions.business_id', $businessId)
+            ->where('model_has_permissions.model_type', User::class)
+            ->where('model_has_permissions.model_id', $userId)
+            ->pluck('permissions.name')
+            ->toArray();
     }
 
     /**

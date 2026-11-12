@@ -15,6 +15,12 @@ export interface StaffMember {
   join_date: string | null;
   status: string;
   is_owner?: boolean;
+  overtime_eligible?: boolean;
+  custom_overtime_rate?: number | null;
+  custom_work_start_time?: string | null;
+  custom_work_end_time?: string | null;
+  custom_standard_hours?: number | null;
+  permissions?: string[];
 }
 
 export const useStaff = () => {
@@ -103,6 +109,7 @@ export const useUpdateStaff = () => {
       qc.invalidateQueries({ queryKey: ['staff'] });
       if (variables?.id) {
         qc.invalidateQueries({ queryKey: ['staff', variables.id] });
+        qc.invalidateQueries({ queryKey: ['staff', variables.id, 'permissions'] });
       }
     },
   });
@@ -153,6 +160,7 @@ export const useUpdateStaffPermissions = (id: number) => {
     onSuccess: () => {
       toast.success('Permissions updated successfully');
       qc.invalidateQueries({ queryKey: ['staff', id, 'permissions'] });
+      qc.invalidateQueries({ queryKey: ['staff'] });
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to update permissions'),
   });

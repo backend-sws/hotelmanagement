@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useWorkSettings, useSaveWorkSettings } from '../api/useAttendance';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,9 @@ import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import {
   Settings2, Clock, Save, RefreshCw, Building2, CheckCircle2,
   Calendar, ShieldCheck, Sparkles, AlertCircle, Info, Undo2,
-  Zap, ArrowRight,
+  Zap, ArrowRight, Shield, Lock, Camera, Smartphone, MapPin,
+  Sliders, Bell, Check, ExternalLink, HelpCircle, Briefcase,
+  Home, HardDrive, Receipt, Database,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -22,8 +25,11 @@ const ALL_DAYS = [
 ];
 
 export default function WorkSettingsPage() {
+  const navigate = useNavigate();
   const { data: settings, isLoading } = useWorkSettings();
   const saveMutation = useSaveWorkSettings();
+
+  const [activeTab, setActiveTab] = useState<'punch_security' | 'timings' | 'weekly_off' | 'overtime' | 'cleanup' | 'all'>('punch_security');
 
   const [form, setForm] = useState({
     work_start_time: '09:00',
@@ -31,7 +37,23 @@ export default function WorkSettingsPage() {
     standard_hours_per_day: 9,
     work_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     late_mark_grace_minutes: 15,
+    default_lunch_minutes: 60,
     auto_apply_holidays: true,
+    enable_auto_absent: true,
+    enable_overtime: false,
+    overtime_rate_type: 'fixed_rate' as 'fixed_rate' | 'multiplier',
+    overtime_hourly_rate: 100,
+    overtime_multiplier: 1.5,
+    overtime_min_minutes: 30,
+    overtime_require_approval: true,
+    punch_mode_office: true,
+    punch_mode_wfh: true,
+    punch_mode_quick_gps: false,
+    punch_mode_selfie_required: true,
+    punch_mode_on_duty: false,
+    forgot_checkout_policy: 'half_day' as 'half_day' | 'auto_full' | 'incomplete',
+    forgot_checkout_alert_time: '19:00',
+    enable_forgot_checkout_alert: true,
   });
 
   const [initialForm, setInitialForm] = useState(form);
@@ -44,7 +66,23 @@ export default function WorkSettingsPage() {
         standard_hours_per_day: settings.standard_hours_per_day || 9,
         work_days: settings.work_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
         late_mark_grace_minutes: settings.late_mark_grace_minutes || 15,
+        default_lunch_minutes: settings.default_lunch_minutes ?? 60,
         auto_apply_holidays: settings.auto_apply_holidays ?? true,
+        enable_auto_absent: settings.enable_auto_absent ?? true,
+        enable_overtime: settings.enable_overtime ?? false,
+        overtime_rate_type: (settings.overtime_rate_type as any) || 'fixed_rate',
+        overtime_hourly_rate: settings.overtime_hourly_rate ?? 100,
+        overtime_multiplier: settings.overtime_multiplier ?? 1.5,
+        overtime_min_minutes: settings.overtime_min_minutes ?? 30,
+        overtime_require_approval: settings.overtime_require_approval ?? true,
+        punch_mode_office: settings.punch_mode_office ?? true,
+        punch_mode_wfh: settings.punch_mode_wfh ?? true,
+        punch_mode_quick_gps: settings.punch_mode_quick_gps ?? false,
+        punch_mode_selfie_required: settings.punch_mode_selfie_required ?? true,
+        punch_mode_on_duty: settings.punch_mode_on_duty ?? false,
+        forgot_checkout_policy: (settings.forgot_checkout_policy as any) || 'half_day',
+        forgot_checkout_alert_time: settings.forgot_checkout_alert_time?.slice(0, 5) || '19:00',
+        enable_forgot_checkout_alert: settings.enable_forgot_checkout_alert ?? true,
       };
       setForm(loaded);
       setInitialForm(loaded);
@@ -81,6 +119,30 @@ export default function WorkSettingsPage() {
     }
   };
 
+  const applyPunchPreset = (preset: 'office_wfh' | 'all') => {
+    if (preset === 'office_wfh') {
+      setForm(p => ({
+        ...p,
+        punch_mode_office: true,
+        punch_mode_wfh: true,
+        punch_mode_quick_gps: false,
+        punch_mode_selfie_required: true,
+        punch_mode_on_duty: false,
+      }));
+      toast.success('Applied "Office & WFH Only (Camera Required)" preset');
+    } else {
+      setForm(p => ({
+        ...p,
+        punch_mode_office: true,
+        punch_mode_wfh: true,
+        punch_mode_quick_gps: true,
+        punch_mode_selfie_required: true,
+        punch_mode_on_duty: true,
+      }));
+      toast.success('Enabled all punch modes');
+    }
+  };
+
   const computedHours = () => {
     try {
       const [sh, sm] = form.work_start_time.split(':').map(Number);
@@ -89,6 +151,24 @@ export default function WorkSettingsPage() {
       return mins > 0 ? (mins / 60).toFixed(1) : '—';
     } catch {
       return '—';
+    }
+  };
+
+  const computedHalfTimeCutoff = () => {
+    try {
+      const [sh, sm] = form.work_start_time.split(':').map(Number);
+      const [eh, em] = form.work_end_time.split(':').map(Number);
+      let startMins = sh * 60 + sm;
+      let endMins = eh * 60 + em;
+      if (endMins <= startMins) endMins += 24 * 60;
+      const midMins = Math.round(startMins + (endMins - startMins) / 2) % (24 * 60);
+      const hh = Math.floor(midMins / 60);
+      const mm = midMins % 60;
+      const period = hh >= 12 ? 'PM' : 'AM';
+      const displayH = hh % 12 || 12;
+      return `${String(displayH).padStart(2, '0')}:${String(mm).padStart(2, '0')} ${period}`;
+    } catch {
+      return '01:30 PM';
     }
   };
 
@@ -157,6 +237,145 @@ export default function WorkSettingsPage() {
 
       {/* Full-width container aligned with PageHeader (max-w-[1600px]) */}
       <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 pb-16 space-y-6">
+        {/* Dedicated Office & App Settings Hub Header & Navigation (Unified Admin Engine) */}
+        <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary-500/10 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+                <Sliders className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  Dedicated Office & App Settings Hub
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-zinc-400">
+                  Consolidated management for branches, shifts, week-offs, punch security & leave quotas
+                </p>
+              </div>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-white/10 self-start sm:self-auto">
+              Unified Admin Engine
+            </span>
+          </div>
+
+          {/* Hub Tab Navigation Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-2 border-t border-slate-100 dark:border-zinc-800/80 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => navigate('/business/profile')}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400 cursor-pointer"
+            >
+              <Building2 className="w-3.5 h-3.5 text-slate-500" />
+              Branches & Geofence
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('timings')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'timings'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
+                  : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              Shift Timings & Grace
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('weekly_off')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'weekly_off'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
+                  : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Weekly Off Rules
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/leave-requests')}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400 cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
+              Leave Policy Defaults
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/attendance/holidays')}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400 cursor-pointer"
+            >
+              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+              Official Holidays
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('punch_security')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'punch_security'
+                  ? 'bg-[#0f4ca5] text-white border-transparent shadow-sm ring-1 ring-blue-500/30'
+                  : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
+              }`}
+            >
+              <Lock className={`w-3.5 h-3.5 ${activeTab === 'punch_security' ? 'text-amber-400' : 'text-slate-500'}`} />
+              Punch Security & Rules
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('cleanup')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'cleanup'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
+                  : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
+              }`}
+            >
+              <HardDrive className="w-3.5 h-3.5 text-slate-500" />
+              Storage & Selfie Cleanup
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/business/payroll')}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400 cursor-pointer"
+            >
+              <Receipt className="w-3.5 h-3.5 text-amber-500" />
+              Salary Deductions & Penalties
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('overtime')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'overtime'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
+                  : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
+              Overtime Policy & Charges
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('all')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === 'all'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
+                  : 'bg-slate-50 dark:bg-zinc-800/40 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/60 hover:border-slate-400'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+              All Hub Sections
+            </button>
+          </div>
+        </div>
+
         {/* KPI Policy Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <CustomKpiCard
@@ -193,177 +412,775 @@ export default function WorkSettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Main Configuration Column (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
-            {/* Section 1: Working Hours & Shift Timing */}
-            <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary-500/10 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
-                    <Clock className="w-5 h-5" />
+            {/* TAB: Punch Security & Rules */}
+            {(activeTab === 'punch_security' || activeTab === 'all') && (
+              <div className="space-y-6">
+                {/* Card 1: Staff Punch Modes & Verification Rules */}
+                <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-zinc-800">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                          Staff Punch Modes & Verification Rules
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-zinc-400">
+                          Choose which punch options are available on the staff web portal and mobile app
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Preset action buttons */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => applyPunchPreset('office_wfh')}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:border-blue-400 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />
+                        Office & WFH Only (Camera Required)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyPunchPreset('all')}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:border-blue-400 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-amber-500" />
+                        Enable All Modes
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Shift Timing & Standard Duration
-                    </h3>
+
+                  {/* 5 Punch Mode Toggles Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 1. At Office Punch */}
+                    <div className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-850/50 flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-blue-500" />
+                          <span className="text-xs font-bold text-slate-900 dark:text-white">
+                            At Office Punch (Geofence + Camera)
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                          Staff must be within office GPS geofence radius to punch at office
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setForm(p => ({ ...p, punch_mode_office: !p.punch_mode_office }))}
+                        className={`relative w-12 h-6 rounded-full transition-all cursor-pointer shrink-0 ${
+                          form.punch_mode_office ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-zinc-700'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                          form.punch_mode_office ? 'left-7' : 'left-1'
+                        }`} />
+                      </button>
+                    </div>
+
+                    {/* 2. Work From Home (WFH) Punch */}
+                    <div className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-850/50 flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Home className="w-4 h-4 text-emerald-500" />
+                          <span className="text-xs font-bold text-slate-900 dark:text-white">
+                            Work From Home (WFH) Punch
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                          Permits remote and home staff to punch with GPS location geotag
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setForm(p => ({ ...p, punch_mode_wfh: !p.punch_mode_wfh }))}
+                        className={`relative w-12 h-6 rounded-full transition-all cursor-pointer shrink-0 ${
+                          form.punch_mode_wfh ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-zinc-700'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                          form.punch_mode_wfh ? 'left-7' : 'left-1'
+                        }`} />
+                      </button>
+                    </div>
+
+                    {/* 3. Quick GPS Punch */}
+                    <div className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-850/50 flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-amber-500" />
+                          <span className="text-xs font-bold text-slate-900 dark:text-white">
+                            Quick GPS Punch (No Camera / 1-Tap)
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                          Allows staff to punch with GPS only without camera selfie. Toggle OFF to force selfie verification.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setForm(p => ({ ...p, punch_mode_quick_gps: !p.punch_mode_quick_gps }))}
+                        className={`relative w-12 h-6 rounded-full transition-all cursor-pointer shrink-0 ${
+                          form.punch_mode_quick_gps ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-zinc-700'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                          form.punch_mode_quick_gps ? 'left-7' : 'left-1'
+                        }`} />
+                      </button>
+                    </div>
+
+                    {/* 4. Camera Selfie Verification */}
+                    <div className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-850/50 flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Camera className="w-4 h-4 text-purple-500" />
+                          <span className="text-xs font-bold text-slate-900 dark:text-white">
+                            Camera Selfie Verification
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                          Requires front-facing photo verification on all clock in and clock out punches
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setForm(p => ({ ...p, punch_mode_selfie_required: !p.punch_mode_selfie_required }))}
+                        className={`relative w-12 h-6 rounded-full transition-all cursor-pointer shrink-0 ${
+                          form.punch_mode_selfie_required ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-zinc-700'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                          form.punch_mode_selfie_required ? 'left-7' : 'left-1'
+                        }`} />
+                      </button>
+                    </div>
+
+                    {/* 5. On-Duty / Field Visit Punch */}
+                    <div className="p-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-850/50 flex items-start justify-between gap-3 md:col-span-2">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Briefcase className="w-4 h-4 text-amber-600" />
+                          <span className="text-xs font-bold text-slate-900 dark:text-white">
+                            On-Duty / Field Visit Punch
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                          Permits field staff, client meetings, and vendor visits with short meeting note
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setForm(p => ({ ...p, punch_mode_on_duty: !p.punch_mode_on_duty }))}
+                        className={`relative w-12 h-6 rounded-full transition-all cursor-pointer shrink-0 ${
+                          form.punch_mode_on_duty ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-zinc-700'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                          form.punch_mode_on_duty ? 'left-7' : 'left-1'
+                        }`} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: FORGOT CHECK-OUT AUTOMATED FALLBACK POLICY */}
+                <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-4">
+                  <div className="space-y-1 pb-3 border-b border-slate-100 dark:border-zinc-800">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                      <Clock className="w-4 h-4 text-blue-500" />
+                      <span>FORGOT CHECK-OUT AUTOMATED FALLBACK POLICY</span>
+                    </div>
                     <p className="text-xs text-slate-500 dark:text-zinc-400">
-                      Global operating hours applied across employee attendance and check-in verifications
+                      When staff punch in but forget to punch out at the end of the day, how should the payroll engine calculate their hours?
                     </p>
                   </div>
-                </div>
-                <span className="text-[11px] font-black px-2.5 py-1 rounded-full bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/20">
-                  Shift Policy
-                </span>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Work Start Time *
-                  </label>
-                  <Input
-                    type="time"
-                    value={form.work_start_time}
-                    onChange={e => setForm(p => ({ ...p, work_start_time: e.target.value }))}
-                    className="bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100 h-10"
-                  />
-                  <span className="text-[11px] text-slate-500 mt-1 block">Expected morning arrival time</span>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Work End Time *
-                  </label>
-                  <Input
-                    type="time"
-                    value={form.work_end_time}
-                    onChange={e => setForm(p => ({ ...p, work_end_time: e.target.value }))}
-                    className="bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100 h-10"
-                  />
-                  <span className="text-[11px] text-slate-500 mt-1 block">Expected evening departure time</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Standard Hours / Day *
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={24}
-                    step={0.5}
-                    value={form.standard_hours_per_day}
-                    onChange={e => setForm(p => ({ ...p, standard_hours_per_day: parseFloat(e.target.value) || 0 }))}
-                    className="bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100 h-10"
-                  />
-                  <span className="text-[11px] text-slate-500 mt-1 block">Net duty hours required per day (accounting for breaks)</span>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
-                    Late Mark Grace (Minutes) *
-                  </label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={120}
-                    value={form.late_mark_grace_minutes}
-                    onChange={e => setForm(p => ({ ...p, late_mark_grace_minutes: parseInt(e.target.value) || 0 }))}
-                    className="bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100 h-10"
-                  />
-                  <span className="text-[11px] text-slate-500 mt-1 block">Check-ins within this window after start time will not trigger late mark</span>
-                </div>
-              </div>
-
-              {/* Real-time hours calculation feedback banner */}
-              <div className="p-3.5 rounded-xl bg-primary-500/[0.06] border border-primary-500/20 flex items-start gap-3">
-                <Info className="w-4 h-4 text-primary-600 dark:text-primary-400 mt-0.5 shrink-0" />
-                <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                  Calculated duration between <strong>{form.work_start_time}</strong> and <strong>{form.work_end_time}</strong> is{' '}
-                  <strong className="text-primary-600 dark:text-primary-400 font-black">{computedHours()} hours</strong>.
-                  Standard working target is configured to <strong className="text-primary-600 dark:text-primary-400 font-black">{form.standard_hours_per_day}h</strong>.
-                </div>
-              </div>
-            </div>
-
-            {/* Section 2: Weekly Schedule */}
-            <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                    <Building2 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Weekly Working Days Schedule
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-zinc-400">
-                      Select official days on which employee duty and attendance is tracked
-                    </p>
-                  </div>
-                </div>
-
-                {/* Quick Preset Buttons */}
-                <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700/60">
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('5-days')}
-                    className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-zinc-700 transition-colors cursor-pointer"
-                  >
-                    Mon - Fri (5D)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('6-days')}
-                    className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-zinc-700 transition-colors cursor-pointer"
-                  >
-                    Mon - Sat (6D)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('7-days')}
-                    className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-zinc-700 transition-colors cursor-pointer"
-                  >
-                    All 7 Days
-                  </button>
-                </div>
-              </div>
-
-              {/* Interactive Day Selection Chips */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
-                {ALL_DAYS.map(day => {
-                  const active = form.work_days.includes(day.id);
-                  const isSun = day.id === 'Sun';
-
-                  return (
-                    <button
-                      key={day.id}
-                      type="button"
-                      onClick={() => toggleDay(day.id)}
-                      className={`p-3 rounded-xl border text-center transition-all duration-200 cursor-pointer flex flex-col items-center justify-center gap-1 ${
-                        active
-                          ? isSun
-                            ? 'bg-rose-500/10 border-rose-500/40 text-rose-700 dark:text-rose-400 ring-1 ring-rose-500/20 shadow-xs'
-                            : 'bg-primary-500/10 border-primary-500/40 text-primary-700 dark:text-primary-300 ring-1 ring-primary-500/20 shadow-xs'
-                          : 'bg-white dark:bg-zinc-800/40 border-slate-200 dark:border-zinc-800 text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-800 hover:text-slate-600'
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                    {/* Option 1: Auto-Close Shift (Full Credit) */}
+                    <div
+                      onClick={() => setForm(p => ({ ...p, forgot_checkout_policy: 'auto_full' }))}
+                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                        form.forgot_checkout_policy === 'auto_full'
+                          ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-sm ring-1 ring-emerald-500/20'
+                          : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-850/40 hover:border-slate-300 dark:hover:border-zinc-700'
                       }`}
                     >
-                      <span className="text-xs font-black uppercase tracking-wider">{day.short}</span>
-                      <span className={`text-[10px] font-bold ${active ? 'opacity-90' : 'opacity-50'}`}>
-                        {active ? 'Workday' : 'Day Off'}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-bold text-xs text-slate-900 dark:text-white leading-tight">
+                            Auto-Close Shift (Full Credit)
+                          </span>
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 shrink-0">
+                            RECOMMENDED
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                          Assumes standard full shift hours (e.g. 8h). Friendly & friction-free.
+                        </p>
+                      </div>
+                      {form.forgot_checkout_policy === 'auto_full' && (
+                        <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          ✓ Currently Active
+                        </span>
+                      )}
+                    </div>
 
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400 pt-1">
-                <span>
-                  <strong className="text-slate-800 dark:text-slate-200">{form.work_days.length} working days</strong> selected per week.
-                </span>
-                <span>Unselected days and national holidays are automatically marked as off days.</span>
+                    {/* Option 2: Cap at Half-Day (4h Credit) */}
+                    <div
+                      onClick={() => setForm(p => ({ ...p, forgot_checkout_policy: 'half_day' }))}
+                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                        form.forgot_checkout_policy === 'half_day'
+                          ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-950/20 shadow-sm ring-1 ring-blue-500/20'
+                          : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-850/40 hover:border-slate-300 dark:hover:border-zinc-700'
+                      }`}
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-bold text-xs text-slate-900 dark:text-white leading-tight">
+                            Cap at Half-Day (4h Credit)
+                          </span>
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 shrink-0">
+                            STRICT
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                          Credits 50% of shift hours until regularized or corrected by HR.
+                        </p>
+                      </div>
+                      {form.forgot_checkout_policy === 'half_day' && (
+                        <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                          ✓ Currently Active
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Option 3: Flag Incomplete (0h Credit) */}
+                    <div
+                      onClick={() => setForm(p => ({ ...p, forgot_checkout_policy: 'incomplete' }))}
+                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                        form.forgot_checkout_policy === 'incomplete'
+                          ? 'border-rose-500 bg-rose-50/40 dark:bg-rose-950/20 shadow-sm ring-1 ring-rose-500/20'
+                          : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-850/40 hover:border-slate-300 dark:hover:border-zinc-700'
+                      }`}
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-bold text-xs text-slate-900 dark:text-white leading-tight">
+                            Flag Incomplete (0h Credit)
+                          </span>
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 shrink-0">
+                            AUDIT ONLY
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                          Marks punch as Incomplete; requires manual HR regularization.
+                        </p>
+                      </div>
+                      {form.forgot_checkout_policy === 'incomplete' && (
+                        <span className="text-[11px] font-black text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                          ✓ Currently Active
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 3: FORGOT CHECK-OUT 7 PM ALERT & OUT-OF-GEOFENCE REGULARIZATION */}
+                <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                        <Bell className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                          Forgot Check-Out Alert & Out-of-Geofence Request
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-zinc-400">
+                          Alert staff past 7:00 PM if they forgot to punch out, and provide an out-of-geofence request option
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        {form.enable_forgot_checkout_alert ? 'Alert Active' : 'Alert Disabled'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setForm(p => ({ ...p, enable_forgot_checkout_alert: !p.enable_forgot_checkout_alert }))}
+                        className={`relative w-12 h-6 rounded-full transition-all cursor-pointer shrink-0 ${
+                          form.enable_forgot_checkout_alert ? 'bg-amber-500' : 'bg-slate-200 dark:bg-zinc-700'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                          form.enable_forgot_checkout_alert ? 'left-7' : 'left-1'
+                        }`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                        Evening Alert Time *
+                      </label>
+                      <Input
+                        type="time"
+                        value={form.forgot_checkout_alert_time}
+                        onChange={e => setForm(p => ({ ...p, forgot_checkout_alert_time: e.target.value }))}
+                        className="bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100 h-10"
+                      />
+                      <span className="text-[11px] text-slate-500 mt-1 block">
+                        Default: 19:00 (7:00 PM). Triggers reminder prompt on staff portal.
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-amber-500/[0.07] border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                      <span className="font-bold flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                        Out-of-Geofence Request Workflow
+                      </span>
+                      <p className="text-[11px] text-amber-800 dark:text-amber-300/90 leading-relaxed">
+                        If an employee has already left the office radius when alerted, they can immediately submit an Out-of-Geofence punch-out request with their departure time. Admin approval restores full shift credit.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* TAB: Shift Timing & Grace */}
+            {(activeTab === 'timings' || activeTab === 'all') && (
+              <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary-500/10 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                        Shift Timing & Standard Duration
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Global operating hours applied across employee attendance and check-in verifications
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-black px-2.5 py-1 rounded-full bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/20">
+                    Shift Policy
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Work Start Time *
+                    </label>
+                    <Input
+                      type="time"
+                      value={form.work_start_time}
+                      onChange={e => setForm(p => ({ ...p, work_start_time: e.target.value }))}
+                      className="bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100 h-10"
+                    />
+                    <span className="text-[11px] text-slate-500 mt-1 block">Expected morning arrival time</span>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Work End Time *
+                    </label>
+                    <Input
+                      type="time"
+                      value={form.work_end_time}
+                      onChange={e => setForm(p => ({ ...p, work_end_time: e.target.value }))}
+                      className="bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100 h-10"
+                    />
+                    <span className="text-[11px] text-slate-500 mt-1 block">Expected evening departure time</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-1">
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Standard Hours / Day *
+                    </label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={24}
+                      step={0.5}
+                      value={form.standard_hours_per_day}
+                      onChange={e => setForm(p => ({ ...p, standard_hours_per_day: parseFloat(e.target.value) || 0 }))}
+                      className="bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100 h-10"
+                    />
+                    <span className="text-[11px] text-slate-500 mt-1 block">Target net working hours per day</span>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Lunch Break (Minutes) *
+                      </label>
+                      <div className="flex gap-1">
+                        {[0, 30, 45, 60].map(mins => (
+                          <button
+                            key={mins}
+                            type="button"
+                            onClick={() => setForm(p => ({ ...p, default_lunch_minutes: mins }))}
+                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded border transition-colors ${
+                              form.default_lunch_minutes === mins
+                                ? 'bg-amber-500 text-white border-amber-500'
+                                : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300'
+                            }`}
+                          >
+                            {mins}m
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={180}
+                      value={form.default_lunch_minutes}
+                      onChange={e => setForm(p => ({ ...p, default_lunch_minutes: parseInt(e.target.value) || 0 }))}
+                      className="bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100 h-10"
+                    />
+                    <span className="text-[11px] text-slate-500 mt-1 block">Deducted from office presence for exact hours</span>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Late Mark Grace (Minutes) *
+                    </label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={120}
+                      value={form.late_mark_grace_minutes}
+                      onChange={e => setForm(p => ({ ...p, late_mark_grace_minutes: parseInt(e.target.value) || 0 }))}
+                      className="bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100 h-10"
+                    />
+                    <span className="text-[11px] text-slate-500 mt-1 block">Grace window before late mark triggers</span>
+                  </div>
+                </div>
+
+                {/* Real-time hours calculation feedback banner */}
+                <div className="p-3.5 rounded-xl bg-primary-500/[0.06] border border-primary-500/20 flex items-start gap-3">
+                  <Info className="w-4 h-4 text-primary-600 dark:text-primary-400 mt-0.5 shrink-0" />
+                  <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                    Gross Office Present Time between <strong>{form.work_start_time}</strong> and <strong>{form.work_end_time}</strong> is{' '}
+                    <strong className="text-primary-600 dark:text-primary-400 font-black">{computedHours()} hours</strong>.
+                    Minus standard lunch (<strong>{form.default_lunch_minutes}m</strong>) = <strong className="text-emerald-600 dark:text-emerald-400 font-black">
+                      {computedHours() !== '—' ? Math.max(0, parseFloat(computedHours()) - form.default_lunch_minutes / 60).toFixed(1) : '—'}h Exact Working Hours
+                    </strong> (Target: {form.standard_hours_per_day}h).
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: Weekly Schedule */}
+            {(activeTab === 'weekly_off' || activeTab === 'all') && (
+              <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                        Weekly Working Days Schedule
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Select official days on which employee duty and attendance is tracked
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Quick Preset Buttons */}
+                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700/60">
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('5-days')}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                    >
+                      Mon - Fri (5D)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('6-days')}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                    >
+                      Mon - Sat (6D)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('7-days')}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                    >
+                      All 7 Days
+                    </button>
+                  </div>
+                </div>
+
+                {/* Interactive Day Selection Chips */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
+                  {ALL_DAYS.map(day => {
+                    const active = form.work_days.includes(day.id);
+                    const isSun = day.id === 'Sun';
+
+                    return (
+                      <button
+                        key={day.id}
+                        type="button"
+                        onClick={() => toggleDay(day.id)}
+                        className={`p-3 rounded-xl border text-center transition-all duration-200 cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                          active
+                            ? isSun
+                              ? 'bg-rose-500/10 border-rose-500/40 text-rose-700 dark:text-rose-400 ring-1 ring-rose-500/20 shadow-xs'
+                              : 'bg-primary-500/10 border-primary-500/40 text-primary-700 dark:text-primary-300 ring-1 ring-primary-500/20 shadow-xs'
+                            : 'bg-white dark:bg-zinc-800/40 border-slate-200 dark:border-zinc-800 text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-800 hover:text-slate-600'
+                        }`}
+                      >
+                        <span className="text-xs font-black uppercase tracking-wider">{day.short}</span>
+                        <span className={`text-[10px] font-bold ${active ? 'opacity-90' : 'opacity-50'}`}>
+                          {active ? 'Workday' : 'Day Off'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400 pt-1">
+                  <span>
+                    <strong className="text-slate-800 dark:text-slate-200">{form.work_days.length} working days</strong> selected per week.
+                  </span>
+                  <span>Unselected days and national holidays are automatically marked as off days.</span>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: Overtime Policy & Charges */}
+            {(activeTab === 'overtime' || activeTab === 'all') && (
+              <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-6">
+                <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        Overtime Policy & Charges
+                        <span className="text-[10px] font-black uppercase tracking-wider bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-400 px-2 py-0.5 rounded-full">
+                          Enterprise
+                        </span>
+                      </h2>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Configure calculation mode (fixed hourly rate or salary multiplier), minimum buffer, and manager verification
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      {form.enable_overtime ? 'Enabled' : 'Disabled'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setForm(p => ({ ...p, enable_overtime: !p.enable_overtime }))}
+                      className={`relative w-12 h-6 rounded-full transition-all cursor-pointer shrink-0 ${
+                        form.enable_overtime ? 'bg-orange-500' : 'bg-slate-200 dark:bg-zinc-700'
+                      }`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                        form.enable_overtime ? 'left-7' : 'left-1'
+                      }`} />
+                    </button>
+                  </div>
+                </div>
+
+                {form.enable_overtime ? (
+                  <div className="space-y-6 animate-in fade-in duration-300">
+                    {/* Calculation Mode Selector */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 block">
+                        Overtime Charge Mode
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div
+                          onClick={() => setForm(p => ({ ...p, overtime_rate_type: 'fixed_rate' }))}
+                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                            form.overtime_rate_type === 'fixed_rate'
+                              ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20 text-orange-900 dark:text-orange-200 shadow-xs'
+                              : 'border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/40 text-slate-700 dark:text-zinc-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-sm">Option 1: Fixed Hourly Rate</span>
+                            {form.overtime_rate_type === 'fixed_rate' && (
+                              <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-zinc-400">
+                            Pay staff a fixed hourly rate for each extra hour worked (e.g. ₹100/hr, ₹150/hr).
+                          </p>
+                        </div>
+
+                        <div
+                          onClick={() => setForm(p => ({ ...p, overtime_rate_type: 'multiplier' }))}
+                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                            form.overtime_rate_type === 'multiplier'
+                              ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20 text-orange-900 dark:text-orange-200 shadow-xs'
+                              : 'border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/40 text-slate-700 dark:text-zinc-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-sm">Option 2: Salary Multiplier</span>
+                            {form.overtime_rate_type === 'multiplier' && (
+                              <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-zinc-400">
+                            Calculate hourly wage dynamically from base salary with a multiplier (e.g. 1.5x of base hourly wage).
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Rate / Multiplier Inputs */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50/70 dark:bg-zinc-800/40 border border-slate-200/60 dark:border-zinc-700/50">
+                      {form.overtime_rate_type === 'fixed_rate' ? (
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                            Company Overtime Rate (₹ / Hour)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₹</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="10"
+                              value={form.overtime_hourly_rate}
+                              onChange={(e) => setForm(p => ({ ...p, overtime_hourly_rate: parseFloat(e.target.value) || 0 }))}
+                              className="pl-8 font-bold text-slate-900 dark:text-white"
+                            />
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-1">
+                            Standard company hourly rate. Can be customized per staff member in Staff Profiles.
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                            Overtime Multiplier Factor (e.g. 1.25x, 1.5x, 2.0x)
+                          </label>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min="0.5"
+                              max="5"
+                              step="0.25"
+                              value={form.overtime_multiplier}
+                              onChange={(e) => setForm(p => ({ ...p, overtime_multiplier: parseFloat(e.target.value) || 1.5 }))}
+                              className="font-bold text-slate-900 dark:text-white pr-8"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">x</span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-1">
+                            Calculated as: (Daily Salary ÷ Standard Hours) × {form.overtime_multiplier}.
+                          </p>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                          Minimum OT Buffer / Grace (Minutes)
+                        </label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="180"
+                            step="15"
+                            value={form.overtime_min_minutes}
+                            onChange={(e) => setForm(p => ({ ...p, overtime_min_minutes: parseInt(e.target.value) || 0 }))}
+                            className="font-bold text-slate-900 dark:text-white pr-14"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Mins</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Minimum extra minutes after shift end before overtime starts counting (prevents accidental overtime triggers).
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Manager Approval Rule */}
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-orange-50/40 dark:bg-orange-950/10 border border-orange-200/60 dark:border-orange-900/30">
+                      <div className="space-y-0.5 pr-4">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <ShieldCheck className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                          Require Manager Approval
+                        </span>
+                        <p className="text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed">
+                          Overtime hours will be marked as <strong>Pending Verification</strong>. Only approved hours will be credited to monthly payroll.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setForm(p => ({ ...p, overtime_require_approval: !p.overtime_require_approval }))}
+                        className={`relative w-12 h-6 rounded-full transition-all cursor-pointer shrink-0 ${
+                          form.overtime_require_approval ? 'bg-orange-500' : 'bg-slate-200 dark:bg-zinc-700'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                          form.overtime_require_approval ? 'left-7' : 'left-1'
+                        }`} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-800/40 border border-slate-200/60 dark:border-zinc-700/50 text-center py-6">
+                    <p className="text-xs text-slate-500 dark:text-zinc-400">
+                      Overtime calculation is currently turned off. Toggle switch to enable hourly charges or salary multipliers for your team.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB: Storage & Selfie Cleanup */}
+            {(activeTab === 'cleanup' || activeTab === 'all') && (
+              <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm space-y-5">
+                <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                    <HardDrive className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Storage & Selfie Photo Cleanup Policy
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400">
+                      Manage attendance verification images retention and cloud storage quotas
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-900/30 text-xs text-purple-900 dark:text-purple-200 space-y-2">
+                  <div className="flex items-center gap-2 font-bold">
+                    <Database className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <span>Automatic 90-Day Media Retention</span>
+                  </div>
+                  <p className="text-[11px] text-purple-800 dark:text-purple-300 leading-relaxed">
+                    Attendance selfies are automatically retained for 90 days for audit and dispute verification. Old facial punch photos are archived to optimize database size while maintaining complete punch timestamps and GPS coordinates.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sidebar / Overview Column (4 cols) */}
@@ -402,6 +1219,29 @@ export default function WorkSettingsPage() {
                 >
                   <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
                     form.auto_apply_holidays ? 'left-7' : 'left-1'
+                  }`} />
+                </button>
+              </div>
+
+              {/* Auto Absent at Half-Time Policy */}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50/80 dark:bg-zinc-800/40 border border-slate-200/60 dark:border-zinc-700/50">
+                <div className="space-y-0.5 pr-2">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                    Auto-Absent at Half-Time
+                  </span>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                    Auto-mark staff as Absent if they have not checked in by mid-shift (around <strong className="text-rose-600 dark:text-rose-400">{computedHalfTimeCutoff()}</strong>). Excludes Sundays and holidays.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm(p => ({ ...p, enable_auto_absent: !p.enable_auto_absent }))}
+                  className={`relative w-12 h-6 rounded-full transition-all cursor-pointer shrink-0 ${
+                    form.enable_auto_absent ? 'bg-rose-500' : 'bg-slate-200 dark:bg-zinc-700'
+                  }`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                    form.enable_auto_absent ? 'left-7' : 'left-1'
                   }`} />
                 </button>
               </div>
@@ -453,9 +1293,37 @@ export default function WorkSettingsPage() {
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/60 dark:bg-zinc-800/30 border border-slate-100 dark:border-zinc-800 text-xs">
+                  <span className="text-slate-500 font-medium">Standard Lunch</span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                    {form.default_lunch_minutes} Minutes
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/60 dark:bg-zinc-800/30 border border-slate-100 dark:border-zinc-800 text-xs">
                   <span className="text-slate-500 font-medium">Late Grace Window</span>
                   <span className="font-bold text-amber-600 dark:text-amber-400">
                     {form.late_mark_grace_minutes} Minutes
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/60 dark:bg-zinc-800/30 border border-slate-100 dark:border-zinc-800 text-xs">
+                  <span className="text-slate-500 font-medium">Half-Time Cutoff</span>
+                  <span className={`font-bold ${form.enable_auto_absent ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`}>
+                    {computedHalfTimeCutoff()} {form.enable_auto_absent ? '(Auto-Absent)' : '(Off)'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/60 dark:bg-zinc-800/30 border border-slate-100 dark:border-zinc-800 text-xs">
+                  <span className="text-slate-500 font-medium">Forgot Check-Out</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400">
+                    {form.forgot_checkout_policy === 'half_day' ? 'Cap at Half-Day (4h)' : form.forgot_checkout_policy === 'auto_full' ? 'Auto-Close (Full)' : 'Flag Incomplete'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/60 dark:bg-zinc-800/30 border border-slate-100 dark:border-zinc-800 text-xs">
+                  <span className="text-slate-500 font-medium">7 PM Alert Status</span>
+                  <span className={`font-bold ${form.enable_forgot_checkout_alert ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`}>
+                    {form.enable_forgot_checkout_alert ? `Active (${form.forgot_checkout_alert_time})` : 'Disabled'}
                   </span>
                 </div>
               </div>

@@ -18,6 +18,8 @@ export interface PayrollRecord {
   per_day_salary: number;
   deduction: number;
   total_commission: number;
+  total_overtime_hours?: number;
+  total_overtime_amount?: number;
   bonus: number;
   advance_deduction: number;
   final_salary: number;

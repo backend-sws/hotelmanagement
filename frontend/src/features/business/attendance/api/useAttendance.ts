@@ -17,7 +17,28 @@ export interface AttendanceRecord {
   notes: string | null;
   work_type: 'office' | 'wfh' | 'field';
   actual_hours: number | null;
+  gross_presence_hours?: number | null;
+  office_present_hours?: number | null;
+  exact_working_hours?: number | null;
+  lunch_start_time?: string | null;
+  lunch_end_time?: string | null;
+  lunch_minutes?: number;
+  is_on_lunch?: boolean;
+  has_approved_wfh?: boolean;
+  approved_wfh_request?: any;
+  forgot_checkout_applied?: boolean;
+  is_auto_closed?: boolean;
+  should_alert_checkout?: boolean;
+  alert_message?: string;
+  is_past_alert_time?: boolean;
+  forgot_checkout_alert_time?: string;
+  forgot_checkout_policy?: 'half_day' | 'auto_full' | 'incomplete';
   late_mark_minutes: number | null;
+  overtime_hours?: number | null;
+  overtime_approved?: boolean;
+  overtime_approved_by?: number | null;
+  overtime_approved_at?: string | null;
+  overtime_notes?: string | null;
   regularization_status: 'pending' | 'approved' | 'rejected' | null;
   regularization_requested_checkin: string | null;
   regularization_requested_checkout: string | null;
@@ -43,7 +64,23 @@ export interface BusinessWorkSetting {
   standard_hours_per_day: number;
   work_days: string[];
   late_mark_grace_minutes: number;
+  default_lunch_minutes?: number;
   auto_apply_holidays: boolean;
+  enable_auto_absent?: boolean;
+  enable_overtime?: boolean;
+  overtime_rate_type?: 'fixed_rate' | 'multiplier';
+  overtime_hourly_rate?: number;
+  overtime_multiplier?: number;
+  overtime_min_minutes?: number;
+  overtime_require_approval?: boolean;
+  punch_mode_office?: boolean;
+  punch_mode_wfh?: boolean;
+  punch_mode_quick_gps?: boolean;
+  punch_mode_selfie_required?: boolean;
+  punch_mode_on_duty?: boolean;
+  forgot_checkout_policy?: 'half_day' | 'auto_full' | 'incomplete';
+  forgot_checkout_alert_time?: string;
+  enable_forgot_checkout_alert?: boolean;
 }
 
 // ── Attendance Queries ─────────────────────────────────────────────────────
@@ -117,15 +154,49 @@ export const useCheckOut = () => {
     onSuccess: () => {
       toast.success('Checked out successfully!');
       qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['today-attendance'] });
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Check-out failed'),
+  });
+};
+
+export const useStartLunch = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/business/attendance/lunch-start');
+      return data.data;
+    },
+    onSuccess: () => {
+      toast.success('Lunch break started. Enjoy your meal!');
+      qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['today-attendance'] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to start lunch break'),
+  });
+};
+
+export const useEndLunch = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/business/attendance/lunch-end');
+      return data.data;
+    },
+    onSuccess: () => {
+      toast.success('Lunch break ended. Welcome back to work!');
+      qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['today-attendance'] });
+      qc.invalidateQueries({ queryKey: ['attendance-report'] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to end lunch break'),
   });
 };
 
 export const useMarkAttendance = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { user_id: number; date: string; status: string; notes?: string }) => {
+    mutationFn: async (payload: { user_id: number; date: string; status: string; notes?: string; late_mark_minutes?: number; actual_hours?: number }) => {
       const { data } = await api.post('/business/attendance/mark', payload);
       return data.data;
     },
@@ -175,8 +246,10 @@ export const useImportAttendance = () => {
       return data.data;
     },
     onSuccess: () => {
-      toast.success('Attendance imported successfully!');
+      toast.success('Attendance updated successfully!');
       qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['holidays'] });
+      qc.invalidateQueries({ queryKey: ['attendance-report'] });
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to import attendance'),
   });
@@ -188,6 +261,7 @@ export const useRequestRegularization = () => {
     mutationFn: async (payload: {
       date: string;
       user_id?: number;
+      attendance_id?: number;
       requested_checkin?: string;
       requested_checkout?: string;
       reason: string;
@@ -262,6 +336,73 @@ export const useMarkWfhAttendance = () => {
       qc.invalidateQueries({ queryKey: ['leave-requests'] });
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed'),
+  });
+};
+
+export const useTriggerAutoAbsent = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (date?: string) => {
+      const { data } = await api.post('/business/attendance/auto-absent', { date });
+      return data;
+    },
+    onSuccess: (res: any) => {
+      toast.success(res?.message || 'Auto-absent evaluated successfully.');
+      qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['attendance-report'] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to trigger auto-absent'),
+  });
+};
+
+// ── Overtime Hooks ─────────────────────────────────────────────────────────
+
+export const useApproveOvertime = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await api.put(`/business/attendance/${id}/approve-overtime`);
+      return data.data;
+    },
+    onSuccess: () => {
+      toast.success('Overtime approved successfully!');
+      qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['attendance-report'] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to approve overtime'),
+  });
+};
+
+export const useRejectOvertime = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await api.put(`/business/attendance/${id}/reject-overtime`);
+      return data.data;
+    },
+    onSuccess: () => {
+      toast.success('Overtime rejected.');
+      qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['attendance-report'] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to reject overtime'),
+  });
+};
+
+export const useEditOvertime = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { id: number; overtime_hours?: number; overtime_approved?: boolean; overtime_notes?: string }) => {
+      const { id, ...rest } = payload;
+      const { data } = await api.patch(`/business/attendance/${id}/edit-overtime`, rest);
+      return data.data;
+    },
+    onSuccess: () => {
+      toast.success('Overtime hours updated!');
+      qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['attendance-report'] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to update overtime'),
   });
 };
 

@@ -38,14 +38,31 @@ export const LeaveRequestFormModal: React.FC<LeaveRequestFormModalProps> = ({
     );
   }, [balanceData, leaveType]);
 
-  // Calculate requested duration in days
-  const daysCount = useMemo(() => {
-    if (!fromDate || !toDate) return 0;
-    const start = new Date(fromDate);
-    const end = new Date(toDate);
-    const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
-    return diff > 0 ? diff : 0;
-  }, [fromDate, toDate]);
+  // Calculate requested duration in working days (excluding Sundays for leave requests)
+  const durationInfo = useMemo(() => {
+    if (!fromDate || !toDate) return { totalDays: 0, workingDays: 0, sundaysCount: 0 };
+    const start = new Date(fromDate + 'T00:00:00');
+    const end = new Date(toDate + 'T00:00:00');
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+      return { totalDays: 0, workingDays: 0, sundaysCount: 0 };
+    }
+
+    let total = 0;
+    let sundays = 0;
+    const curr = new Date(start);
+    while (curr <= end) {
+      total++;
+      if (curr.getDay() === 0) {
+        sundays++;
+      }
+      curr.setDate(curr.getDate() + 1);
+    }
+
+    const workingDays = requestType === 'leave' ? Math.max(0, total - sundays) : total;
+    return { totalDays: total, workingDays, sundaysCount: sundays };
+  }, [fromDate, toDate, requestType]);
+
+  const daysCount = durationInfo.workingDays;
 
   const isOverQuota = Boolean(
     requestType === 'leave' &&
@@ -246,7 +263,12 @@ export const LeaveRequestFormModal: React.FC<LeaveRequestFormModalProps> = ({
               <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl p-2.5 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-200">
                 <span className="flex items-center gap-1.5 font-bold">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  Duration: <strong>{daysCount} {daysCount === 1 ? 'day' : 'days'}</strong>
+                  Duration: <strong>{daysCount} {daysCount === 1 ? 'working day' : 'working days'}</strong>
+                  {durationInfo.sundaysCount > 0 && requestType === 'leave' && (
+                    <span className="text-[11px] font-normal text-slate-500 dark:text-zinc-400 ml-1">
+                      ({durationInfo.sundaysCount} {durationInfo.sundaysCount === 1 ? 'Sunday' : 'Sundays'} excluded)
+                    </span>
+                  )}
                 </span>
                 {requestType === 'leave' && activeBalance?.is_paid && (
                   <span className="text-[11px] text-emerald-700 dark:text-emerald-300">

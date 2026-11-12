@@ -8,3 +8,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 \Illuminate\Support\Facades\Schedule::command('attendance:cleanup-photos')->daily();
+\Illuminate\Support\Facades\Schedule::command('attendance:auto-absent')->everyFifteenMinutes();
+\Illuminate\Support\Facades\Schedule::command('attendance:process-forgot-checkout')->everyThirtyMinutes();

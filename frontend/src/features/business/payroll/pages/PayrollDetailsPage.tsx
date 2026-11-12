@@ -161,6 +161,9 @@ function CorporateSalarySlip({
   if (Number(payroll.total_commission) > 0) {
     earningsList.push({ name: 'Sales Commission / Incentive', amount: Number(payroll.total_commission) });
   }
+  if (Number(payroll.total_overtime_amount) > 0) {
+    earningsList.push({ name: `Overtime Pay (${payroll.total_overtime_hours || 0} hrs)`, amount: Number(payroll.total_overtime_amount) });
+  }
   if (Number(payroll.bonus) > 0) {
     earningsList.push({ name: 'Performance / Special Bonus', amount: Number(payroll.bonus) });
   }
@@ -816,6 +819,8 @@ export default function PayrollDetailsPage() {
   const [formData, setFormData] = useState({
     bonus: 0,
     advance_deduction: 0,
+    total_overtime_amount: 0,
+    total_overtime_hours: 0,
     notes: ''
   });
 
@@ -824,6 +829,8 @@ export default function PayrollDetailsPage() {
       setFormData({
         bonus: payroll.bonus,
         advance_deduction: payroll.advance_deduction,
+        total_overtime_amount: payroll.total_overtime_amount || 0,
+        total_overtime_hours: payroll.total_overtime_hours || 0,
         notes: payroll.notes || ''
       });
     }
@@ -870,8 +877,9 @@ export default function PayrollDetailsPage() {
     ? effectivePresent * perDaySalary 
     : effectivePresent * perDaySalary;
 
-  const earnedTillDateNet = earnedTillDateBase + Number(payroll.total_commission || 0) + Number(formData.bonus || 0) - Number(formData.advance_deduction || 0);
-  const projectedNet = Number(payroll.base_salary) - Number(payroll.deduction) + Number(payroll.total_commission || 0) + Number(formData.bonus || 0) - Number(formData.advance_deduction || 0);
+  const currentOtAmount = editMode ? Number(formData.total_overtime_amount || 0) : Number(payroll.total_overtime_amount || 0);
+  const earnedTillDateNet = earnedTillDateBase + Number(payroll.total_commission || 0) + currentOtAmount + Number(formData.bonus || 0) - Number(formData.advance_deduction || 0);
+  const projectedNet = Number(payroll.base_salary) - Number(payroll.deduction) + Number(payroll.total_commission || 0) + currentOtAmount + Number(formData.bonus || 0) - Number(formData.advance_deduction || 0);
 
   const displayNet = (isDraft && isMonthly && viewMode === 'earned') ? earnedTillDateNet : projectedNet;
   const displayBase = (isDraft && isMonthly && viewMode === 'earned') ? earnedTillDateBase : Number(payroll.base_salary);
@@ -1251,6 +1259,37 @@ export default function PayrollDetailsPage() {
                     </span>
                   </div>
                 )}
+
+                {/* Overtime Pay Row */}
+                {editMode ? (
+                  <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-white/5">
+                    <div>
+                      <span className="text-slate-555 dark:text-zinc-400 font-medium block">Overtime Pay</span>
+                      <span className="text-[10px] text-slate-400">Total approved OT: {formData.total_overtime_hours || 0} hrs</span>
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">₹</span>
+                      <input 
+                        type="number" 
+                        className="w-28 pl-6 pr-2.5 h-8 text-right bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold text-slate-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-primary-500" 
+                        value={formData.total_overtime_amount}
+                        onChange={(e) => setFormData(prev => ({ ...prev, total_overtime_amount: Number(e.target.value) }))}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  Number(payroll.total_overtime_amount) > 0 && (
+                    <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-white/5 text-sm">
+                      <div>
+                        <span className="text-slate-555 dark:text-zinc-400 block font-medium">Overtime Pay</span>
+                        <span className="text-[10px] text-slate-400">Approved OT: {payroll.total_overtime_hours || 0} hrs</span>
+                      </div>
+                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                        +₹{Number(payroll.total_overtime_amount).toLocaleString()}
+                      </span>
+                    </div>
+                  )
+                )}
                 
                 {editMode ? (
                   <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-white/5">
@@ -1284,6 +1323,7 @@ export default function PayrollDetailsPage() {
               <span className="text-base font-black text-slate-800 dark:text-zinc-200 font-display">
                 ₹{(displayBase
                   + Number(payroll.total_commission) 
+                  + (editMode ? Number(formData.total_overtime_amount) : Number(payroll.total_overtime_amount || 0))
                   + (editMode ? Number(formData.bonus) : Number(payroll.bonus))).toLocaleString()}
               </span>
             </div>

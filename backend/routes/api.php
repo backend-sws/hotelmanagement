@@ -240,10 +240,15 @@ Route::prefix('v1')->group(function () {
                 Route::get('attendance/today', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'todayStatus']);
                 Route::post('attendance/check-in', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'checkIn']);
                 Route::post('attendance/check-out', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'checkOut']);
+                Route::post('attendance/lunch-start', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'startLunch']);
+                Route::post('attendance/lunch-end', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'endLunch']);
                 Route::post('attendance/mark', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'markManual']);
                 Route::get('attendance/report', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'monthlyReport']);
                 Route::put('attendance/{id}/approve', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'approve']);
                 Route::put('attendance/{id}/unapprove', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'unapprove']);
+                Route::put('attendance/{id}/approve-overtime', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'approveOvertime']);
+                Route::put('attendance/{id}/reject-overtime', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'rejectOvertime']);
+                Route::patch('attendance/{id}/edit-overtime', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'editOvertime']);
                 Route::apiResource('attendance', \App\Http\Controllers\Api\Business\AttendanceController::class)->only(['index']);
 
                 // ── Regularization (Backdated time correction) ──────────────
@@ -255,6 +260,7 @@ Route::prefix('v1')->group(function () {
 
                 // ── WFH Attendance Mark ─────────────────────────────────────
                 Route::post('attendance/wfh-mark/{leaveRequestId}', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'markWfhAttendance']);
+                Route::post('attendance/auto-absent', [\App\Http\Controllers\Api\Business\AttendanceController::class, 'triggerAutoAbsent']);
 
                 // ── Work Settings ───────────────────────────────────────────
                 Route::get('work-settings', [\App\Http\Controllers\Api\Business\WorkSettingController::class, 'show']);

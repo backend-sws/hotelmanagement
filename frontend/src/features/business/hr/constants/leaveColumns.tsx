@@ -89,11 +89,21 @@ export const getLeaveColumns = ({
     },
     {
       header: 'Duration',
-      cell: (row: LeaveRequest) => (
-        <span className="text-xs text-slate-300 font-mono">
-          {format(new Date(row.from_date), 'dd MMM yyyy')} - {format(new Date(row.to_date), 'dd MMM yyyy')}
-        </span>
-      ),
+      cell: (row: LeaveRequest) => {
+        const netDays = row.net_working_days;
+        return (
+          <div className="flex flex-col">
+            <span className="text-xs text-slate-800 dark:text-slate-300 font-mono">
+              {format(new Date(row.from_date), 'dd MMM yyyy')} - {format(new Date(row.to_date), 'dd MMM yyyy')}
+            </span>
+            {netDays !== undefined ? (
+              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                {netDays} {netDays === 1 ? 'working day' : 'working days'} (excl. Sun/Holidays)
+              </span>
+            ) : null}
+          </div>
+        );
+      },
     },
     {
       header: 'Reason',

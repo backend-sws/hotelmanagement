@@ -55,8 +55,8 @@ export function RegularizationModal({ isOpen, onClose, defaultDate, staffList, d
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Request Arrival Time Correction"
-      description="If you forgot to check in on arrival, submit your actual arrival time for manager approval."
+      title="Request Attendance & Time Correction"
+      description="If you forgot to punch in or punch out, submit your actual arrival or departure times for manager approval."
     >
       <form onSubmit={handleSubmit} className="space-y-4 pt-2">
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300 font-medium">

@@ -42,8 +42,10 @@ class ProfileService
         $allRoles = $globalRoles->concat($teamRoles)->unique('id');
         $allPermissions = $globalPermissions->concat($teamPermissions)->pluck('name')->unique()->values();
 
-        // If user has Superadmin role, assign all system permissions
+        // If user has Superadmin role or is the business owner, assign all system permissions
         if ($allRoles->contains(fn($r) => strtolower($r->name) === 'superadmin')) {
+            $allPermissions = \Spatie\Permission\Models\Permission::pluck('name')->unique()->values();
+        } elseif ($currentTeamId && \App\Models\Business::where('id', $currentTeamId)->where('owner_id', $user->id)->exists()) {
             $allPermissions = \Spatie\Permission\Models\Permission::pluck('name')->unique()->values();
         }
 

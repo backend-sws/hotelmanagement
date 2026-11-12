@@ -4,6 +4,7 @@ namespace App\Services\Business;
 
 use App\Models\Attendance;
 use App\Models\BusinessHoliday;
+use App\Models\BusinessWorkSetting;
 use App\Models\LeaveRequest;
 use App\Models\Payroll;
 use App\Models\SaleCommission;
@@ -91,7 +92,11 @@ class PayrollService
             $forcedPaid = 0;
             $forcedUnpaid = 0;
             foreach ($approvedLeaveRequests as $lr) {
-                $days = Carbon::parse($lr->from_date)->diffInDays(Carbon::parse($lr->to_date)) + 1;
+                // Calculate working days strictly excluding Sundays & holidays within this month
+                $days = method_exists($lr, 'calculateNetWorkingDays')
+                    ? $lr->calculateNetWorkingDays($startOfMonth, $endOfMonth)
+                    : (Carbon::parse($lr->from_date)->diffInDays(Carbon::parse($lr->to_date)) + 1);
+
                 if ($lr->admin_override_category === 'paid') {
                     $forcedPaid += $days;
                 } elseif ($lr->admin_override_category === 'unpaid') {
@@ -125,6 +130,26 @@ class PayrollService
                 ->where('status', 'approved')
                 ->sum('amount');
 
+            // ── OVERTIME HOURS & CALCULATION ─────────────────────────────────
+            $workSetting = BusinessWorkSetting::where('business_id', $businessId)->first();
+            $enableOvertime = (bool) ($workSetting->enable_overtime ?? false);
+            $otRateType = $workSetting->overtime_rate_type ?? 'fixed_rate';
+            $otHourlyRate = (float) ($workSetting->overtime_hourly_rate ?? 0);
+            $otMultiplier = (float) ($workSetting->overtime_multiplier ?? 1.5);
+            $otRequireApproval = (bool) ($workSetting->overtime_require_approval ?? true);
+
+            $staffOtEligible = !isset($staffData->overtime_eligible) || (bool) $staffData->overtime_eligible;
+            $customOtRate = (isset($staffData->custom_overtime_rate) && $staffData->custom_overtime_rate !== null) ? (float) $staffData->custom_overtime_rate : null;
+
+            $totalOvertimeHours = 0.0;
+            if ($enableOvertime && $staffOtEligible) {
+                $otRecords = $attendances->filter(function ($att) use ($otRequireApproval) {
+                    if (!$att->overtime_hours || $att->overtime_hours <= 0) return false;
+                    return $otRequireApproval ? (bool) $att->overtime_approved : true;
+                });
+                $totalOvertimeHours = round($otRecords->sum('overtime_hours'), 2);
+            }
+
             // ── DAILY SALARY TYPE ──────────────────────────────────────────
             if ($salaryType === 'daily') {
                 $dailyRate = (float) ($staffData->daily_salary ?? 0);
@@ -139,7 +164,23 @@ class PayrollService
                 $workingDays = $totalDaysInMonth - $weekOffs - $holidays;
                 if ($workingDays <= 0)
                     $workingDays = $totalDaysInMonth;
-                $finalSalary = $baseSalary + (float) $totalCommission - (float) $advanceDeduction;
+
+                // Overtime pay calculation for daily staff
+                $totalOvertimeAmount = 0.0;
+                if ($totalOvertimeHours > 0) {
+                    if ($customOtRate !== null && $customOtRate > 0) {
+                        $dailyOtRate = $customOtRate;
+                    } elseif ($otRateType === 'fixed_rate') {
+                        $dailyOtRate = $otHourlyRate;
+                    } else {
+                        $stdHours = (float) ($staffData->custom_standard_hours ?? $workSetting->standard_hours_per_day ?? 9.0);
+                        $baseHourly = $stdHours > 0 ? ($dailyRate / $stdHours) : ($dailyRate / 9.0);
+                        $dailyOtRate = round($baseHourly * $otMultiplier, 2);
+                    }
+                    $totalOvertimeAmount = round($totalOvertimeHours * $dailyOtRate, 2);
+                }
+
+                $finalSalary = $baseSalary + (float) $totalCommission + $totalOvertimeAmount - (float) $advanceDeduction;
 
                 $payrollData = [
                     'business_id' => $businessId,
@@ -157,6 +198,8 @@ class PayrollService
                     'per_day_salary' => round($perDaySalary, 2),
                     'deduction' => 0,
                     'total_commission' => (float) $totalCommission,
+                    'total_overtime_hours' => $totalOvertimeHours,
+                    'total_overtime_amount' => $totalOvertimeAmount,
                     'bonus' => $existing ? $existing->bonus : 0,
                     'advance_deduction' => (float) $advanceDeduction,
                     'salary_components' => json_encode([]),
@@ -231,8 +274,23 @@ class PayrollService
             $unpaidAbsences = max(0, $elapsedWorkingDays - $effectivePresent);
             $deduction = $unpaidAbsences * $perDaySalary;
 
+            // Overtime pay calculation for monthly staff
+            $totalOvertimeAmount = 0.0;
+            if ($totalOvertimeHours > 0) {
+                if ($customOtRate !== null && $customOtRate > 0) {
+                    $monthlyOtRate = $customOtRate;
+                } elseif ($otRateType === 'fixed_rate') {
+                    $monthlyOtRate = $otHourlyRate;
+                } else {
+                    $stdHours = (float) ($staffData->custom_standard_hours ?? $workSetting->standard_hours_per_day ?? 9.0);
+                    $baseHourly = $stdHours > 0 ? ($perDaySalary / $stdHours) : ($perDaySalary / 9.0);
+                    $monthlyOtRate = round($baseHourly * $otMultiplier, 2);
+                }
+                $totalOvertimeAmount = round($totalOvertimeHours * $monthlyOtRate, 2);
+            }
+
             // Final salary
-            $finalSalary = $baseSalary - $deduction + (float) $totalCommission - (float) $advanceDeduction;
+            $finalSalary = $baseSalary - $deduction + (float) $totalCommission + $totalOvertimeAmount - (float) $advanceDeduction;
 
             $payrollData = [
                 'business_id' => $businessId,
@@ -250,6 +308,8 @@ class PayrollService
                 'per_day_salary' => round($perDaySalary, 2),
                 'deduction' => round($deduction, 2),
                 'total_commission' => (float) $totalCommission,
+                'total_overtime_hours' => $totalOvertimeHours,
+                'total_overtime_amount' => $totalOvertimeAmount,
                 'bonus' => $existing ? $existing->bonus : 0,
                 'advance_deduction' => (float) $advanceDeduction,
                 'salary_components' => json_encode($components),

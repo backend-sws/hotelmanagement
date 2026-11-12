@@ -23,6 +23,8 @@ export const staffSchema = z.object({
   custom_work_start_time: z.string().optional().nullable(),
   custom_work_end_time: z.string().optional().nullable(),
   custom_standard_hours: z.number().min(1).max(24).optional().nullable(),
+  overtime_eligible: z.boolean().optional(),
+  custom_overtime_rate: z.number().min(0).optional().nullable(),
 });
 
 export type StaffFormData = z.infer<typeof staffSchema>;

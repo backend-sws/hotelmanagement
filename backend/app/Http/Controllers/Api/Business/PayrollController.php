@@ -102,6 +102,8 @@ class PayrollController extends BaseController
         $request->validate([
             'bonus' => 'nullable|numeric|min:0',
             'advance_deduction' => 'nullable|numeric|min:0',
+            'total_overtime_amount' => 'nullable|numeric|min:0',
+            'total_overtime_hours' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
         ]);
 
@@ -112,11 +114,16 @@ class PayrollController extends BaseController
 
             $bonus = $request->input('bonus', $payroll->bonus);
             $advanceDeduction = $request->input('advance_deduction', $payroll->advance_deduction);
-            $finalSalary = $payroll->base_salary - $payroll->deduction + $payroll->total_commission + $bonus - $advanceDeduction;
+            $otAmount = (float) $request->input('total_overtime_amount', $payroll->total_overtime_amount ?? 0);
+            $otHours = (float) $request->input('total_overtime_hours', $payroll->total_overtime_hours ?? 0);
+
+            $finalSalary = $payroll->base_salary - $payroll->deduction + $payroll->total_commission + $otAmount + $bonus - $advanceDeduction;
 
             $payroll->update([
                 'bonus' => $bonus,
                 'advance_deduction' => $advanceDeduction,
+                'total_overtime_amount' => $otAmount,
+                'total_overtime_hours' => $otHours,
                 'final_salary' => round($finalSalary, 2),
                 'notes' => $request->input('notes', $payroll->notes),
             ]);

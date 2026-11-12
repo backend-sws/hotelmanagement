@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAttendance, useMarkAttendance } from '../api/useAttendance';
 import { useStaff } from '../../staff/api/useStaff';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Calendar, UserCheck, Clock, Download, Upload, ShieldAlert, Award, FileSpreadsheet, Eye, UserCircle2 } from 'lucide-react';
+import { Calendar, UserCheck, Clock, Download, Upload, ShieldAlert, Award, FileSpreadsheet, Eye, UserCircle2, UserX, Utensils, Coffee, Bell, MapPin, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,9 @@ import {
   useAttendanceReport,
   usePendingRegularizations,
   useHolidays,
+  useTriggerAutoAbsent,
+  useStartLunch,
+  useEndLunch,
 } from '../api/useAttendance';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
 import { FilterContainer, FilterSelect, FilterReset } from '@/components/ui/filter-controls';
@@ -55,6 +58,9 @@ export default function AttendancePage() {
   const { data: staffList, isLoading: isStaffLoading } = useStaff();
   const approveMutation = useApproveAttendance();
   const unapproveMutation = useUnapproveAttendance();
+  const triggerAutoAbsent = useTriggerAutoAbsent();
+  const startLunchMutation = useStartLunch();
+  const endLunchMutation = useEndLunch();
   const { data: todayStatus } = useTodayAttendance();
   const { data: monthlyReport } = useAttendanceReport(selectedMonth);
   const { data: pendingRegData } = usePendingRegularizations();
@@ -140,6 +146,57 @@ export default function AttendancePage() {
     };
   }, [attendanceData, isManager]);
 
+  // Compute average daily attendance per day
+  const dailyAttendanceStats = useMemo(() => {
+    if (!filteredStaffList.length) {
+      return { avgDailyAttendance: '0.0', avgDailyPct: 0, totalElapsedDays: 0, totalPresentStaffDays: 0 };
+    }
+
+    const [year, monthStr] = selectedMonth.split('-');
+    const daysInMonth = new Date(parseInt(year), parseInt(monthStr), 0).getDate();
+    const today = new Date();
+    const isCurrentMonth = today.getFullYear() === parseInt(year) && today.getMonth() === parseInt(monthStr) - 1;
+    const maxDay = isCurrentMonth ? Math.min(today.getDate(), daysInMonth) : daysInMonth;
+
+    const records = attendanceData?.data || [];
+    let elapsedWorkingDays = 0;
+    let totalPresentStaffDays = 0;
+
+    for (let day = 1; day <= maxDay; day++) {
+      const dateStr = `${selectedMonth}-${String(day).padStart(2, '0')}`;
+      const dayOfWeek = new Date(parseInt(year), parseInt(monthStr) - 1, day).getDay();
+      const isSunday = dayOfWeek === 0;
+      const isHoliday = (holidays as any[])?.some((h: any) => (h.date?.includes('T') ? h.date.split('T')[0] : h.date) === dateStr);
+
+      if (!isSunday && !isHoliday) {
+        elapsedWorkingDays++;
+        filteredStaffList.forEach((staff: any) => {
+          const rec = records.find((r: any) => r.user_id === staff.id && r.date?.startsWith(dateStr));
+          if (rec) {
+            if (rec.status === 'present' || rec.status === 'late') {
+              totalPresentStaffDays += 1;
+            } else if (rec.status === 'half_day') {
+              totalPresentStaffDays += 0.5;
+            }
+          }
+        });
+      }
+    }
+
+    const totalStaff = filteredStaffList.length;
+    const avgDailyAttendance = elapsedWorkingDays > 0 ? (totalPresentStaffDays / elapsedWorkingDays) : 0;
+    const avgDailyPct = (elapsedWorkingDays > 0 && totalStaff > 0)
+      ? Math.round((avgDailyAttendance / totalStaff) * 100)
+      : 0;
+
+    return {
+      avgDailyAttendance: avgDailyAttendance.toFixed(1),
+      avgDailyPct,
+      totalElapsedDays: elapsedWorkingDays,
+      totalPresentStaffDays: Math.round(totalPresentStaffDays),
+    };
+  }, [selectedMonth, filteredStaffList, attendanceData, holidays]);
+
   const avgEfficiency = useMemo(() => {
     if (!monthlyReport || !Array.isArray(monthlyReport) || monthlyReport.length === 0) return null;
     const items = monthlyReport.filter((r: any) => r.efficiency_pct !== undefined && r.efficiency_pct !== null);
@@ -160,28 +217,63 @@ export default function AttendancePage() {
         'Staff Name': staff.name,
       };
       
-      let present = 0, absent = 0, halfDay = 0, leave = 0;
+      let present = 0, lateCount = 0, halfDay = 0, absent = 0, leave = 0, holidayCount = 0, weekOff = 0, otHours = 0;
       
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${selectedMonth}-${String(day).padStart(2, '0')}`;
         const record = attendanceData.data.find((r: any) => r.user_id === staff.id && r.date.startsWith(dateStr));
+        const holiday = (holidays as any[])?.find((h: any) => (h.date?.includes('T') ? h.date.split('T')[0] : h.date) === dateStr);
+        const dayOfWeek = new Date(parseInt(year), parseInt(monthStr) - 1, day).getDay();
+        const isSunday = dayOfWeek === 0;
         
         let statusStr = '';
         if (record) {
-          if (record.status === 'present') { statusStr = 'P'; present++; }
-          else if (record.status === 'absent') { statusStr = 'A'; absent++; }
-          else if (record.status === 'half_day') { statusStr = 'H'; halfDay++; }
-          else if (record.status === 'leave') { statusStr = 'L'; leave++; }
-          else if (record.status === 'holiday') { statusStr = 'O'; }
-          else if (record.status === 'week_off') { statusStr = 'W'; }
+          if (record.overtime_hours && record.overtime_approved) {
+            otHours += Number(record.overtime_hours);
+          }
+          const isLate = record.status === 'late' || (record.late_mark_minutes && record.late_mark_minutes > 0) || (record?.notes && record.notes.toLowerCase().includes('late entry'));
+          if (isLate) {
+            statusStr = 'LE';
+            lateCount++;
+            if (record.status === 'present') present++;
+          } else if (record.status === 'present') {
+            statusStr = 'P';
+            present++;
+          } else if (record.status === 'half_day') {
+            statusStr = 'HD';
+            halfDay++;
+          } else if (record.status === 'absent') {
+            statusStr = 'A';
+            absent++;
+          } else if (record.status === 'leave') {
+            statusStr = 'L';
+            leave++;
+          } else if (record.status === 'holiday') {
+            statusStr = 'H';
+            holidayCount++;
+          } else if (record.status === 'week_off') {
+            statusStr = 'WO';
+            weekOff++;
+          }
+        } else if (holiday) {
+          statusStr = 'H';
+          holidayCount++;
+        } else if (isSunday) {
+          statusStr = 'WO';
+          weekOff++;
         }
         
         row[String(day)] = statusStr;
       }
       
       row['Total Present'] = present;
+      row['Total Late Entry'] = lateCount;
+      row['Total Half Day'] = halfDay;
       row['Total Absent'] = absent;
-      row['Total Leave/Half'] = leave + halfDay;
+      row['Total Leave'] = leave;
+      row['Total Holiday'] = holidayCount;
+      row['Total Week Off'] = weekOff;
+      row['Total Approved OT (Hours)'] = otHours.toFixed(1);
       
       return row;
     });
@@ -194,8 +286,13 @@ export default function AttendancePage() {
         accessorKey: String(i + 1),
       })),
       { header: 'Total Present', accessorKey: 'Total Present' },
+      { header: 'Total Late Entry', accessorKey: 'Total Late Entry' },
+      { header: 'Total Half Day', accessorKey: 'Total Half Day' },
       { header: 'Total Absent', accessorKey: 'Total Absent' },
-      { header: 'Total Leave/Half', accessorKey: 'Total Leave/Half' },
+      { header: 'Total Leave', accessorKey: 'Total Leave' },
+      { header: 'Total Holiday', accessorKey: 'Total Holiday' },
+      { header: 'Total Week Off', accessorKey: 'Total Week Off' },
+      { header: 'Total Approved OT (Hrs)', accessorKey: 'Total Approved OT (Hours)' },
     ];
 
     exportToCsv(exportData, columns, `Attendance_Register_${selectedMonth}`);
@@ -280,6 +377,18 @@ export default function AttendancePage() {
                     </span>
                   )}
                 </Button>
+
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => triggerAutoAbsent.mutate(undefined)}
+                  disabled={triggerAutoAbsent.isPending}
+                  title="Check staff who have not punched in by half-shift cutoff and mark absent"
+                  className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-xs font-bold px-3 h-10 hover:bg-slate-50 dark:hover:bg-zinc-800"
+                >
+                  <UserX className="w-3.5 h-3.5 mr-1.5 text-rose-500" />
+                  {triggerAutoAbsent.isPending ? 'Checking...' : 'Run Auto-Absent'}
+                </Button>
               </>
             )}
 
@@ -305,6 +414,31 @@ export default function AttendancePage() {
               </Button>
             )}
 
+            {isCheckedIn && !isCheckedOut && (
+              todayStatus?.is_on_lunch ? (
+                <Button
+                  size="sm"
+                  onClick={() => endLunchMutation.mutate()}
+                  disabled={endLunchMutation.isPending}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 h-10 shadow-sm cursor-pointer"
+                >
+                  <Utensils className="w-3.5 h-3.5 mr-1.5" />
+                  {endLunchMutation.isPending ? 'Ending...' : 'End Lunch Break'}
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => startLunchMutation.mutate()}
+                  disabled={startLunchMutation.isPending}
+                  className="bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 font-bold text-xs px-3.5 h-10 shadow-sm cursor-pointer"
+                >
+                  <Coffee className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
+                  {startLunchMutation.isPending ? 'Starting...' : 'Take Lunch Break'}
+                </Button>
+              )
+            )}
+
             <Button 
               variant="brand"
               size="sm"
@@ -320,21 +454,59 @@ export default function AttendancePage() {
 
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-0 pb-8 space-y-6">
         
+        {/* Past 7 PM Check-Out Alert Reminder Banner */}
+        {isCheckedIn && !isCheckedOut && todayStatus?.should_alert_checkout && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in fade-in">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <Bell className="w-5 h-5 animate-bounce" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-bold text-sm text-amber-950 dark:text-amber-100">
+                    Evening Check-Out Reminder (Past 7:00 PM)
+                  </h4>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                    Action Required
+                  </span>
+                </div>
+                <p className="text-xs text-amber-800 dark:text-amber-300/90 mt-0.5">
+                  {todayStatus?.alert_message || 'You have not checked out yet. If you are already out of the office geofence area, please submit an Out-of-Geofence request to avoid a half-day penalty.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 shrink-0">
+              <Button
+                size="sm"
+                onClick={() => setIsCheckInOpen(true)}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs h-9 shadow-sm cursor-pointer"
+              >
+                <MapPin className="w-3.5 h-3.5 mr-1.5" />
+                Punch Out / Request Admin
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* KPI Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <CustomKpiCard
-            title="Present Days"
-            value={stats.presentCount}
+            title="Avg Daily Attendance"
+            value={dailyAttendanceStats.totalElapsedDays > 0 ? `${dailyAttendanceStats.avgDailyPct}%` : '—'}
             icon={<UserCheck className="w-5 h-5 text-white" />}
             glowColor="emerald"
-            subtitle="Active present records"
+            subtitle={
+              isManager && selectedStaff === ''
+                ? `Avg ${dailyAttendanceStats.avgDailyAttendance} / ${filteredStaffList.length} staff per day`
+                : `${dailyAttendanceStats.totalPresentStaffDays} of ${dailyAttendanceStats.totalElapsedDays} workdays present`
+            }
           />
           <CustomKpiCard
             title="Avg Efficiency"
             value={avgEfficiency !== null ? `${avgEfficiency}%` : '—'}
             icon={<Award className="w-5 h-5 text-white" />}
             glowColor="purple"
-            subtitle="Working hours efficiency"
+            subtitle="Working hours efficiency (per day)"
           />
           <CustomKpiCard
             title="Pending Approval"

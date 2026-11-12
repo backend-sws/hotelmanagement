@@ -31,7 +31,19 @@ class Attendance extends Model
         // WFH & Hours tracking
         'work_type',
         'actual_hours',
+        'gross_presence_hours',
+        'lunch_start_time',
+        'lunch_end_time',
+        'lunch_minutes',
         'late_mark_minutes',
+        'forgot_checkout_applied',
+        'is_auto_closed',
+        // Overtime Tracking & Approval
+        'overtime_hours',
+        'overtime_approved',
+        'overtime_approved_by',
+        'overtime_approved_at',
+        'overtime_notes',
         // Regularization (backdated correction)
         'regularization_requested_at',
         'regularization_requested_checkin',
@@ -50,8 +62,21 @@ class Attendance extends Model
         'check_out_latitude' => 'float',
         'check_out_longitude' => 'float',
         'actual_hours' => 'float',
+        'gross_presence_hours' => 'float',
+        'lunch_minutes' => 'integer',
+        'overtime_hours' => 'float',
+        'overtime_approved' => 'boolean',
+        'overtime_approved_at' => 'datetime',
+        'forgot_checkout_applied' => 'boolean',
+        'is_auto_closed' => 'boolean',
         'regularization_requested_at' => 'datetime',
         'regularization_actioned_at' => 'datetime',
+    ];
+
+    protected $appends = [
+        'exact_working_hours',
+        'office_present_hours',
+        'is_on_lunch',
     ];
 
     public function user()
@@ -62,6 +87,11 @@ class Attendance extends Model
     public function location()
     {
         return $this->belongsTo(BusinessLocation::class, 'location_id');
+    }
+
+    public function overtimeApprovedBy()
+    {
+        return $this->belongsTo(User::class, 'overtime_approved_by');
     }
 
     public function regularizationApprovedBy()
@@ -86,11 +116,10 @@ class Attendance extends Model
     }
 
     /**
-     * Calculate actual working hours from check_in and check_out.
-     * Returns decimal hours (e.g., 8.5 for 8h 30m).
-     * Handles overnight shifts (check-out on the next calendar day).
+     * Total office presence duration (check-out minus check-in).
+     * Returns decimal hours (e.g. 9.0 for 9 hours in office).
      */
-    public function computeActualHours(): ?float
+    public function computeGrossPresenceHours(): ?float
     {
         if (!$this->check_in_time || !$this->check_out_time) {
             return null;
@@ -102,11 +131,49 @@ class Attendance extends Model
             $out->addDay();
         }
         $diffMinutes = $in->diffInMinutes($out);
-        // Guard against impossible durations (> 24 hours)
         if ($diffMinutes <= 0 || $diffMinutes > 24 * 60) {
             return null;
         }
         return round($diffMinutes / 60, 2);
+    }
+
+    /**
+     * Calculate exact working hours: Total Office Presence - Lunch Break.
+     * Returns decimal hours (e.g., 8.0 for 9h presence - 1h lunch).
+     */
+    public function computeActualHours(): ?float
+    {
+        $gross = $this->computeGrossPresenceHours();
+        if ($gross === null) {
+            return null;
+        }
+
+        $lunchMins = (int) ($this->lunch_minutes ?? 0);
+        if ($lunchMins <= 0 && $this->lunch_start_time && $this->lunch_end_time) {
+            $lIn  = \Carbon\Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->lunch_start_time);
+            $lOut = \Carbon\Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->lunch_end_time);
+            if ($lOut->gt($lIn)) {
+                $lunchMins = $lIn->diffInMinutes($lOut);
+            }
+        }
+
+        $netHours = max(0, round($gross - ($lunchMins / 60), 2));
+        return $netHours;
+    }
+
+    public function getExactWorkingHoursAttribute(): ?float
+    {
+        return $this->actual_hours ?? $this->computeActualHours();
+    }
+
+    public function getOfficePresentHoursAttribute(): ?float
+    {
+        return $this->gross_presence_hours ?? $this->computeGrossPresenceHours();
+    }
+
+    public function getIsOnLunchAttribute(): bool
+    {
+        return !empty($this->lunch_start_time) && empty($this->lunch_end_time) && !empty($this->check_in_time) && empty($this->check_out_time);
     }
 
 

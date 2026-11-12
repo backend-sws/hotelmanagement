@@ -39,7 +39,8 @@ class AttendanceController extends BaseController
             'records' => 'required|array',
             'records.*.user_id' => 'required|integer|exists:users,id',
             'records.*.date' => 'required|date',
-            'records.*.status' => 'required|in:present,absent,half_day,leave,week_off,holiday',
+            'records.*.status' => 'required|in:present,absent,half_day,leave,week_off,holiday,late,clear',
+            'records.*.late_mark_minutes' => 'nullable|integer|min:0',
             'records.*.check_in_time' => 'nullable|date_format:H:i:s,H:i',
             'records.*.check_out_time' => 'nullable|date_format:H:i:s,H:i',
             'records.*.notes' => 'nullable|string',
@@ -55,10 +56,19 @@ class AttendanceController extends BaseController
 
     public function checkIn(Request $request)
     {
+        $businessId = app('current_business_id');
+        $hasApprovedWfh = \App\Models\LeaveRequest::where('business_id', $businessId)
+            ->where('user_id', $request->user()->id)
+            ->where('request_type', 'wfh')
+            ->where('status', 'approved')
+            ->whereDate('from_date', '<=', now()->toDateString())
+            ->whereDate('to_date', '>=', now()->toDateString())
+            ->exists();
+
         $request->validate([
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'photo' => 'required|string',
+            'latitude'  => $hasApprovedWfh ? 'nullable|numeric' : 'required|numeric',
+            'longitude' => $hasApprovedWfh ? 'nullable|numeric' : 'required|numeric',
+            'photo'     => 'required|string',
         ]);
 
         try {
@@ -71,15 +81,52 @@ class AttendanceController extends BaseController
 
     public function checkOut(Request $request)
     {
+        $businessId = app('current_business_id');
+        $hasApprovedWfh = \App\Models\LeaveRequest::where('business_id', $businessId)
+            ->where('user_id', $request->user()->id)
+            ->where('request_type', 'wfh')
+            ->where('status', 'approved')
+            ->whereDate('from_date', '<=', now()->toDateString())
+            ->whereDate('to_date', '>=', now()->toDateString())
+            ->exists();
+
         $request->validate([
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'photo' => 'required|string',
+            'latitude'  => $hasApprovedWfh ? 'nullable|numeric' : 'required|numeric',
+            'longitude' => $hasApprovedWfh ? 'nullable|numeric' : 'required|numeric',
+            'photo'     => 'nullable|string',
         ]);
 
         try {
             $attendance = $this->attendanceService->checkOut($request->all());
             return $this->success($attendance, 'Checked out successfully');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * POST /api/business/attendance/lunch-start
+     * Staff member marks start of lunch break.
+     */
+    public function startLunch(Request $request)
+    {
+        try {
+            $attendance = $this->attendanceService->startLunch();
+            return $this->success($attendance, 'Lunch break started. Enjoy your meal!');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * POST /api/business/attendance/lunch-end
+     * Staff member marks end of lunch break and resumes work.
+     */
+    public function endLunch(Request $request)
+    {
+        try {
+            $attendance = $this->attendanceService->endLunch();
+            return $this->success($attendance, 'Lunch break ended. Welcome back to work!');
         } catch (\Throwable $e) {
             return $this->error($e->getMessage(), 422);
         }
@@ -95,7 +142,13 @@ class AttendanceController extends BaseController
         $request->validate([
             'user_id' => 'required|integer|exists:users,id',
             'date' => 'required|date',
-            'status' => 'required|in:present,absent,half_day,leave,week_off,holiday',
+            'status' => 'required|in:present,absent,half_day,leave,week_off,holiday,late,clear',
+            'late_mark_minutes' => 'nullable|integer|min:0',
+            'check_in_time'     => 'nullable|string',
+            'check_out_time'    => 'nullable|string',
+            'lunch_minutes'     => 'nullable|integer|min:0|max:300',
+            'lunch_start_time'  => 'nullable|string',
+            'lunch_end_time'    => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
 
@@ -127,11 +180,49 @@ class AttendanceController extends BaseController
         }
     }
 
-    public function todayStatus()
+    public function todayStatus(Request $request)
     {
         try {
+            $user = $request->user();
+            $businessId = app('current_business_id');
+            $today = now()->toDateString();
+
             $status = $this->attendanceService->getTodayStatus();
-            return $this->success($status, 'Today status retrieved successfully');
+
+            $approvedWfh = \App\Models\LeaveRequest::where('business_id', $businessId)
+                ->where('user_id', $user->id)
+                ->where('request_type', 'wfh')
+                ->where('status', 'approved')
+                ->whereDate('from_date', '<=', $today)
+                ->whereDate('to_date', '>=', $today)
+                ->first();
+
+            $data = $status ? $status->toArray() : [];
+            $data['has_approved_wfh'] = !empty($approvedWfh);
+            if ($approvedWfh) {
+                $data['approved_wfh_request'] = $approvedWfh;
+            }
+
+            // Forgot checkout alert evaluation (e.g. alert after 7 PM)
+            $workSetting = \App\Models\BusinessWorkSetting::where('business_id', $businessId)->first();
+            $alertTime = $workSetting->forgot_checkout_alert_time ?? '19:00:00';
+            $enableAlert = $workSetting->enable_forgot_checkout_alert ?? true;
+            $nowTime = now()->format('H:i:s');
+            $isPastAlertTime = $nowTime >= $alertTime;
+
+            $isCheckedIn = !empty($status) && !empty($status->check_in_time) && empty($status->check_out_time);
+            $shouldAlertCheckout = $enableAlert && $isCheckedIn && $isPastAlertTime;
+
+            $data['should_alert_checkout'] = $shouldAlertCheckout;
+            $data['is_past_alert_time'] = $isPastAlertTime;
+            $data['forgot_checkout_alert_time'] = substr($alertTime, 0, 5);
+            $data['forgot_checkout_policy'] = $workSetting->forgot_checkout_policy ?? 'half_day';
+            $data['has_pending_regularization'] = !empty($status) && $status->regularization_status === 'pending';
+            if ($shouldAlertCheckout) {
+                $data['alert_message'] = "You checked in at {$status->check_in_time} but have not checked out yet. If you have already left the office premises, please submit an Out-of-Geofence Punch-Out Request to your manager to avoid half-day capping.";
+            }
+
+            return $this->success($data, 'Today status retrieved successfully');
         } catch (\Throwable $e) {
             return $this->error($e->getMessage(), 500);
         }
@@ -260,9 +351,12 @@ class AttendanceController extends BaseController
         }
 
         $request->validate([
-            'check_in_time'  => 'nullable|date_format:H:i,H:i:s',
-            'check_out_time' => 'nullable|date_format:H:i,H:i:s',
-            'notes'          => 'nullable|string|max:500',
+            'check_in_time'    => 'nullable|date_format:H:i,H:i:s',
+            'check_out_time'   => 'nullable|date_format:H:i,H:i:s',
+            'lunch_minutes'    => 'nullable|integer|min:0|max:300',
+            'lunch_start_time' => 'nullable|date_format:H:i,H:i:s',
+            'lunch_end_time'   => 'nullable|date_format:H:i,H:i:s',
+            'notes'            => 'nullable|string|max:500',
         ]);
 
         try {
@@ -289,6 +383,88 @@ class AttendanceController extends BaseController
             return $this->success($attendance, 'WFH attendance marked successfully.');
         } catch (\Throwable $e) {
             return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * PUT /api/business/attendance/{id}/approve-overtime
+     */
+    public function approveOvertime(Request $request, int $id)
+    {
+        $user = $request->user();
+        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+            return $this->forbidden('Unauthorized to approve overtime');
+        }
+
+        try {
+            $attendance = $this->attendanceService->approveOvertime($id);
+            return $this->success($attendance, 'Overtime approved successfully.');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * PUT /api/business/attendance/{id}/reject-overtime
+     */
+    public function rejectOvertime(Request $request, int $id)
+    {
+        $user = $request->user();
+        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+            return $this->forbidden('Unauthorized to reject overtime');
+        }
+
+        try {
+            $attendance = $this->attendanceService->rejectOvertime($id);
+            return $this->success($attendance, 'Overtime rejected.');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * PATCH /api/business/attendance/{id}/edit-overtime
+     */
+    public function editOvertime(Request $request, int $id)
+    {
+        $user = $request->user();
+        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+            return $this->forbidden('Unauthorized to edit overtime');
+        }
+
+        $request->validate([
+            'overtime_hours'    => 'nullable|numeric|min:0|max:24',
+            'overtime_approved' => 'nullable|boolean',
+            'overtime_notes'    => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $attendance = $this->attendanceService->editOvertime($id, $request->all());
+            return $this->success($attendance, 'Overtime updated successfully.');
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * POST /api/business/attendance/auto-absent
+     * Evaluates staff shift half-time cutoffs and marks absent for no-shows.
+     */
+    public function triggerAutoAbsent(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+            return $this->forbidden('Unauthorized');
+        }
+
+        $businessId = app('current_business_id');
+        $date = $request->input('date');
+
+        try {
+            $count = $this->attendanceService->autoMarkAbsentForHalfTimeNoShow($businessId, $date);
+            return $this->success(['marked_absent_count' => $count], "Evaluated auto-absent: {$count} staff member(s) marked absent.");
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

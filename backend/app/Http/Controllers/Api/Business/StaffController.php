@@ -42,6 +42,8 @@ class StaffController extends BaseController
             'custom_work_start_time' => 'nullable|string',
             'custom_work_end_time' => 'nullable|string',
             'custom_standard_hours' => 'nullable|numeric|min:1|max:24',
+            'overtime_eligible' => 'nullable|boolean',
+            'custom_overtime_rate' => 'nullable|numeric|min:0',
         ]);
 
         // Check if phone or email already exists as staff in this business
@@ -102,6 +104,8 @@ class StaffController extends BaseController
             'custom_work_start_time' => 'nullable|string',
             'custom_work_end_time' => 'nullable|string',
             'custom_standard_hours' => 'nullable|numeric|min:1|max:24',
+            'overtime_eligible' => 'nullable|boolean',
+            'custom_overtime_rate' => 'nullable|numeric|min:0',
         ]);
 
         try {
@@ -144,6 +148,12 @@ class StaffController extends BaseController
 
     public function updatePermissions(Request $request, int $id)
     {
+        $businessId = app('current_business_id');
+        $business = \App\Models\Business::find($businessId);
+        if ($business && $business->owner_id === $id) {
+            return $this->error('The business owner has full unrestricted access. Permissions cannot be modified.', 422);
+        }
+
         $request->validate([
             'permissions' => 'array',
             'permissions.*' => 'string'
@@ -247,6 +257,7 @@ class StaffController extends BaseController
 
             $staffUser->load('roles', 'businesses');
 
+            setPermissionsTeamId($businessId);
             $userData = $staffUser->toArray();
             $userData['permissions'] = $staffUser->getAllPermissions()->pluck('name');
 

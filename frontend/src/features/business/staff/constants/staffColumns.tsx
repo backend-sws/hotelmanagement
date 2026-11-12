@@ -96,19 +96,31 @@ export const getStaffColumns = ({ handleEdit, handleToggleStatus, handlePermissi
     header: 'Actions',
     cell: (item: StaffMember) => {
       const isSelf = currentUser?.id === item.id;
-      const isAdmin = item.role === 'admin' || item.is_owner;
-      const disableToggle = isSelf || isAdmin;
+      const isOwner = Boolean(
+        item.is_owner || 
+        item.role === 'owner' || 
+        item.role === 'hotel_owner' || 
+        item.role?.toLowerCase?.()?.includes('owner')
+      );
+      const isAdmin = Boolean(
+        item.role === 'admin' || 
+        item.role?.toLowerCase?.()?.includes('admin')
+      );
+      const isOwnerOrAdmin = isOwner || isAdmin;
+      const disableToggle = isSelf || isOwnerOrAdmin;
 
       return (
         <div className="flex items-center gap-3 justify-end">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20"
-            onClick={(e) => handlePermissions(e, item)}
-          >
-            Permissions
-          </Button>
+          {!isOwnerOrAdmin && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20"
+              onClick={(e) => handlePermissions(e, item)}
+            >
+              Permissions
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"

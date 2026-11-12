@@ -370,7 +370,7 @@ export function Sidebar({ className }: { className?: string }) {
   // If superadmin, show superadmin menu. If partner AND NOT inside a business, show partner menu.
   // We check location.pathname to determine if we should show Partner menu (when Partner accesses /partner/*)
   const isPartnerRoute = location.pathname.startsWith('/partner');
-  const isBusinessManager = user?.roles?.some((r) => r.name === 'admin' || r.name === 'manager' || r.name === 'Business Admin');
+  const isBusinessManager = activeBusiness?.owner_id === user?.id || user?.roles?.some((r) => r.name === 'admin' || r.name === 'manager' || r.name === 'Business Admin' || r.name?.toLowerCase() === 'owner');
 
   const filteredStaffGroups = [];
 
