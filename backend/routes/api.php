@@ -291,6 +291,7 @@ Route::prefix('v1')->group(function () {
                 Route::patch('salary-advances/{salaryAdvance}/status', [\App\Http\Controllers\Api\Business\PayrollController::class, 'updateSalaryAdvanceStatus']);
                 Route::apiResource('leave-requests', \App\Http\Controllers\Api\Business\LeaveRequestController::class);
                 Route::patch('leave-requests/{leave_request}/status', [\App\Http\Controllers\Api\Business\LeaveRequestController::class, 'updateStatus']);
+                Route::post('leave-requests/{leave_request}/cancel', [\App\Http\Controllers\Api\Business\LeaveRequestController::class, 'cancel']);
 
                 // ── WFH Leave Override ──────────────────────────────────────
                 Route::patch('leave-requests/{leave_request}/override-category', [\App\Http\Controllers\Api\Business\LeaveRequestController::class, 'overrideCategory']);

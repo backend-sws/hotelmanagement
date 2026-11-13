@@ -16,6 +16,7 @@ import { AttendanceImportModal } from '../components/AttendanceImportModal';
 import { Modal } from '@/components/ui/modal';
 import { exportToCsv } from '@/utils/exportToCsv';
 import { useAuthStore } from '@/store/authStore';
+import { usePermissions } from '@/hooks/usePermissions';
 import { AttendanceMonthlyGrid } from '../components/AttendanceMonthlyGrid';
 import { getAttendanceColumns } from '../constants/attendanceColumns';
 import {
@@ -67,6 +68,7 @@ export default function AttendancePage() {
   const { data: pendingRegData } = usePendingRegularizations();
   const { data: holidays = [] } = useHolidays(selectedMonth);
   const user = useAuthStore(state => state.user);
+  const { hasPermission } = usePermissions();
 
   const pendingRegs = pendingRegData?.data || pendingRegData || [];
 
@@ -74,15 +76,21 @@ export default function AttendancePage() {
   const isCheckedOut = !!todayStatus?.check_out_time;
 
   const isManager = (() => {
-    if (!user || !staffList) return false;
+    if (!user) return false;
     
-    const hasAdminRole = user.roles?.some((r: any) => r.name === 'Business Admin' || r.name === 'Superadmin');
+    const hasAdminRole = user.roles?.some((r: any) => 
+      ['Business Admin', 'Superadmin', 'admin', 'manager'].includes(r.name)
+    );
     if (hasAdminRole) {
-        return true;
+      return true;
     }
 
-    const currentStaff = staffList.find((s: any) => s.id === user.id);
-    return currentStaff?.role === 'manager' || currentStaff?.role === 'admin' || currentStaff?.role === 'Business Admin' || !currentStaff;
+    if (hasPermission('manage_attendance') || hasPermission('view_attendance')) {
+      return true;
+    }
+
+    const currentStaff = staffList?.find((s: any) => s.id === user.id);
+    return currentStaff?.role === 'manager' || currentStaff?.role === 'hr' || currentStaff?.role === 'admin' || currentStaff?.role === 'Business Admin' || !currentStaff;
   })();
 
   const handleApprove = (id: number) => {

@@ -3,14 +3,16 @@ import {
   useLeaveRequests,
   useCreateLeaveRequest,
   useUpdateLeaveStatus,
+  useCancelLeaveRequest,
   useOverrideLeaveCategory,
 } from '../api/useLeaveRequests';
 import { useLeaveBalances } from '../api/useLeavePolicies';
 import { LeavePoliciesModal } from '../components/LeavePoliciesModal';
 import { useMarkWfhAttendance } from '../../attendance/api/useAttendance';
-import { Calendar, Plus, CheckCircle2, XCircle, Clock, RefreshCw, AlertTriangle, Home, Settings2, Sparkles, Umbrella } from 'lucide-react';
+import { Calendar, Plus, CheckCircle2, XCircle, Clock, RefreshCw, AlertTriangle, Home, Settings2, Sparkles, Umbrella, Ban } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { useAuthStore } from '@/store/authStore';
+import { usePermissions } from '@/hooks/usePermissions';
 import { LeaveRequestFormModal } from '../components/LeaveRequestFormModal';
 import { getLeaveColumns } from '../constants/leaveColumns';
 import { CustomKpiCard } from '@/components/ui/CustomKpiCard';
@@ -32,17 +34,25 @@ export default function LeaveRequestsPage() {
   const { data: requests, isLoading, refetch, isRefetching } = useLeaveRequests();
   const createMutation = useCreateLeaveRequest();
   const updateStatusMutation = useUpdateLeaveStatus();
+  const cancelMutation = useCancelLeaveRequest();
   const overrideCategoryMutation = useOverrideLeaveCategory();
   const markWfhAttendanceMutation = useMarkWfhAttendance();
   const user = useAuthStore(state => state.user);
   const { data: staffList, isLoading: isStaffLoading } = useStaff();
+  const { hasPermission } = usePermissions();
 
-  const isManager = Boolean(user?.roles?.some(r => 
-    r.name === 'admin' || 
-    r.name === 'manager' || 
-    r.name === 'Business Admin' || 
-    r.name === 'Superadmin'
-  ));
+  const isManager = Boolean(
+    user?.roles?.some(r => 
+      r.name === 'admin' || 
+      r.name === 'manager' || 
+      r.name === 'Business Admin' || 
+      r.name === 'Superadmin'
+    ) ||
+    hasPermission('manage_leaves') ||
+    hasPermission('manage_attendance') ||
+    staffList?.find(s => s.id === user?.id)?.role === 'manager' ||
+    staffList?.find(s => s.id === user?.id)?.role === 'hr'
+  );
 
   // Fetch balances for selected staff (if manager selected someone) or logged in user
   const targetUserId = isManager && selectedStaff ? Number(selectedStaff) : undefined;
@@ -50,19 +60,22 @@ export default function LeaveRequestsPage() {
 
   const columns = getLeaveColumns({
     isManager,
+    currentUserId: user?.id,
     updateStatusMutation,
+    cancelLeaveMutation: cancelMutation,
     overrideCategoryMutation,
     markWfhAttendanceMutation,
   });
 
   // Compute analytics
   const stats = useMemo(() => {
-    if (!requests) return { total: 0, pending: 0, approved: 0, rejected: 0 };
+    if (!requests) return { total: 0, pending: 0, approved: 0, rejected: 0, cancelled: 0 };
     return {
       total: requests.length,
       pending: requests.filter((r: any) => r.status === 'pending').length,
       approved: requests.filter((r: any) => r.status === 'approved').length,
       rejected: requests.filter((r: any) => r.status === 'rejected').length,
+      cancelled: requests.filter((r: any) => r.status === 'cancelled').length,
     };
   }, [requests]);
 
@@ -236,7 +249,7 @@ export default function LeaveRequestsPage() {
         )}
 
         {/* KPI Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
           <CustomKpiCard
             title="Total Requests"
             value={stats.total}
@@ -257,6 +270,13 @@ export default function LeaveRequestsPage() {
             icon={<CheckCircle2 className="w-5 h-5 text-white" />}
             glowColor="emerald"
             subtitle="Confirmed staff absence"
+          />
+          <CustomKpiCard
+            title="Cancelled Leaves"
+            value={stats.cancelled}
+            icon={<Ban className="w-5 h-5 text-white" />}
+            glowColor="indigo"
+            subtitle="Revoked applications"
           />
           <CustomKpiCard
             title="Rejected Leaves"
@@ -295,6 +315,7 @@ export default function LeaveRequestsPage() {
               options={[
                 { value: 'pending', label: 'Pending Approval' },
                 { value: 'approved', label: 'Approved' },
+                { value: 'cancelled', label: 'Cancelled' },
                 { value: 'rejected', label: 'Rejected' }
               ]}
               wrapperClassName="w-full"

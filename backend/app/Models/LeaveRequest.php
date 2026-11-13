@@ -99,6 +99,17 @@ class LeaveRequest extends Model
             ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
             ->toArray();
 
+        // Also include any official company holidays marked directly on the attendance sheet
+        $attendanceHolidays = Attendance::withoutGlobalScopes()
+            ->where('business_id', $this->business_id)
+            ->where('status', 'holiday')
+            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->pluck('date')
+            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
+            ->toArray();
+
+        $allHolidayDates = array_values(array_unique(array_merge($holidayDates, $attendanceHolidays)));
+
         $workSetting = BusinessWorkSetting::withoutGlobalScopes()
             ->where('business_id', $this->business_id)
             ->first();
@@ -124,7 +135,7 @@ class LeaveRequest extends Model
 
             // Check if day is an official off-day (or Sunday)
             $isOffDay = !in_array($dayName, $workDays) || $curr->dayOfWeek === \Carbon\Carbon::SUNDAY;
-            $isHoliday = in_array($dateStr, $holidayDates);
+            $isHoliday = in_array($dateStr, $allHolidayDates);
 
             if (!$isOffDay && !$isHoliday) {
                 $netDays++;

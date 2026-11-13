@@ -10,12 +10,31 @@ use Illuminate\Support\Facades\Auth;
 
 class LeaveRequestController extends Controller
 {
+    private function canManageLeaves($user): bool
+    {
+        if ($user->hasRole(['Business Admin', 'admin', 'manager', 'Superadmin'])) {
+            return true;
+        }
+        if ($user->can('manage_leaves') || $user->can('manage_attendance')) {
+            return true;
+        }
+        $businessId = app('current_business_id');
+        $bu = \Illuminate\Support\Facades\DB::table('business_user')
+            ->where('business_id', $businessId)
+            ->where('user_id', $user->id)
+            ->first();
+        if ($bu && in_array(strtolower($bu->role ?? ''), ['manager', 'hr', 'admin'])) {
+            return true;
+        }
+        return false;
+    }
+
     public function index(Request $request)
     {
         $query = LeaveRequest::with(['user', 'approvedBy'])->orderBy('created_at', 'desc');
 
         $user = $request->user();
-        $isManager = $user->hasRole(['admin', 'manager', 'Business Admin', 'Superadmin']);
+        $isManager = $this->canManageLeaves($user);
         
         if (!$isManager) {
             $query->where('user_id', $user->id);
@@ -130,9 +149,9 @@ class LeaveRequestController extends Controller
     public function destroy(Request $request, LeaveRequest $leaveRequest)
     {
         $user = $request->user();
-        $isManager = $user->hasRole(['admin', 'manager', 'Business Admin', 'Superadmin']);
+        $isManager = $this->canManageLeaves($user);
 
-        // Only allow deleting if status is pending and belongs to user (or manager)
+        // Staff can only delete their own request if pending
         if (!$isManager && ($leaveRequest->status !== 'pending' || $user->id !== $leaveRequest->user_id)) {
             return response()->json(['message' => 'Cannot delete this request.'], 403);
         }
@@ -145,22 +164,68 @@ class LeaveRequestController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Leave request cancelled.'
+            'message' => 'Leave request removed successfully.'
+        ]);
+    }
+
+    /**
+     * POST /api/business/leave-requests/{id}/cancel
+     * Allows staff (their own requests) and managers/admins/HR to cancel pending or approved leaves.
+     * When an approved leave is cancelled, reverts attendance records and restores leave quota.
+     */
+    public function cancel(Request $request, $id)
+    {
+        $user = $request->user();
+        $isManager = $this->canManageLeaves($user);
+
+        $leaveRequest = LeaveRequest::findOrFail($id);
+
+        // Staff can only cancel their own request
+        if (!$isManager && $leaveRequest->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized to cancel this leave request.'], 403);
+        }
+
+        // Cannot cancel already rejected or already cancelled request
+        if (in_array($leaveRequest->status, ['rejected', 'cancelled'])) {
+            return response()->json(['message' => 'Leave request is already ' . $leaveRequest->status . '.'], 400);
+        }
+
+        $prevStatus = $leaveRequest->status;
+
+        $cancelNote = $request->input('remark') ?: 'Cancelled by ' . ($isManager ? 'Manager/Admin' : 'Staff');
+        $newRemark = $leaveRequest->admin_remark 
+            ? $leaveRequest->admin_remark . ' | ' . $cancelNote 
+            : $cancelNote;
+
+        $leaveRequest->update([
+            'status'       => 'cancelled',
+            'admin_remark' => $newRemark,
+        ]);
+
+        // If previously approved, remove the leave from attendance records
+        if ($prevStatus === 'approved') {
+            app(\App\Services\Business\AttendanceService::class)->removeLeaveFromAttendance($leaveRequest);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Leave request has been successfully cancelled.',
+            'data'    => $leaveRequest->fresh(['user', 'approvedBy'])
         ]);
     }
 
     public function updateStatus(Request $request, $id)
     {
         $validated = $request->validate([
-            'status'       => 'required|in:approved,rejected',
+            'status'       => 'required|in:approved,rejected,cancelled',
             'admin_remark' => 'nullable|string|max:500',
         ]);
 
         $user = $request->user();
-        $isManager = $user->hasRole(['admin', 'manager', 'Business Admin', 'Superadmin']);
+        $isManager = $this->canManageLeaves($user);
 
         if (!$isManager) {
-            return response()->json(['message' => 'Unauthorized. Only managers can approve leaves.'], 403);
+            return response()->json(['message' => 'Unauthorized. Only managers can approve or reject leaves.'], 403);
         }
 
         $leaveRequest = LeaveRequest::findOrFail($id);
@@ -176,13 +241,13 @@ class LeaveRequestController extends Controller
         $attendanceService = app(\App\Services\Business\AttendanceService::class);
         if ($validated['status'] === 'approved') {
             $attendanceService->applyApprovedLeaveToAttendance($leaveRequest, $user->id);
-        } elseif ($validated['status'] === 'rejected' && $prevStatus === 'approved') {
+        } elseif (in_array($validated['status'], ['rejected', 'cancelled']) && $prevStatus === 'approved') {
             $attendanceService->removeLeaveFromAttendance($leaveRequest);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Leave status updated and attendance marked successfully.',
+            'message' => 'Leave status updated successfully.',
             'data'    => $leaveRequest->load(['user', 'approvedBy'])
         ]);
     }
@@ -195,7 +260,7 @@ class LeaveRequestController extends Controller
     public function overrideCategory(Request $request, $id)
     {
         $user = $request->user();
-        $isManager = $user->hasRole(['admin', 'manager', 'Business Admin', 'Superadmin']);
+        $isManager = $this->canManageLeaves($user);
 
         if (!$isManager) {
             return response()->json(['message' => 'Unauthorized. Only managers can override leave category.'], 403);

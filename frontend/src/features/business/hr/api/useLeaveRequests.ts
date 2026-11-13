@@ -13,7 +13,7 @@ export interface LeaveRequest {
   from_date: string;
   to_date: string;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   approved_by?: number;
   wfh_attendance_marked: boolean;
   admin_remark: string | null;
@@ -96,6 +96,26 @@ export const useOverrideLeaveCategory = () => {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to override category');
+    }
+  });
+};
+
+export const useCancelLeaveRequest = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, remark }: { id: number; remark?: string }) => {
+      const { data } = await api.post(`/business/leave-requests/${id}/cancel`, { remark });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-report'] });
+      queryClient.invalidateQueries({ queryKey: ['payrolls'] });
+      toast.success('Leave request cancelled successfully.');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to cancel leave request');
     }
   });
 };

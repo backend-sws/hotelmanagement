@@ -372,7 +372,8 @@ export function AttendanceMonthlyGrid({
                         cellBadge = 'LE';
                       } else if (isHalfDay) {
                         cellClass = 'bg-amber-500 text-white shadow-xs';
-                        cellTitle = `Half Day (0.5 Day) ${isUnapproved ? '(Pending Approval)' : ''} ${record?.actual_hours ? `(${record.actual_hours}h)` : ''}`;
+                        const halfHours = (record?.actual_hours !== null && record?.actual_hours !== undefined) ? record.actual_hours : 4.5;
+                        cellTitle = `Half Day (0.5 Day) ${isUnapproved ? '(Pending Approval)' : ''} (${halfHours}h)`;
                         cellBadge = 'HD';
                       } else if (isPresent) {
                         cellClass = 'bg-emerald-500 text-white shadow-xs';
@@ -816,8 +817,8 @@ export function AttendanceMonthlyGrid({
                   <div className="bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20">
                     <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 block">Exact Working Hours</span>
                     <span className="text-sm font-black text-emerald-700 dark:text-emerald-300">
-                      {selectedRecord.exact_working_hours ?? selectedRecord.actual_hours ?? '—'}
-                      {(selectedRecord.exact_working_hours ?? selectedRecord.actual_hours) ? 'h' : ''}
+                      {selectedRecord.exact_working_hours ?? selectedRecord.actual_hours ?? (selectedRecord.status === 'half_day' ? '4.5' : '—')}
+                      {(selectedRecord.exact_working_hours ?? selectedRecord.actual_hours ?? (selectedRecord.status === 'half_day' ? '4.5' : '')) ? 'h' : ''}
                     </span>
                   </div>
                 </div>

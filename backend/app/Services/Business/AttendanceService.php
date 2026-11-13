@@ -52,16 +52,20 @@ class AttendanceService
             ->whereDate('to_date', '>=', $today)
             ->exists();
 
+        $isWfhRequested = ($data['work_type'] ?? '') === 'wfh';
+        $workSetting = BusinessWorkSetting::where('business_id', $businessId)->first();
+        $isWfhAllowed = $hasApprovedWfh || ($isWfhRequested && ($workSetting->punch_mode_wfh ?? true));
+
         $photoPath = $data['photo'] ?? null;
-        if ($hasApprovedWfh && empty($photoPath)) {
+        if ($isWfhAllowed && empty($photoPath)) {
             throw new \Exception('Photo verification (selfie / workstation image) is required for WFH attendance.');
         }
 
-        // Validate geo-fence: If staff has approved WFH for today, geo-fence is bypassed!
+        // Validate geo-fence: If staff has approved WFH or WFH punch is enabled, geo-fence is bypassed!
         $isWithinFence = false;
         $locationId = null;
 
-        if ($hasApprovedWfh) {
+        if ($isWfhAllowed) {
             $isWithinFence = true;
         } else {
             if (isset($data['latitude']) && isset($data['longitude'])) {
@@ -83,8 +87,8 @@ class AttendanceService
         $lateMarkMinutes = $this->calculateLateMarkMinutes($businessId, $userId, now());
 
         $ownerId = \Illuminate\Support\Facades\DB::table('businesses')->where('id', $businessId)->value('owner_id');
-        $effectiveWorkType = $hasApprovedWfh ? 'wfh' : ($data['work_type'] ?? 'office');
-        $notes = $hasApprovedWfh ? 'WFH attendance verified via photo capture' : ($data['notes'] ?? null);
+        $effectiveWorkType = $isWfhAllowed ? 'wfh' : ($data['work_type'] ?? 'office');
+        $notes = $isWfhAllowed ? 'WFH attendance verified via photo capture' : ($data['notes'] ?? null);
 
         if ($existing) {
             $existing->update([
@@ -368,6 +372,15 @@ class AttendanceService
             if ($net !== null) {
                 $this->evaluateAndSaveOvertime($record);
             }
+        } elseif ($record->status === 'half_day') {
+            $dateStr = is_string($record->date) ? $record->date : $record->date->format('Y-m-d');
+            $shift = $this->getStaffShiftInfo($businessId, $record->user_id, $dateStr);
+            $stdHours = (float) ($shift['standard_hours'] ?? 9.0);
+            $halfHours = round($stdHours / 2, 2);
+            $record->update([
+                'gross_presence_hours' => $halfHours,
+                'actual_hours'         => $halfHours,
+            ]);
         }
 
         return $record->fresh();
@@ -698,6 +711,17 @@ class AttendanceService
 
         $startDate = Carbon::parse($leaveRequest->from_date)->startOfDay();
         $endDate   = Carbon::parse($leaveRequest->to_date)->startOfDay();
+
+        if ($leaveRequest->request_type === 'wfh') {
+            Attendance::where('business_id', $businessId)
+                ->where('user_id', $userId)
+                ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+                ->where('work_type', 'wfh')
+                ->whereNull('check_in_photo')
+                ->delete();
+            $leaveRequest->update(['wfh_attendance_marked' => false]);
+            return;
+        }
 
         $current = $startDate->copy();
         while ($current->lte($endDate)) {
@@ -1266,24 +1290,27 @@ class AttendanceService
             $totalStandardHours = round($totalWorkingDays * $standardHoursPerDay, 2);
         }
 
-        // Sum actual hours from attendance records
-        $totalActualHours = (float) Attendance::where('business_id', $businessId)
+        // Sum actual hours from attendance records (and credit standard_hours/2 for half-day if actual_hours is null)
+        $monthAttendances = Attendance::where('business_id', $businessId)
             ->where('user_id', $userId)
             ->whereYear('date', $year)
             ->whereMonth('date', $mon)
-            ->whereNotNull('actual_hours')
-            ->sum('actual_hours');
+            ->get();
+
+        $totalActualHours = 0.0;
+        foreach ($monthAttendances as $att) {
+            if ($att->actual_hours !== null && (float)$att->actual_hours > 0) {
+                $totalActualHours += (float) $att->actual_hours;
+            } elseif ($att->status === 'half_day') {
+                $totalActualHours += round($standardHoursPerDay / 2, 2);
+            }
+        }
 
         $efficiencyPct = $totalStandardHours > 0
             ? round(($totalActualHours / $totalStandardHours) * 100, 1)
             : 0.0;
 
-        $attendancesCount = Attendance::where('business_id', $businessId)
-            ->where('user_id', $userId)
-            ->whereYear('date', $year)
-            ->whereMonth('date', $mon)
-            ->where('date', '<=', $effectiveEndDate->toDateString())
-            ->get();
+        $attendancesCount = $monthAttendances->where('date', '<=', $effectiveEndDate->toDateString());
         $presentCount = $attendancesCount->whereIn('status', ['present', 'late'])->count();
         $halfCount = $attendancesCount->where('status', 'half_day')->count();
         $effectivePresent = $presentCount + ($halfCount * 0.5);

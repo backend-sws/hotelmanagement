@@ -10,14 +10,52 @@ class AttendanceController extends BaseController
 {
     public function __construct(private AttendanceService $attendanceService) {}
 
+    private function canViewAttendance($user): bool
+    {
+        if ($user->hasRole(['Business Admin', 'admin', 'manager', 'Superadmin'])) {
+            return true;
+        }
+        if ($user->can('view_attendance') || $user->can('manage_attendance')) {
+            return true;
+        }
+        $businessId = app('current_business_id');
+        $bu = \Illuminate\Support\Facades\DB::table('business_user')
+            ->where('business_id', $businessId)
+            ->where('user_id', $user->id)
+            ->first();
+        if ($bu && in_array(strtolower($bu->role ?? ''), ['manager', 'hr', 'admin', 'supervisor'])) {
+            return true;
+        }
+        return false;
+    }
+
+    private function canManageAttendance($user): bool
+    {
+        if ($user->hasRole(['Business Admin', 'admin', 'manager', 'Superadmin'])) {
+            return true;
+        }
+        if ($user->can('manage_attendance')) {
+            return true;
+        }
+        $businessId = app('current_business_id');
+        $bu = \Illuminate\Support\Facades\DB::table('business_user')
+            ->where('business_id', $businessId)
+            ->where('user_id', $user->id)
+            ->first();
+        if ($bu && in_array(strtolower($bu->role ?? ''), ['manager', 'hr', 'admin'])) {
+            return true;
+        }
+        return false;
+    }
+
     public function index(Request $request)
     {
         try {
             $user = $request->user();
             $filters = $request->all();
             
-            // If user is not manager/admin, they can only see their own attendance
-            if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+            // If user cannot view team attendance, restrict to their own records
+            if (!$this->canViewAttendance($user)) {
                 $filters['user_id'] = $user->id;
             }
 
@@ -31,7 +69,7 @@ class AttendanceController extends BaseController
     public function import(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager'])) {
+        if (!$this->canManageAttendance($user)) {
             return $this->error('Unauthorized to import attendance', 403);
         }
 
@@ -57,6 +95,7 @@ class AttendanceController extends BaseController
     public function checkIn(Request $request)
     {
         $businessId = app('current_business_id');
+        $isWfh = ($request->input('work_type') === 'wfh');
         $hasApprovedWfh = \App\Models\LeaveRequest::where('business_id', $businessId)
             ->where('user_id', $request->user()->id)
             ->where('request_type', 'wfh')
@@ -65,14 +104,22 @@ class AttendanceController extends BaseController
             ->whereDate('to_date', '>=', now()->toDateString())
             ->exists();
 
+        $workSetting = \App\Models\BusinessWorkSetting::where('business_id', $businessId)->first();
+        $isWfhAllowed = $isWfh && ($hasApprovedWfh || ($workSetting->punch_mode_wfh ?? true));
+
         $request->validate([
-            'latitude'  => $hasApprovedWfh ? 'nullable|numeric' : 'required|numeric',
-            'longitude' => $hasApprovedWfh ? 'nullable|numeric' : 'required|numeric',
+            'latitude'  => ($hasApprovedWfh || $isWfhAllowed) ? 'nullable|numeric' : 'required|numeric',
+            'longitude' => ($hasApprovedWfh || $isWfhAllowed) ? 'nullable|numeric' : 'required|numeric',
             'photo'     => 'required|string',
+            'work_type' => 'nullable|in:office,wfh',
         ]);
 
         try {
-            $attendance = $this->attendanceService->checkIn($request->all());
+            $data = $request->all();
+            if ($isWfhAllowed || $hasApprovedWfh) {
+                $data['work_type'] = 'wfh';
+            }
+            $attendance = $this->attendanceService->checkIn($data);
             return $this->success($attendance, 'Checked in successfully', 201);
         } catch (\Throwable $e) {
             return $this->error($e->getMessage(), 422);
@@ -90,9 +137,17 @@ class AttendanceController extends BaseController
             ->whereDate('to_date', '>=', now()->toDateString())
             ->exists();
 
+        $isTodayWfh = \App\Models\Attendance::where('business_id', $businessId)
+            ->where('user_id', $request->user()->id)
+            ->where('date', now()->toDateString())
+            ->where('work_type', 'wfh')
+            ->exists();
+
+        $isWfhBypass = $hasApprovedWfh || $isTodayWfh;
+
         $request->validate([
-            'latitude'  => $hasApprovedWfh ? 'nullable|numeric' : 'required|numeric',
-            'longitude' => $hasApprovedWfh ? 'nullable|numeric' : 'required|numeric',
+            'latitude'  => $isWfhBypass ? 'nullable|numeric' : 'required|numeric',
+            'longitude' => $isWfhBypass ? 'nullable|numeric' : 'required|numeric',
             'photo'     => 'nullable|string',
         ]);
 
@@ -135,7 +190,7 @@ class AttendanceController extends BaseController
     public function markManual(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager'])) {
+        if (!$this->canManageAttendance($user)) {
             return $this->error('Unauthorized to manually mark attendance', 403);
         }
 
@@ -168,11 +223,11 @@ class AttendanceController extends BaseController
 
         try {
             $user = $request->user();
-            $isManager = $user->hasRole(['Business Admin', 'admin', 'manager']) || $user->hasRole('Superadmin');
+            $canView = $this->canViewAttendance($user);
             
             $report = $this->attendanceService->getMonthlyReport(
                 $request->input('month'), 
-                $isManager ? null : $user->id
+                $canView ? null : $user->id
             );
             return $this->success($report, 'Monthly report retrieved successfully');
         } catch (\Throwable $e) {
@@ -259,7 +314,7 @@ class AttendanceController extends BaseController
     public function approve(Request $request, int $id)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+        if (!$this->canManageAttendance($user)) {
             return $this->forbidden('Unauthorized to approve attendance');
         }
 
@@ -274,7 +329,7 @@ class AttendanceController extends BaseController
     public function unapprove(Request $request, int $id)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+        if (!$this->canManageAttendance($user)) {
             return $this->forbidden('Unauthorized to unapprove attendance');
         }
 
@@ -317,7 +372,7 @@ class AttendanceController extends BaseController
     public function regularizationRequests(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+        if (!$this->canManageAttendance($user)) {
             return $this->forbidden('Unauthorized');
         }
 
@@ -336,7 +391,7 @@ class AttendanceController extends BaseController
     public function approveRegularization(Request $request, int $id)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+        if (!$this->canManageAttendance($user)) {
             return $this->forbidden('Unauthorized');
         }
 
@@ -355,7 +410,7 @@ class AttendanceController extends BaseController
     public function rejectRegularization(Request $request, int $id)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+        if (!$this->canManageAttendance($user)) {
             return $this->forbidden('Unauthorized');
         }
 
@@ -374,7 +429,7 @@ class AttendanceController extends BaseController
     public function adminEditTime(Request $request, int $id)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+        if (!$this->canManageAttendance($user)) {
             return $this->forbidden('Unauthorized to edit attendance time');
         }
 
@@ -402,7 +457,7 @@ class AttendanceController extends BaseController
     public function markWfhAttendance(Request $request, int $leaveRequestId)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+        if (!$this->canManageAttendance($user)) {
             return $this->forbidden('Unauthorized');
         }
 
@@ -420,7 +475,7 @@ class AttendanceController extends BaseController
     public function approveOvertime(Request $request, int $id)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+        if (!$this->canManageAttendance($user)) {
             return $this->forbidden('Unauthorized to approve overtime');
         }
 
@@ -438,7 +493,7 @@ class AttendanceController extends BaseController
     public function rejectOvertime(Request $request, int $id)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+        if (!$this->canManageAttendance($user)) {
             return $this->forbidden('Unauthorized to reject overtime');
         }
 
@@ -456,7 +511,7 @@ class AttendanceController extends BaseController
     public function editOvertime(Request $request, int $id)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+        if (!$this->canManageAttendance($user)) {
             return $this->forbidden('Unauthorized to edit overtime');
         }
 
@@ -481,7 +536,7 @@ class AttendanceController extends BaseController
     public function triggerAutoAbsent(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasRole(['Business Admin', 'admin', 'manager']) && !$user->hasRole('Superadmin')) {
+        if (!$this->canManageAttendance($user)) {
             return $this->forbidden('Unauthorized');
         }
 

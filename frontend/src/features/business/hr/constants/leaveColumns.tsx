@@ -2,19 +2,23 @@ import React from 'react';
 import type { ColumnDef } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { Check, X, Home, Calendar, Sparkles, ArrowLeftRight, CheckCircle2 } from 'lucide-react';
+import { Check, X, Home, Calendar, Sparkles, ArrowLeftRight, CheckCircle2, Ban } from 'lucide-react';
 import type { LeaveRequest } from '../api/useLeaveRequests';
 
 interface GetLeaveColumnsProps {
   isManager: boolean | undefined;
+  currentUserId?: number;
   updateStatusMutation: any;
+  cancelLeaveMutation?: any;
   overrideCategoryMutation?: any;
   markWfhAttendanceMutation?: any;
 }
 
 export const getLeaveColumns = ({
   isManager,
+  currentUserId,
   updateStatusMutation,
+  cancelLeaveMutation,
   overrideCategoryMutation,
   markWfhAttendanceMutation,
 }: GetLeaveColumnsProps): ColumnDef<LeaveRequest>[] => {
@@ -125,75 +129,106 @@ export const getLeaveColumns = ({
       header: 'Status',
       accessorKey: 'status',
       cell: (row: LeaveRequest) => (
-        <Badge
-          variant={row.status === 'approved' ? 'success' : row.status === 'rejected' ? 'destructive' : 'warning'}
-          className="capitalize text-[10px]"
-        >
-          {row.status}
-        </Badge>
+        row.status === 'cancelled' ? (
+          <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-500/15 text-slate-400 border border-slate-500/20">
+            Cancelled
+          </span>
+        ) : (
+          <Badge
+            variant={row.status === 'approved' ? 'success' : row.status === 'rejected' ? 'destructive' : 'warning'}
+            className="capitalize text-[10px]"
+          >
+            {row.status}
+          </Badge>
+        )
       ),
     },
-    ...(isManager
-      ? [
-          {
-            header: 'Actions',
-            cell: (row: LeaveRequest) => {
-              return (
-                <div className="flex items-center gap-2 justify-end">
-                  {/* Pending Approval / Rejection */}
-                  {row.status === 'pending' && (
-                    <>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          updateStatusMutation.mutate({ id: row.id, status: 'approved' });
-                        }}
-                        disabled={updateStatusMutation.isPending}
-                        className="inline-flex items-center gap-1.5 h-7 px-2.5 text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg transition-colors active:scale-95 disabled:opacity-50 cursor-pointer"
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Approve</span>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          updateStatusMutation.mutate({ id: row.id, status: 'rejected' });
-                        }}
-                        disabled={updateStatusMutation.isPending}
-                        className="inline-flex items-center gap-1.5 h-7 px-2.5 text-[10px] font-black uppercase tracking-widest bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-lg transition-colors active:scale-95 disabled:opacity-50 cursor-pointer"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                        <span>Reject</span>
-                      </button>
-                    </>
-                  )}
+    {
+      header: 'Actions',
+      cell: (row: LeaveRequest) => {
+        const isOwn = currentUserId ? row.user_id === currentUserId : true;
+        const canCancel = (isManager || isOwn) && (row.status === 'approved' || row.status === 'pending');
 
-                  {/* WFH Mark Attendance Action */}
-                  {row.request_type === 'wfh' && row.status === 'approved' && (
-                    row.wfh_attendance_marked ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                        <CheckCircle2 className="w-3 h-3" /> Marked
-                      </span>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markWfhAttendanceMutation?.mutate(row.id);
-                        }}
-                        disabled={markWfhAttendanceMutation?.isPending}
-                        className="inline-flex items-center gap-1 h-7 px-2.5 text-[10px] font-black uppercase tracking-widest bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/30 rounded-lg transition-colors active:scale-95 disabled:opacity-50 cursor-pointer"
-                        title="Auto-mark staff attendance for this approved WFH request"
-                      >
-                        <Sparkles className="w-3 h-3" />
-                        <span>Mark Attendance</span>
-                      </button>
-                    )
-                  )}
-                </div>
-              );
-            },
-          },
-        ]
-      : []),
+        return (
+          <div className="flex items-center gap-1.5 justify-end">
+            {/* Manager Pending Approval / Rejection */}
+            {isManager && row.status === 'pending' && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateStatusMutation.mutate({ id: row.id, status: 'approved' });
+                  }}
+                  disabled={updateStatusMutation?.isPending}
+                  className="inline-flex items-center gap-1 h-7 px-2.5 text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg transition-colors active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Approve</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateStatusMutation.mutate({ id: row.id, status: 'rejected' });
+                  }}
+                  disabled={updateStatusMutation?.isPending}
+                  className="inline-flex items-center gap-1 h-7 px-2.5 text-[10px] font-black uppercase tracking-widest bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-lg transition-colors active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Reject</span>
+                </button>
+              </>
+            )}
+
+            {/* WFH Mark Attendance Action */}
+            {isManager && row.request_type === 'wfh' && row.status === 'approved' && (
+              row.wfh_attendance_marked ? (
+                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  <CheckCircle2 className="w-3 h-3" /> Marked
+                </span>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    markWfhAttendanceMutation?.mutate(row.id);
+                  }}
+                  disabled={markWfhAttendanceMutation?.isPending}
+                  className="inline-flex items-center gap-1 h-7 px-2.5 text-[10px] font-black uppercase tracking-widest bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/30 rounded-lg transition-colors active:scale-95 disabled:opacity-50 cursor-pointer"
+                  title="Auto-mark staff attendance for this approved WFH request"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Mark Attendance</span>
+                </button>
+              )
+            )}
+
+            {/* Cancel Leave Action for Staff (own) & Admin/Manager (any) */}
+            {canCancel && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm(`Are you sure you want to cancel this ${row.status === 'approved' ? 'approved' : 'pending'} leave request? Attendance records will be reverted.`)) {
+                    cancelLeaveMutation?.mutate({ id: row.id });
+                  }
+                }}
+                disabled={cancelLeaveMutation?.isPending}
+                className="inline-flex items-center gap-1 h-7 px-2.5 text-[10px] font-black uppercase tracking-widest bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 rounded-lg transition-colors active:scale-95 disabled:opacity-50 cursor-pointer"
+                title={`Cancel this ${row.status} leave request`}
+              >
+                <Ban className="w-3 h-3" />
+                <span>Cancel Leave</span>
+              </button>
+            )}
+
+            {row.status === 'cancelled' && (
+              <span className="text-[10px] text-slate-400 italic">Cancelled</span>
+            )}
+
+            {row.status === 'rejected' && (
+              <span className="text-[10px] text-slate-400 italic">Rejected</span>
+            )}
+          </div>
+        );
+      },
+    },
   ];
 };

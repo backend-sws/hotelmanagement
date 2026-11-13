@@ -32,7 +32,43 @@ class BusinessHolidayController extends Controller
             $query->whereYear('date', now()->year);
         }
 
-        return response()->json(['data' => $query->orderBy('date')->get()]);
+        $holidays = $query->orderBy('date')->get()->toArray();
+        $existingDates = array_map(function ($h) {
+            $d = is_array($h) ? ($h['date'] ?? '') : ($h->date ?? '');
+            return substr((string) $d, 0, 10);
+        }, $holidays);
+
+        // Include any holiday marked directly on the attendance calendar
+        $attQuery = \App\Models\Attendance::where('business_id', $businessId)
+            ->where('status', 'holiday')
+            ->whereNotNull('date');
+
+        if ($request->filled('from_date') && $request->filled('to_date')) {
+            $attQuery->whereBetween('date', [$request->from_date, $request->to_date]);
+        } elseif ($request->filled('year')) {
+            $attQuery->whereYear('date', $request->year);
+        } elseif ($request->filled('month')) {
+            $attQuery->whereYear('date', substr($request->month, 0, 4))->whereMonth('date', substr($request->month, 5, 2));
+        }
+
+        $attHolidays = $attQuery->distinct('date')->get(['date', 'notes']);
+        foreach ($attHolidays as $attH) {
+            $d = substr((string) $attH->date, 0, 10);
+            if (!in_array($d, $existingDates)) {
+                $holidays[] = [
+                    'id'          => null,
+                    'business_id' => $businessId,
+                    'date'        => $d,
+                    'name'        => $attH->notes ?: 'Company Holiday',
+                    'type'        => 'custom',
+                    'is_paid'     => true,
+                    'description' => 'Marked from attendance sheet',
+                ];
+                $existingDates[] = $d;
+            }
+        }
+
+        return response()->json(['data' => $holidays]);
     }
 
     /**
@@ -92,3 +128,4 @@ class BusinessHolidayController extends Controller
         return response()->json($result);
     }
 }
+

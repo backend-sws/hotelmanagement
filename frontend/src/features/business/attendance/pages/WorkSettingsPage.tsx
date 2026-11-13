@@ -286,7 +286,7 @@ export default function WorkSettingsPage() {
           </div>
 
           {/* Hub Tab Navigation Pills */}
-          <div className="flex flex-wrap items-center gap-2 pt-2.5 pb-1 border-t border-slate-100 dark:border-zinc-800/80">
+          <div className="flex items-center gap-2 pt-2.5 pb-2 border-t border-slate-100 dark:border-zinc-800/80 overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-zinc-700">
             <button
               type="button"
               onClick={() => setActiveTab('branches')}

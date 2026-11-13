@@ -30,10 +30,21 @@ export const AttendanceCheckInModal = ({ isOpen, onClose }: AttendanceCheckInMod
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
 
+  const [punchMode, setPunchMode] = useState<'office' | 'wfh'>('office');
+
   const hasApprovedWfh = Boolean((todayStatus as any)?.has_approved_wfh || (todayStatus as any)?.work_type === 'wfh');
   const isCheckedIn = Boolean(todayStatus && todayStatus.check_in_time);
   const isCheckedOut = Boolean(todayStatus && todayStatus.check_out_time);
   const isOnLunch = Boolean((todayStatus as any)?.is_on_lunch);
+
+  // If staff has approved WFH or already punched in as WFH, default to WFH mode
+  React.useEffect(() => {
+    if (hasApprovedWfh || (todayStatus as any)?.work_type === 'wfh') {
+      setPunchMode('wfh');
+    }
+  }, [hasApprovedWfh, todayStatus]);
+
+  const isWfh = punchMode === 'wfh' || hasApprovedWfh || (todayStatus as any)?.work_type === 'wfh';
 
   const regularizeMutation = useRequestRegularization();
   const [showOutOfGeofence, setShowOutOfGeofence] = useState(false);
@@ -156,12 +167,14 @@ export const AttendanceCheckInModal = ({ isOpen, onClose }: AttendanceCheckInMod
 
       // 3. Complete check-in / check-out
       const payload: any = { photo: path };
-      if (!hasApprovedWfh && location) {
+      if (location) {
         payload.latitude = location.lat;
         payload.longitude = location.lng;
       }
-      if (hasApprovedWfh) {
+      if (isWfh) {
         payload.work_type = 'wfh';
+      } else {
+        payload.work_type = 'office';
       }
 
       const mutation = isCheckedIn ? checkOutMutation : checkInMutation;
@@ -197,6 +210,36 @@ export const AttendanceCheckInModal = ({ isOpen, onClose }: AttendanceCheckInMod
       title="Staff Attendance"
     >
       <div className="space-y-5">
+        {/* Punch Mode Selection (In-Office vs WFH) */}
+        {!isCheckedIn && !isCheckedOut && (
+          <div className="flex p-1 bg-slate-100 dark:bg-zinc-800 rounded-xl border border-slate-200/80 dark:border-zinc-700/60">
+            <button
+              type="button"
+              onClick={() => setPunchMode('office')}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                punchMode === 'office'
+                  ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs border border-slate-200 dark:border-zinc-700'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200'
+              }`}
+            >
+              <MapPin className="w-3.5 h-3.5 text-blue-500" />
+              <span>🏢 Office Punch</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPunchMode('wfh')}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                punchMode === 'wfh'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200'
+              }`}
+            >
+              <Home className="w-3.5 h-3.5" />
+              <span>🏠 Work From Home (WFH)</span>
+            </button>
+          </div>
+        )}
+
         {/* Free Late Grace Passes Info (When checking in) */}
         {!isCheckedIn && !isCheckedOut && todayStatus && (todayStatus.enable_late_deduction ?? true) && (
           <div className="p-3 bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700/60 rounded-xl flex items-center justify-between text-xs">
@@ -210,17 +253,17 @@ export const AttendanceCheckInModal = ({ isOpen, onClose }: AttendanceCheckInMod
           </div>
         )}
 
-        {/* Approved WFH Notification Banner */}
-        {hasApprovedWfh && (
+        {/* WFH Notification Banner */}
+        {isWfh && !isCheckedIn && !isCheckedOut && (
           <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800/60 rounded-xl flex items-start gap-3 text-xs text-emerald-900 dark:text-emerald-200">
             <Home className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
             <div>
               <div className="font-extrabold text-sm text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                Approved Work From Home (WFH)
-                <Badge variant="success" className="text-[10px] uppercase font-black tracking-wider">Image Only</Badge>
+                Work From Home (WFH) Punch Mode
+                <Badge variant="success" className="text-[10px] uppercase font-black tracking-wider">Geofence Waived</Badge>
               </div>
               <p className="mt-1 text-emerald-700 dark:text-emerald-400 leading-relaxed">
-                Geofence verification is waived for your approved WFH. Only a selfie or workstation photo is required to mark attendance.
+                Geofence verification is waived. Only a selfie or workstation photo is required to mark attendance.
               </p>
             </div>
           </div>
@@ -356,8 +399,8 @@ export const AttendanceCheckInModal = ({ isOpen, onClose }: AttendanceCheckInMod
           </div>
         ) : (
           <>
-            {/* Geolocation Section (Only for in-office staff; bypassed for approved WFH) */}
-            {!hasApprovedWfh && (
+            {/* Geolocation Section (Only for in-office staff; bypassed for WFH) */}
+            {!isWfh && (
               <div className="p-3.5 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
                 <div className="flex items-center justify-between">
                   <div>
@@ -456,7 +499,7 @@ export const AttendanceCheckInModal = ({ isOpen, onClose }: AttendanceCheckInMod
             <div>
               <h4 className="font-bold text-xs mb-2 flex items-center gap-2 text-slate-700 dark:text-slate-300">
                 <Camera size={15} className="text-primary-500" /> 
-                {hasApprovedWfh ? 'Selfie / Workstation Photo Verification' : 'Photo Verification'}
+                {isWfh ? 'Selfie / Workstation Photo Verification' : 'Photo Verification'}
               </h4>
               <div className="aspect-video bg-black rounded-xl overflow-hidden relative flex items-center justify-center">
                 {photoPreview ? (
@@ -503,7 +546,7 @@ export const AttendanceCheckInModal = ({ isOpen, onClose }: AttendanceCheckInMod
                   : 'bg-primary-600 hover:bg-primary-700 text-white'
               }`}
               onClick={handleAction}
-              disabled={!photo || isUploading || checkInMutation.isPending || checkOutMutation.isPending}
+              disabled={!photo || isUploading || (!isWfh && !location) || checkInMutation.isPending || checkOutMutation.isPending}
             >
               {(isUploading || checkInMutation.isPending || checkOutMutation.isPending) ? (
                 <>
@@ -511,7 +554,7 @@ export const AttendanceCheckInModal = ({ isOpen, onClose }: AttendanceCheckInMod
                   {isUploading ? 'Uploading Verification Photo...' : 'Processing Attendance...'}
                 </>
               ) : (
-                isCheckedIn ? 'Check Out for Today' : (hasApprovedWfh ? 'WFH Check In (Photo Verified)' : 'Check In')
+                isCheckedIn ? 'Check Out for Today' : (isWfh ? '🏠 WFH Check In (Photo Verified)' : '🏢 In-Office Check In')
               )}
             </Button>
           </>

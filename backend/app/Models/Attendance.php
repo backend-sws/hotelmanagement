@@ -121,11 +121,15 @@ class Attendance extends Model
      */
     public function computeGrossPresenceHours(): ?float
     {
+        if ($this->status === 'half_day' && (!$this->check_in_time || !$this->check_out_time)) {
+            return 4.5;
+        }
         if (!$this->check_in_time || !$this->check_out_time) {
             return null;
         }
-        $in  = \Carbon\Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->check_in_time);
-        $out = \Carbon\Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->check_out_time);
+        $dateStr = $this->date instanceof \DateTimeInterface ? $this->date->format('Y-m-d') : substr((string)$this->date, 0, 10);
+        $in  = \Carbon\Carbon::parse($dateStr . ' ' . $this->check_in_time);
+        $out = \Carbon\Carbon::parse($dateStr . ' ' . $this->check_out_time);
         if ($out->lessThanOrEqualTo($in)) {
             // Check-out is next morning / overnight shift
             $out->addDay();
@@ -143,15 +147,20 @@ class Attendance extends Model
      */
     public function computeActualHours(): ?float
     {
+        if ($this->status === 'half_day' && (!$this->check_in_time || !$this->check_out_time)) {
+            return 4.5;
+        }
+
         $gross = $this->computeGrossPresenceHours();
         if ($gross === null) {
             return null;
         }
 
         $lunchMins = (int) ($this->lunch_minutes ?? 0);
+        $dateStr = $this->date instanceof \DateTimeInterface ? $this->date->format('Y-m-d') : substr((string)$this->date, 0, 10);
         if ($lunchMins <= 0 && $this->lunch_start_time && $this->lunch_end_time) {
-            $lIn  = \Carbon\Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->lunch_start_time);
-            $lOut = \Carbon\Carbon::parse($this->date->format('Y-m-d') . ' ' . $this->lunch_end_time);
+            $lIn  = \Carbon\Carbon::parse($dateStr . ' ' . $this->lunch_start_time);
+            $lOut = \Carbon\Carbon::parse($dateStr . ' ' . $this->lunch_end_time);
             if ($lOut->gt($lIn)) {
                 $lunchMins = $lIn->diffInMinutes($lOut);
             }
