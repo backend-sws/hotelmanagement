@@ -171,23 +171,55 @@ function CorporateSalarySlip({
   const totalGrossEarnings = earningsList.reduce((acc, curr) => acc + curr.amount, 0);
 
   // Deductions List
-  const deductionsList: { name: string; amount: number }[] = [];
-  if (Array.isArray(payroll.salary_components) && payroll.salary_components.length > 0) {
-    payroll.salary_components
-      .filter((c: any) => c.type === 'deduction' && Number(c.amount) > 0)
-      .forEach((c: any) => deductionsList.push({ name: c.name, amount: Number(c.amount) }));
-  }
-  if (Number(payroll.absence_deductions) > 0) {
-    deductionsList.push({ name: 'Absence Deductions (Loss of Pay)', amount: Number(payroll.absence_deductions) });
-  } else if (!payroll.late_deductions && Number(payroll.deduction) > 0) {
-    deductionsList.push({ name: 'Absence Deductions (Loss of Pay)', amount: Number(payroll.deduction) });
-  }
-  if (Number(payroll.late_deductions) > 0) {
-    const lateCutLabel = payroll.late_cut_days ? ` (${payroll.late_count || 0} lates, ${payroll.late_cut_days}d cut)` : '';
-    deductionsList.push({ name: `Late Arrival Penalty${lateCutLabel}`, amount: Number(payroll.late_deductions) });
-  }
-  if (Number(payroll.advance_deduction) > 0) {
-    deductionsList.push({ name: 'Salary Advance Recovered', amount: Number(payroll.advance_deduction) });
+  const deductionsList: { name: string; amount: number; reason?: string; type?: string }[] = [];
+  if (Array.isArray(payroll.deductions_breakdown) && payroll.deductions_breakdown.length > 0) {
+    payroll.deductions_breakdown.forEach((item: any) => {
+      deductionsList.push({
+        name: item.name,
+        amount: Number(item.amount),
+        reason: item.reason,
+        type: item.type,
+      });
+    });
+  } else {
+    // Fallback if legacy record without breakdown
+    if (Array.isArray(payroll.salary_components) && payroll.salary_components.length > 0) {
+      payroll.salary_components
+        .filter((c: any) => c.type === 'deduction' && Number(c.amount) > 0)
+        .forEach((c: any) => deductionsList.push({ name: c.name, amount: Number(c.amount), reason: `${c.name} deduction as per salary structure` }));
+    }
+    if (Number(payroll.absence_deductions) > 0) {
+      const absParts: string[] = [];
+      if (payroll.absent_days) absParts.push(`${payroll.absent_days} unapproved absent`);
+      if (payroll.half_days) absParts.push(`${payroll.half_days} half days`);
+      if (payroll.unpaid_leaves) absParts.push(`${payroll.unpaid_leaves} unpaid leaves`);
+      deductionsList.push({ 
+        name: 'Absence Deductions (Loss of Pay)', 
+        amount: Number(payroll.absence_deductions),
+        reason: absParts.length > 0 ? absParts.join(', ') : 'Unapproved voluntary absences & unpaid leaves'
+      });
+    } else if (!payroll.late_deductions && Number(payroll.deduction) > 0) {
+      deductionsList.push({ 
+        name: 'Absence Deductions (Loss of Pay)', 
+        amount: Number(payroll.deduction),
+        reason: 'Unapproved voluntary absences & unpaid leaves'
+      });
+    }
+    if (Number(payroll.late_deductions) > 0) {
+      const lateCutLabel = payroll.late_cut_days ? ` (${payroll.late_count || 0} lates, ${payroll.late_cut_days}d cut)` : '';
+      deductionsList.push({ 
+        name: `Late Arrival Penalty${lateCutLabel}`, 
+        amount: Number(payroll.late_deductions),
+        reason: `${payroll.late_count || 0} late punch arrivals recorded`
+      });
+    }
+    if (Number(payroll.advance_deduction) > 0) {
+      deductionsList.push({ 
+        name: 'Salary Advance Recovered', 
+        amount: Number(payroll.advance_deduction),
+        reason: 'Monthly recovery towards salary advance'
+      });
+    }
   }
 
   const totalGrossDeductions = deductionsList.reduce((acc, curr) => acc + curr.amount, 0);
@@ -393,9 +425,18 @@ function CorporateSalarySlip({
                   <td className="py-1.5 px-3 text-right font-semibold text-slate-900 border-r border-slate-300">
                     {earning?.name ? `₹${earning.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
                   </td>
-                  {/* Deduction Name */}
-                  <td className="py-1.5 px-3 text-slate-800 font-medium border-r border-slate-300">
-                    {deduction?.name || '—'}
+                  {/* Deduction Name & Rule Reason */}
+                  <td className="py-1.5 px-3 border-r border-slate-300">
+                    {deduction?.name ? (
+                      <div>
+                        <div className="text-slate-800 font-semibold text-xs leading-snug">{deduction.name}</div>
+                        {deduction.reason && (
+                          <div className="text-[10px] text-slate-500 font-normal leading-tight mt-0.5">
+                            {deduction.reason}
+                          </div>
+                        )}
+                      </div>
+                    ) : '—'}
                   </td>
                   {/* Deduction Amount */}
                   <td className="py-1.5 px-3 text-right font-semibold text-rose-700">
@@ -1422,48 +1463,120 @@ export default function PayrollDetailsPage() {
                 </h4>
               </div>
 
-              <div className="mt-4 space-y-4">
-                {/* Check Salary components deductions */}
-                {Array.isArray(payroll.salary_components) && payroll.salary_components.filter((c: any) => c.type === 'deduction').map((comp: any) => (
-                  <div key={comp.id || comp.name} className="flex justify-between items-center text-sm">
-                    <span className="text-slate-555 dark:text-zinc-400">{comp.name}</span>
-                    <span className="font-semibold text-rose-500">
-                      -₹{Number(comp.amount).toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-                
-                {/* Absence Deductions (LOP) */}
-                {Number(payroll.absence_deductions ?? (Number(payroll.late_deductions) > 0 ? 0 : displayDeduction)) > 0 && (
-                  <div className="flex justify-between items-center text-sm">
-                    <div>
-                      <span className="text-slate-700 dark:text-zinc-300 font-medium block">Absence Deductions (LOP)</span>
-                      <span className="text-[10px] text-slate-400">Unapproved absences & unpaid leaves</span>
-                    </div>
-                    <span className="font-semibold text-rose-500">
-                      -₹{Number(payroll.absence_deductions ?? displayDeduction).toLocaleString()}
-                    </span>
-                  </div>
+              <div className="mt-4 space-y-3.5">
+                {Array.isArray(payroll.deductions_breakdown) && payroll.deductions_breakdown.length > 0 ? (
+                  payroll.deductions_breakdown.map((item: any, idx: number) => {
+                    const isAdvanceItem = item.type === 'advance';
+                    if (editMode && isAdvanceItem) {
+                      return (
+                        <div key={idx} className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-white/5">
+                          <div>
+                            <span className="text-slate-700 dark:text-zinc-300 font-medium block text-sm">Advance Deduct</span>
+                            <span className="text-[10px] text-slate-400">{item.reason}</span>
+                          </div>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">₹</span>
+                            <input 
+                              type="number" 
+                              className="w-28 pl-6 pr-2.5 h-8 text-right bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold text-slate-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-primary-500" 
+                              value={formData.advance_deduction}
+                              onChange={(e) => setFormData(prev => ({ ...prev, advance_deduction: Number(e.target.value) }))}
+                            />
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Category style based on type
+                    const badgeColor = item.type === 'late_arrival'
+                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/30'
+                      : item.type === 'unapproved_absence'
+                      ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-900/30'
+                      : item.type === 'half_day'
+                      ? 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-900/30'
+                      : item.type === 'advance'
+                      ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/30'
+                      : 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border-slate-200 dark:border-zinc-700';
+
+                    return (
+                      <div key={idx} className="flex justify-between items-start text-sm pb-3 border-b border-slate-100/70 dark:border-white/5 last:border-b-0 last:pb-0">
+                        <div className="pr-3">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-slate-800 dark:text-zinc-200 font-semibold">{item.name}</span>
+                            {item.days !== undefined && item.days > 0 && (
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded border font-bold ${badgeColor}`}>
+                                {item.days}d cut {item.rate ? `@ ₹${Number(item.rate).toLocaleString()}/d` : ''}
+                              </span>
+                            )}
+                          </div>
+                          {item.reason && (
+                            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 leading-snug">
+                              {item.reason}
+                            </p>
+                          )}
+                        </div>
+                        <span className="font-bold text-rose-600 dark:text-rose-400 shrink-0 text-right">
+                          -₹{Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  /* Fallback to legacy components if no breakdown present */
+                  <>
+                    {Array.isArray(payroll.salary_components) && payroll.salary_components.filter((c: any) => c.type === 'deduction').map((comp: any) => (
+                      <div key={comp.id || comp.name} className="flex justify-between items-center text-sm">
+                        <span className="text-slate-555 dark:text-zinc-400">{comp.name}</span>
+                        <span className="font-semibold text-rose-500">
+                          -₹{Number(comp.amount).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                    
+                    {Number(payroll.absence_deductions ?? (Number(payroll.late_deductions) > 0 ? 0 : displayDeduction)) > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <div>
+                          <span className="text-slate-700 dark:text-zinc-300 font-medium block">Absence Deductions (LOP)</span>
+                          <span className="text-[10px] text-slate-400">Unapproved absences & unpaid leaves</span>
+                        </div>
+                        <span className="font-semibold text-rose-500">
+                          -₹{Number(payroll.absence_deductions ?? displayDeduction).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+
+                    {Number(payroll.late_deductions || 0) > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <div>
+                          <span className="text-slate-700 dark:text-zinc-300 font-medium block">Late Arrival Penalty</span>
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                            {payroll.late_count || 0} late arrivals ({payroll.late_cut_days || 0} days cut)
+                          </span>
+                        </div>
+                        <span className="font-semibold text-rose-500">
+                          -₹{Number(payroll.late_deductions).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {!editMode && Number(payroll.advance_deduction) > 0 && (
+                      <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-white/5 text-sm">
+                        <span className="text-slate-555 dark:text-zinc-400">Salary Advance Recovered</span>
+                        <span className="font-semibold text-rose-500">
+                          -₹{Number(payroll.advance_deduction).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
 
-                {/* Late Arrival Penalty */}
-                {Number(payroll.late_deductions || 0) > 0 && (
-                  <div className="flex justify-between items-center text-sm">
-                    <div>
-                      <span className="text-slate-700 dark:text-zinc-300 font-medium block">Late Arrival Penalty</span>
-                      <span className="text-[10px] text-amber-600 dark:text-amber-400">
-                        {payroll.late_count || 0} late arrivals ({payroll.late_cut_days || 0} days cut)
-                      </span>
-                    </div>
-                    <span className="font-semibold text-rose-500">
-                      -₹{Number(payroll.late_deductions).toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                
-                {editMode ? (
+                {/* Edit mode advance input if not rendered above */}
+                {editMode && (!Array.isArray(payroll.deductions_breakdown) || !payroll.deductions_breakdown.some((i: any) => i.type === 'advance')) && (
                   <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-white/5">
-                    <span className="text-slate-555 dark:text-zinc-400 font-medium">Advance Deduct</span>
+                    <div>
+                      <span className="text-slate-700 dark:text-zinc-300 font-medium block text-sm">Advance Deduct</span>
+                      <span className="text-[10px] text-slate-400">Monthly recovery towards employee advance</span>
+                    </div>
                     <div className="relative">
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">₹</span>
                       <input 
@@ -1474,15 +1587,18 @@ export default function PayrollDetailsPage() {
                       />
                     </div>
                   </div>
-                ) : (
-                  Number(payroll.advance_deduction) > 0 && (
-                    <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-white/5 text-sm">
-                      <span className="text-slate-555 dark:text-zinc-400">Salary Advance Recovered</span>
-                      <span className="font-semibold text-rose-500">
-                        -₹{Number(payroll.advance_deduction).toLocaleString()}
-                      </span>
-                    </div>
-                  )
+                )}
+
+                {/* Empty deductions state */}
+                {!editMode && 
+                 (!Array.isArray(payroll.deductions_breakdown) || payroll.deductions_breakdown.length === 0) &&
+                 Number(payroll.deduction || 0) === 0 &&
+                 Number(payroll.advance_deduction || 0) === 0 &&
+                 (!Array.isArray(payroll.salary_components) || payroll.salary_components.filter((c: any) => c.type === 'deduction').length === 0) && (
+                  <div className="py-3 text-center text-xs text-slate-400 dark:text-zinc-500 flex items-center justify-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <span>No deductions applied for this month.</span>
+                  </div>
                 )}
               </div>
             </div>
@@ -1492,10 +1608,19 @@ export default function PayrollDetailsPage() {
               <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Total Deductions</span>
               <span className="text-base font-black text-rose-500 font-display">
                 ₹{(
-                  displayDeduction 
-                  + (editMode ? Number(formData.advance_deduction) : Number(payroll.advance_deduction))
-                  + (Array.isArray(payroll.salary_components) ? payroll.salary_components.filter((c: any) => c.type === 'deduction').reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) : 0)
-                ).toLocaleString()}
+                  (Array.isArray(payroll.deductions_breakdown) && payroll.deductions_breakdown.length > 0)
+                    ? payroll.deductions_breakdown.reduce((acc: number, curr: any) => {
+                        if (editMode && curr.type === 'advance') {
+                          return acc + Number(formData.advance_deduction || 0);
+                        }
+                        return acc + Number(curr.amount || 0);
+                      }, 0) + (editMode && !payroll.deductions_breakdown.some((i: any) => i.type === 'advance') ? Number(formData.advance_deduction || 0) : 0)
+                    : (
+                        displayDeduction 
+                        + (editMode ? Number(formData.advance_deduction) : Number(payroll.advance_deduction))
+                        + (Array.isArray(payroll.salary_components) ? payroll.salary_components.filter((c: any) => c.type === 'deduction').reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) : 0)
+                      )
+                ).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
           </div>

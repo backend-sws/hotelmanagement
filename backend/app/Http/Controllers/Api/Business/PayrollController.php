@@ -152,6 +152,75 @@ class PayrollController extends BaseController
 
             $finalSalary = $baseSalary - $deduction + (float) $payroll->total_commission + $otAmount + $bonus - $advanceDeduction;
 
+            $updatedBreakdown = [];
+            $components = is_array($payroll->salary_components) ? $payroll->salary_components : json_decode($payroll->salary_components ?? '[]', true);
+            if (is_array($components)) {
+                foreach ($components as $comp) {
+                    if (is_array($comp) && ($comp['type'] ?? '') === 'deduction' && (float)($comp['amount'] ?? 0) > 0) {
+                        $updatedBreakdown[] = [
+                            'type'   => 'component',
+                            'name'   => $comp['name'] ?? 'Salary Component',
+                            'reason' => ($comp['name'] ?? 'Component') . ' deduction as per salary structure',
+                            'amount' => round((float) $comp['amount'], 2),
+                        ];
+                    }
+                }
+            }
+
+            if ($absenceDeductions > 0) {
+                if (isset($fullAbsentDays) && $fullAbsentDays > 0) {
+                    $multiplierText = ($absencePenaltyMultiplier ?? 1.0) > 1.0 ? " (" . ($absencePenaltyMultiplier ?? 2.0) . "x voluntary absence penalty)" : "";
+                    $updatedBreakdown[] = [
+                        'type'   => 'unapproved_absence',
+                        'name'   => 'Unapproved Absence Penalty',
+                        'reason' => "{$fullAbsentDays} unauthorized absent " . ($fullAbsentDays > 1 ? 'days' : 'day') . $multiplierText,
+                        'days'   => $fullAbsentDays,
+                        'rate'   => round($perDaySalary * ($absencePenaltyMultiplier ?? 1.0), 2),
+                        'amount' => $fullAbsentDeduction ?? round($fullAbsentDays * $perDaySalary, 2),
+                    ];
+                }
+                if (isset($halfDayPortion) && $halfDayPortion > 0) {
+                    $updatedBreakdown[] = [
+                        'type'   => 'half_day',
+                        'name'   => 'Half Day Absence',
+                        'reason' => ($payroll->half_days ?? 0) . " half " . (($payroll->half_days ?? 0) > 1 ? 'days' : 'day') . " worked (0.5 day wage cut)",
+                        'days'   => $halfDayPortion,
+                        'rate'   => round($perDaySalary, 2),
+                        'amount' => $halfDayDeduction ?? round($halfDayPortion * $perDaySalary, 2),
+                    ];
+                }
+                if (empty($updatedBreakdown) || (!isset($fullAbsentDays) && !isset($halfDayPortion))) {
+                    $updatedBreakdown[] = [
+                        'type'   => 'unapproved_absence',
+                        'name'   => 'Absence Deductions (Loss of Pay)',
+                        'reason' => 'Unapproved voluntary absences & unpaid leaves',
+                        'amount' => round($absenceDeductions, 2),
+                    ];
+                }
+            }
+
+            if ($lateDeductions > 0) {
+                $lateCutDays = (float) ($payroll->late_cut_days ?? 0);
+                $lateCount = (int) ($payroll->late_count ?? 0);
+                $updatedBreakdown[] = [
+                    'type'   => 'late_arrival',
+                    'name'   => 'Late Arrival Penalty',
+                    'reason' => "{$lateCount} late arrivals recorded ({$lateCutDays}d salary cut)",
+                    'days'   => $lateCutDays,
+                    'rate'   => round($perDaySalary, 2),
+                    'amount' => round($lateDeductions, 2),
+                ];
+            }
+
+            if ($advanceDeduction > 0) {
+                $updatedBreakdown[] = [
+                    'type'   => 'advance',
+                    'name'   => 'Salary Advance Recovered',
+                    'reason' => 'Advance salary installment recovered for ' . \Carbon\Carbon::parse($payroll->month . '-01')->format('M Y'),
+                    'amount' => round((float) $advanceDeduction, 2),
+                ];
+            }
+
             $payroll->update([
                 'base_salary' => $baseSalary,
                 'per_day_salary' => $perDaySalary,
@@ -162,6 +231,7 @@ class PayrollController extends BaseController
                 'advance_deduction' => $advanceDeduction,
                 'total_overtime_amount' => $otAmount,
                 'total_overtime_hours' => $otHours,
+                'deductions_breakdown' => $updatedBreakdown,
                 'final_salary' => round($finalSalary, 2),
                 'notes' => $request->input('notes', $payroll->notes),
             ]);

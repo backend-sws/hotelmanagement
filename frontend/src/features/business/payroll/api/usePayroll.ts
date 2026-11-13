@@ -22,6 +22,14 @@ export interface PayrollRecord {
   deduction: number;
   late_deductions?: number;
   absence_deductions?: number;
+  deductions_breakdown?: Array<{
+    type?: string;
+    name: string;
+    reason: string;
+    amount: number;
+    days?: number;
+    rate?: number;
+  }>;
   total_commission: number;
   total_overtime_hours?: number;
   total_overtime_amount?: number;

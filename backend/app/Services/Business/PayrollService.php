@@ -239,6 +239,26 @@ class PayrollService
                 $deduction = $lateDeductionAmount;
                 $finalSalary = $baseSalary - $deduction + (float) $totalCommission + $totalOvertimeAmount - (float) $advanceDeduction;
 
+                $dailyBreakdown = [];
+                if ($lateCutDays > 0 && $lateDeductionAmount > 0) {
+                    $dailyBreakdown[] = [
+                        'type'   => 'late_arrival',
+                        'name'   => 'Late Arrival Penalty',
+                        'reason' => "{$lateCount} late arrivals recorded ({$lateCutDays}d salary cut)",
+                        'days'   => $lateCutDays,
+                        'rate'   => round($perDaySalary, 2),
+                        'amount' => $lateDeductionAmount,
+                    ];
+                }
+                if ($advanceDeduction > 0) {
+                    $dailyBreakdown[] = [
+                        'type'   => 'advance',
+                        'name'   => 'Salary Advance Recovered',
+                        'reason' => 'Advance salary installment recovered for ' . Carbon::parse($month . '-01')->format('M Y'),
+                        'amount' => round((float) $advanceDeduction, 2),
+                    ];
+                }
+
                 $payrollData = [
                     'business_id' => $businessId,
                     'user_id' => $userId,
@@ -265,6 +285,7 @@ class PayrollService
                     'bonus' => $existing ? $existing->bonus : 0,
                     'advance_deduction' => (float) $advanceDeduction,
                     'salary_components' => json_encode([]),
+                    'deductions_breakdown' => $dailyBreakdown,
                     'salary_type' => 'daily',
                     'final_salary' => round($finalSalary, 2),
                     'status' => 'draft',
@@ -395,6 +416,63 @@ class PayrollService
             // Final salary
             $finalSalary = $baseSalary - $deduction + (float) $totalCommission + $totalOvertimeAmount - (float) $advanceDeduction;
 
+            $monthlyBreakdown = [];
+            if (is_array($components)) {
+                foreach ($components as $comp) {
+                    if (is_array($comp) && ($comp['type'] ?? '') === 'deduction' && (float)($comp['amount'] ?? 0) > 0) {
+                        $monthlyBreakdown[] = [
+                            'type'   => 'component',
+                            'name'   => $comp['name'] ?? 'Salary Component',
+                            'reason' => ($comp['name'] ?? 'Component') . ' deduction as per salary structure',
+                            'amount' => round((float) $comp['amount'], 2),
+                        ];
+                    }
+                }
+            }
+
+            if ($fullAbsentDays > 0 && $fullAbsentDeduction > 0) {
+                $multiplierText = $absencePenaltyMultiplier > 1.0 ? " ({$absencePenaltyMultiplier}x voluntary absence penalty)" : "";
+                $monthlyBreakdown[] = [
+                    'type'   => 'unapproved_absence',
+                    'name'   => 'Unapproved Absence Penalty',
+                    'reason' => "{$fullAbsentDays} unauthorized absent " . ($fullAbsentDays > 1 ? 'days' : 'day') . $multiplierText,
+                    'days'   => $fullAbsentDays,
+                    'rate'   => round($perDaySalary * $absencePenaltyMultiplier, 2),
+                    'amount' => $fullAbsentDeduction,
+                ];
+            }
+
+            if ($halfDayPortion > 0 && $halfDayDeduction > 0) {
+                $monthlyBreakdown[] = [
+                    'type'   => 'half_day',
+                    'name'   => 'Half Day Absence',
+                    'reason' => "{$halfDays} half " . ($halfDays > 1 ? 'days' : 'day') . " worked (0.5 day wage cut)",
+                    'days'   => $halfDayPortion,
+                    'rate'   => round($perDaySalary, 2),
+                    'amount' => $halfDayDeduction,
+                ];
+            }
+
+            if ($lateCutDays > 0 && $lateDeductionAmount > 0) {
+                $monthlyBreakdown[] = [
+                    'type'   => 'late_arrival',
+                    'name'   => 'Late Arrival Penalty',
+                    'reason' => "{$lateCount} late arrivals ({$freeWaiver} grace waived, {$lateCutDays}d salary cut)",
+                    'days'   => $lateCutDays,
+                    'rate'   => round($perDaySalary, 2),
+                    'amount' => $lateDeductionAmount,
+                ];
+            }
+
+            if ($advanceDeduction > 0) {
+                $monthlyBreakdown[] = [
+                    'type'   => 'advance',
+                    'name'   => 'Salary Advance Recovered',
+                    'reason' => 'Advance salary installment recovered for ' . Carbon::parse($month . '-01')->format('M Y'),
+                    'amount' => round((float) $advanceDeduction, 2),
+                ];
+            }
+
             $payrollData = [
                 'business_id' => $businessId,
                 'user_id' => $userId,
@@ -421,6 +499,7 @@ class PayrollService
                 'bonus' => $existing ? $existing->bonus : 0,
                 'advance_deduction' => (float) $advanceDeduction,
                 'salary_components' => json_encode($components),
+                'deductions_breakdown' => $monthlyBreakdown,
                 'salary_type' => 'monthly',
                 'final_salary' => round($finalSalary, 2),
                 'status' => 'draft',
