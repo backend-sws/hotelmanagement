@@ -329,6 +329,10 @@ class AttendanceService
 
         if (!empty($data['check_in_time'])) {
             $payload['check_in_time'] = $data['check_in_time'];
+            if ($lateMarkMinutes === null && in_array($status, ['present', 'late'])) {
+                $checkInCarbon = \Carbon\Carbon::parse($data['date'] . ' ' . $data['check_in_time']);
+                $payload['late_mark_minutes'] = $this->calculateLateMarkMinutes($businessId, $data['user_id'], $checkInCarbon);
+            }
         }
         if (!empty($data['check_out_time'])) {
             $payload['check_out_time'] = $data['check_out_time'];
@@ -987,6 +991,9 @@ class AttendanceService
 
         if ($attendance->regularization_requested_checkin) {
             $updates['check_in_time'] = $attendance->regularization_requested_checkin;
+            $dateStr = $attendance->date instanceof \DateTimeInterface ? $attendance->date->format('Y-m-d') : substr((string)$attendance->date, 0, 10);
+            $checkInCarbon = \Carbon\Carbon::parse($dateStr . ' ' . $attendance->regularization_requested_checkin);
+            $updates['late_mark_minutes'] = $this->calculateLateMarkMinutes($attendance->business_id, $attendance->user_id, $checkInCarbon);
         }
         if ($attendance->regularization_requested_checkout) {
             $updates['check_out_time'] = $attendance->regularization_requested_checkout;
@@ -1039,6 +1046,9 @@ class AttendanceService
         $updates = [];
         if (!empty($data['check_in_time'])) {
             $updates['check_in_time'] = $data['check_in_time'];
+            $dateStr = $attendance->date instanceof \DateTimeInterface ? $attendance->date->format('Y-m-d') : substr((string)$attendance->date, 0, 10);
+            $checkInCarbon = \Carbon\Carbon::parse($dateStr . ' ' . $data['check_in_time']);
+            $updates['late_mark_minutes'] = $this->calculateLateMarkMinutes($attendance->business_id, $attendance->user_id, $checkInCarbon);
         }
         if (!empty($data['check_out_time'])) {
             $updates['check_out_time'] = $data['check_out_time'];

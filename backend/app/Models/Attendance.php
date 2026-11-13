@@ -77,6 +77,8 @@ class Attendance extends Model
         'exact_working_hours',
         'office_present_hours',
         'is_on_lunch',
+        'formatted_check_in_time',
+        'formatted_check_out_time',
     ];
 
     public function user()
@@ -116,6 +118,49 @@ class Attendance extends Model
     }
 
     /**
+     * Resolves effective check-in Carbon instance.
+     * Guards against anomalous 00:xx:xx midnight records when late_mark_minutes indicates morning punch.
+     */
+    public function getEffectiveCheckInDateTime(): ?\Carbon\Carbon
+    {
+        if (!$this->check_in_time) {
+            return null;
+        }
+        $dateStr = $this->date instanceof \DateTimeInterface ? $this->date->format('Y-m-d') : substr((string)$this->date, 0, 10);
+        $inTime = (string) $this->check_in_time;
+
+        // If recorded as midnight 00:xx (before 05:00 AM) but late_mark_minutes is positive,
+        // it indicates an anomalous recording of late duration or 12h AM misentry.
+        if ($this->late_mark_minutes > 0 && preg_match('/^0[0-4]:/i', $inTime)) {
+            $workSetting = \App\Models\BusinessWorkSetting::where('business_id', $this->business_id)->first();
+            $startTimeStr = $workSetting?->work_start_time ?? '09:00:00';
+            $grace = $workSetting?->late_mark_grace_minutes ?? 15;
+            $workStart = \Carbon\Carbon::parse($dateStr . ' ' . $startTimeStr);
+            return $workStart->copy()->addMinutes($grace + (int) $this->late_mark_minutes);
+        }
+
+        return \Carbon\Carbon::parse($dateStr . ' ' . $inTime);
+    }
+
+    public function getFormattedCheckInTimeAttribute(): ?string
+    {
+        if (!$this->check_in_time) {
+            return null;
+        }
+        $dt = $this->getEffectiveCheckInDateTime();
+        return $dt ? $dt->format('h:i A') : null;
+    }
+
+    public function getFormattedCheckOutTimeAttribute(): ?string
+    {
+        if (!$this->check_out_time) {
+            return null;
+        }
+        $dateStr = $this->date instanceof \DateTimeInterface ? $this->date->format('Y-m-d') : substr((string)$this->date, 0, 10);
+        return \Carbon\Carbon::parse($dateStr . ' ' . $this->check_out_time)->format('h:i A');
+    }
+
+    /**
      * Total office presence duration (check-out minus check-in).
      * Returns decimal hours (e.g. 9.0 for 9 hours in office).
      */
@@ -128,7 +173,7 @@ class Attendance extends Model
             return null;
         }
         $dateStr = $this->date instanceof \DateTimeInterface ? $this->date->format('Y-m-d') : substr((string)$this->date, 0, 10);
-        $in  = \Carbon\Carbon::parse($dateStr . ' ' . $this->check_in_time);
+        $in  = $this->getEffectiveCheckInDateTime() ?? \Carbon\Carbon::parse($dateStr . ' ' . $this->check_in_time);
         $out = \Carbon\Carbon::parse($dateStr . ' ' . $this->check_out_time);
         if ($out->lessThanOrEqualTo($in)) {
             // Check-out is next morning / overnight shift

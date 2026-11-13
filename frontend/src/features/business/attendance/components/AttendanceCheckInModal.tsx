@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Camera, MapPin, Loader2, CheckCircle, Home, Utensils, Coffee, CheckCircle2, Clock, AlertCircle, Send, Bell, ChevronDown, ChevronUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { formatTime12Hour } from '../utils/timeFormat';
 
 interface AttendanceCheckInModalProps {
   isOpen: boolean;
@@ -371,7 +372,7 @@ export const AttendanceCheckInModal = ({ isOpen, onClose }: AttendanceCheckInMod
             <div>
               <h3 className="text-lg font-bold">You're done for today!</h3>
               <p className="text-xs text-slate-500 mt-1">
-                Checked in at <strong>{todayStatus?.check_in_time}</strong> — Checked out at <strong>{todayStatus?.check_out_time}</strong>
+                Checked in at <strong>{formatTime12Hour(todayStatus?.check_in_time)}</strong> — Checked out at <strong>{formatTime12Hour(todayStatus?.check_out_time)}</strong>
               </p>
             </div>
 

@@ -19,6 +19,7 @@ import {
 import { Check, Camera, Clock, AlertCircle, Gift, Calendar, X } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RegularizationModal } from './RegularizationModal';
+import { formatTime12Hour } from '../utils/timeFormat';
 
 interface AttendanceMonthlyGridProps {
   month: string; // format: 'yyyy-MM'
@@ -177,12 +178,17 @@ export function AttendanceMonthlyGrid({
       notes: editNotes || (editStatus === 'late' ? `Late Entry (${editLateMinutes || 30}m)` : undefined),
     }, {
       onSuccess: () => {
-        // If times were changed on an existing record, update times as admin
-        if (selectedRecord && (editCheckIn || editCheckOut)) {
+        // Only update times as admin if the times were actually changed by the user to avoid overwriting real punch timestamps
+        const originalIn = selectedRecord?.check_in_time ? selectedRecord.check_in_time.slice(0, 5) : '';
+        const originalOut = selectedRecord?.check_out_time ? selectedRecord.check_out_time.slice(0, 5) : '';
+        const inChanged = Boolean(editCheckIn && editCheckIn !== originalIn);
+        const outChanged = Boolean(editCheckOut && editCheckOut !== originalOut);
+
+        if (selectedRecord && (inChanged || outChanged)) {
           adminEditMutation.mutate({
             id: selectedRecord.id,
-            check_in_time: editCheckIn ? `${editCheckIn}:00` : undefined,
-            check_out_time: editCheckOut ? `${editCheckOut}:00` : undefined,
+            check_in_time: inChanged ? `${editCheckIn}:00` : undefined,
+            check_out_time: outChanged ? `${editCheckOut}:00` : undefined,
             notes: editNotes,
           });
         }
@@ -368,7 +374,7 @@ export function AttendanceMonthlyGrid({
                       } else if (isLateRecord) {
                         cellClass = 'bg-orange-500 text-white shadow-xs';
                         const lateMins = record?.late_mark_minutes ? `${record.late_mark_minutes}m late` : 'Late Entry';
-                        cellTitle = `Late Entry (${lateMins}) ${isUnapproved ? '(Pending Approval)' : ''} ${record?.check_in_time ? `(In: ${record.check_in_time})` : ''}`;
+                        cellTitle = `Late Entry (${lateMins}) ${isUnapproved ? '(Pending Approval)' : ''} ${record?.check_in_time ? `(In: ${formatTime12Hour(record.check_in_time)})` : ''}`;
                         cellBadge = 'LE';
                       } else if (isHalfDay) {
                         cellClass = 'bg-amber-500 text-white shadow-xs';
@@ -377,7 +383,7 @@ export function AttendanceMonthlyGrid({
                         cellBadge = 'HD';
                       } else if (isPresent) {
                         cellClass = 'bg-emerald-500 text-white shadow-xs';
-                        cellTitle = `Present ${isUnapproved ? '(Pending Approval)' : ''} ${record?.check_in_time ? `(In: ${record.check_in_time})` : ''} ${record?.actual_hours ? `(${record.actual_hours}h)` : ''}`;
+                        cellTitle = `Present ${isUnapproved ? '(Pending Approval)' : ''} ${record?.check_in_time ? `(In: ${formatTime12Hour(record.check_in_time)})` : ''} ${record?.actual_hours ? `(${record.actual_hours}h)` : ''}`;
                         cellBadge = 'P';
                       } else if (isAbsent) {
                         cellClass = 'bg-rose-500 text-white shadow-xs';
@@ -705,7 +711,9 @@ export function AttendanceMonthlyGrid({
               <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 p-4 rounded-2xl flex flex-col justify-between shadow-sm">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-450 dark:text-slate-500">Check In Time</p>
-                  <p className="text-base font-black text-slate-800 dark:text-slate-200 mt-1">{selectedRecord.check_in_time || 'N/A'}</p>
+                  <p className="text-base font-black text-slate-800 dark:text-slate-200 mt-1">
+                    {formatTime12Hour(selectedRecord.check_in_time)}
+                  </p>
                   {selectedRecord.late_mark_minutes ? (
                     <span className="text-[10px] text-rose-500 font-bold">Late by {selectedRecord.late_mark_minutes}m</span>
                   ) : null}
@@ -730,7 +738,9 @@ export function AttendanceMonthlyGrid({
               <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 p-4 rounded-2xl flex flex-col justify-between shadow-sm">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-450 dark:text-slate-500">Check Out Time</p>
-                  <p className="text-base font-black text-slate-800 dark:text-slate-200 mt-1">{selectedRecord.check_out_time || 'N/A'}</p>
+                  <p className="text-base font-black text-slate-800 dark:text-slate-200 mt-1">
+                    {formatTime12Hour(selectedRecord.check_out_time)}
+                  </p>
                   {selectedRecord.actual_hours !== null && selectedRecord.actual_hours !== undefined ? (
                     <span className="text-[10px] text-emerald-500 font-bold">Hours: {selectedRecord.actual_hours}h</span>
                   ) : null}
@@ -1060,27 +1070,47 @@ export function AttendanceMonthlyGrid({
                 )}
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Check-In Time
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Check-In Time
+                    </label>
+                    {editCheckIn && (
+                      <span className="text-[10px] font-black text-primary-600 dark:text-primary-400">
+                        {formatTime12Hour(editCheckIn)}
+                      </span>
+                    )}
+                  </div>
                   <Input 
                     type="time"
                     value={editCheckIn} 
                     onChange={(e) => setEditCheckIn(e.target.value)}
                     className="h-10 text-sm bg-white dark:bg-[#0c0c0f] border-slate-200/80 dark:border-white/10"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Format: 12-Hour standard ({editCheckIn ? formatTime12Hour(editCheckIn) : 'e.g. 09:30 AM'})
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Check-Out Time
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Check-Out Time
+                    </label>
+                    {editCheckOut && (
+                      <span className="text-[10px] font-black text-primary-600 dark:text-primary-400">
+                        {formatTime12Hour(editCheckOut)}
+                      </span>
+                    )}
+                  </div>
                   <Input 
                     type="time"
                     value={editCheckOut} 
                     onChange={(e) => setEditCheckOut(e.target.value)}
                     className="h-10 text-sm bg-white dark:bg-[#0c0c0f] border-slate-200/80 dark:border-white/10"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Format: 12-Hour standard ({editCheckOut ? formatTime12Hour(editCheckOut) : 'e.g. 06:30 PM'})
+                  </p>
                 </div>
 
                 {/* Overtime Manual Adjust Inputs */}

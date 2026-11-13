@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { CheckCircle, Camera, Check, MapPin, Home, Utensils } from 'lucide-react';
 import React from 'react';
 import type { AttendanceRecord } from '../api/useAttendance';
+import { formatTime12Hour } from '../utils/timeFormat';
 
 interface AttendanceColumnProps {
   handleApprove: (id: number) => void;
@@ -46,12 +47,12 @@ export const getAttendanceColumns = ({ handleApprove, handleUnapprove, handleVie
   {
     header: 'Check In',
     accessorKey: 'check_in_time',
-    cell: (row: AttendanceRecord) => row.check_in_time || '-'
+    cell: (row: AttendanceRecord) => row.check_in_time ? formatTime12Hour(row.check_in_time) : '-'
   },
   {
     header: 'Check Out',
     accessorKey: 'check_out_time',
-    cell: (row: AttendanceRecord) => row.check_out_time || '-'
+    cell: (row: AttendanceRecord) => row.check_out_time ? formatTime12Hour(row.check_out_time) : '-'
   },
   {
     header: 'Office Present Time',

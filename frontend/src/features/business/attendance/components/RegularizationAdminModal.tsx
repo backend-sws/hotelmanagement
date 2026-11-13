@@ -9,6 +9,7 @@ import {
 } from '../api/useAttendance';
 import { Clock, Check, X, User, AlertCircle, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatTime12Hour } from '../utils/timeFormat';
 
 interface RegularizationAdminModalProps {
   isOpen: boolean;
@@ -64,20 +65,20 @@ export function RegularizationAdminModal({ isOpen, onClose }: RegularizationAdmi
                     <div>
                       <span className="text-slate-400 dark:text-slate-500">Requested Arrival: </span>
                       <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                        {req.regularization_requested_checkin ? req.regularization_requested_checkin.slice(0, 5) : '—'}
+                        {req.regularization_requested_checkin ? formatTime12Hour(req.regularization_requested_checkin) : '—'}
                       </span>
                     </div>
                     {req.regularization_requested_checkout && (
                       <div>
                         <span className="text-slate-400 dark:text-slate-500">Requested Departure: </span>
                         <span className="font-semibold text-blue-600 dark:text-blue-400">
-                          {req.regularization_requested_checkout.slice(0, 5)}
+                          {formatTime12Hour(req.regularization_requested_checkout)}
                         </span>
                       </div>
                     )}
                     {req.check_in_time && (
                       <div className="line-through text-slate-400 dark:text-slate-600">
-                        Original: {req.check_in_time.slice(0, 5)}
+                        Original: {formatTime12Hour(req.check_in_time)}
                       </div>
                     )}
                   </div>
