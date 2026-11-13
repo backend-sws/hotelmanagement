@@ -48,3 +48,4 @@ return new class extends Migration
         // Data repair migration, no destructive rollback required
     }
 };
+

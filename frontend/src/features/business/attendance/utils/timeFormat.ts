@@ -27,3 +27,4 @@ export function formatTime12Hour(timeStr?: string | null): string {
 
   return trimmed;
 }
+
